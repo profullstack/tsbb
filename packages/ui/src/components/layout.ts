@@ -1,7 +1,7 @@
 import { html, raw } from 'hono/html';
 import type { NavItem, User, Viewer } from '@tsbb/plugin-api';
 import { Avatar, LinkButton, trusted, type Renderable } from './primitives.ts';
-import { IconBell, IconMoon, IconSun } from './icons.ts';
+import { IconBell, IconGithub, IconMoon, IconSun } from './icons.ts';
 
 export interface LayoutSlots {
   head?: string;
@@ -121,14 +121,21 @@ export function Layout(props: LayoutProps) {
       <main class="main" id="main"><div class="container">${props.body}</div></main>
       <footer class="site-footer">
         <div class="container row-between">
-          <span
-            >${props.boardName} — running on
-            <a href="https://github.com/profullstack/tsbb" rel="noopener">tsbb</a></span
-          >
+          <span>
+            &copy; ${new Date().getFullYear()} Profullstack, Inc. &middot; running on
+            <a href="https://github.com/profullstack/tsbb" rel="noopener">tsbb</a>
+          </span>
           <span class="row">
             <a href="/members">Members</a>
             <a href="/feeds">Feeds</a>
             <a href="/feed.xml">RSS</a>
+            <a
+              href="https://github.com/profullstack/tsbb"
+              rel="noopener"
+              title="tsbb on GitHub"
+              style="display:inline-flex;align-items:center;gap:.3rem"
+              >${IconGithub()} GitHub</a
+            >
             ${props.viewer.isAdmin ? html`<a href="/admin">Admin</a>` : ''}
           </span>
         </div>
