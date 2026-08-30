@@ -6,7 +6,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./migrate": "./src/migrate.ts",
-    "./fts": "./src/fts.ts"
+    "./fts": "./src/fts.ts",
+    "./seed": "./src/seed.ts"
   },
   "dependencies": {
     "@libsql/client": "^0.15.4"

@@ -1,0 +1,16 @@
+{
+  "name": "@profullstack/tsbb",
+  "version": "0.1.0",
+  "description": "A TypeScript bulletin board. Forums, plugins, avatars, signatures and a terminal client.",
+  "type": "module",
+  "license": "MIT",
+  "author": "Profullstack, Inc.",
+  "bin": { "tsbb": "./bin/tsbb.mjs" },
+  "engines": { "node": ">=24" },
+  "dependencies": {
+    "@tsbb/core": "workspace:*",
+    "@tsbb/db": "workspace:*",
+    "@tsbb/mail": "workspace:*",
+    "@tsbb/plugin-host": "workspace:*"
+  }
+}

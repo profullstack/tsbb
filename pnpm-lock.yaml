@@ -21,6 +21,21 @@ importers:
         specifier: ^5.9.2
         version: 5.9.3
 
+  apps/cli:
+    dependencies:
+      '@tsbb/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@tsbb/db':
+        specifier: workspace:*
+        version: link:../../packages/db
+      '@tsbb/mail':
+        specifier: workspace:*
+        version: link:../../packages/mail
+      '@tsbb/plugin-host':
+        specifier: workspace:*
+        version: link:../../packages/plugin-host
+
   apps/server:
     dependencies:
       '@hono/node-server':
