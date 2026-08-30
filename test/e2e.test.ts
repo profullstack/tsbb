@@ -347,9 +347,16 @@ describe('a board end to end', () => {
     const form = new FormData();
     form.set('avatar', new File([png], 'me.png', { type: 'image/png' }));
     const response = await app.fetch(
-      new Request(url('/settings/avatar'), { method: 'POST', headers: { cookie }, body: form }),
+      new Request(url('/settings/avatar'), {
+        method: 'POST',
+        headers: { cookie },
+        body: form,
+        redirect: 'manual',
+      }),
     );
-    assert.equal(response.status, 200);
+    // Redirects rather than rendering, so a refresh cannot re-upload.
+    assert.equal(response.status, 303);
+    assert.match(response.headers.get('location') ?? '', /^\/settings\?saved=1/);
 
     const row = await db.one<{ avatar_url: string; avatar_kind: string }>(
       'SELECT avatar_url, avatar_kind FROM users WHERE email_lower = ?',
@@ -364,6 +371,57 @@ describe('a board end to end', () => {
     assert.equal(served.status, 200);
     assert.equal(served.headers.get('content-type'), 'image/webp');
     assert.match(served.headers.get('cache-control') ?? '', /immutable/);
+  });
+
+  it('keeps the uploaded avatar when the profile form is saved', async () => {
+    /*
+     * The profile form carries no avatar field at all. Reading the absent case
+     * as 'identicon' meant every ordinary profile save silently reset the
+     * avatar — and because the form did not redirect, refreshing re-submitted
+     * and did it again. A missing SELECT means "not edited"; only a missing
+     * CHECKBOX means "off".
+     */
+    const before = await db.one<{ avatar_kind: string; avatar_url: string }>(
+      'SELECT avatar_kind, avatar_url FROM users WHERE email_lower = ?',
+      ['ann@example.com'],
+    );
+    assert.equal(before?.avatar_kind, 'upload', 'starts from the uploaded avatar');
+
+    const response = await post('/settings', {
+      username: 'ann',
+      displayName: 'Ann',
+      bio: 'Editing my profile, not my avatar.',
+    });
+    assert.equal(response.status, 303, 'saving redirects, so a refresh cannot re-submit');
+
+    const after = await db.one<{ avatar_kind: string; avatar_url: string }>(
+      'SELECT avatar_kind, avatar_url FROM users WHERE email_lower = ?',
+      ['ann@example.com'],
+    );
+    assert.equal(after?.avatar_kind, 'upload', 'the avatar survived the save');
+    assert.equal(after?.avatar_url, before?.avatar_url);
+
+    const page = await get('/settings');
+    assert.ok((await page.text()).includes('Editing my profile'), 'and the edit was applied');
+  });
+
+  it('changes the avatar kind when the form does carry the field', async () => {
+    await post('/settings', { username: 'ann', avatarKind: 'gravatar' });
+    let row = await db.one<{ avatar_kind: string }>(
+      'SELECT avatar_kind FROM users WHERE email_lower = ?',
+      ['ann@example.com'],
+    );
+    assert.equal(row?.avatar_kind, 'gravatar');
+
+    // And refuses a value that is not one of the offered choices.
+    await post('/settings', { username: 'ann', avatarKind: 'file:///etc/passwd' });
+    row = await db.one<{ avatar_kind: string }>(
+      'SELECT avatar_kind FROM users WHERE email_lower = ?',
+      ['ann@example.com'],
+    );
+    assert.equal(row?.avatar_kind, 'gravatar', 'an unknown kind is ignored, not stored');
+
+    await post('/settings', { username: 'ann', avatarKind: 'upload' });
   });
 
   it('will not serve a path that is not one of its own generated names', async () => {

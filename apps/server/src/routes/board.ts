@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import { all, one } from '@tsbb/db';
 import type { Context } from 'hono';
 import { html } from 'hono/html';
 import {
@@ -10,6 +11,7 @@ import {
   listPosts,
   listTopics,
   countTopics,
+  formatCount,
   markRead,
   rankFor,
   recordView,
@@ -51,22 +53,35 @@ export function boardRoutes(services: Services) {
 
     const above = await slot(c, services, 'board:above_categories');
     const below = await slot(c, services, 'board:below_categories');
+    const stats = await boardStats();
 
     const body = html`${trusted(above)}
       ${tree.length === 0
         ? Card(CardContent(Empty('No forums yet', viewer.isAdmin
             ? html`Create the first one in <a href="/admin/forums">administration</a>.`
             : 'An administrator has not set this board up yet.')))
-        : tree.map((node) =>
-            node.kind === 'category'
-              ? html`<section class="category">
-                  <div class="category-header"><h2 class="category-title">${node.name}</h2></div>
-                  ${Card(CardContent(node.children.map((child) => ForumRow(child)), { flush: true }))}
-                </section>`
-              : html`<section class="category">
-                  ${Card(CardContent(ForumRow(node), { flush: true }))}
-                </section>`,
-          )}
+        : (() => {
+            // One counter across every category, so the hue cycle runs the
+            // length of the page instead of restarting inside each card —
+            // :nth-child counts within a parent and never gets past hue 3.
+            let hue = 0;
+            return tree.map((node) =>
+              node.kind === 'category'
+                ? html`<section class="category">
+                    <div class="category-header"><h2 class="category-title">${node.name}</h2></div>
+                    ${Card(
+                      CardContent(
+                        node.children.map((child) => ForumRow(child, hue++)),
+                        { flush: true },
+                      ),
+                    )}
+                  </section>`
+                : html`<section class="category">
+                    ${Card(CardContent(ForumRow(node, hue++), { flush: true }))}
+                  </section>`,
+            );
+          })()}
+      ${boardStatsPanel(stats)}
       ${trusted(below)}`;
 
     return render(c, services, {
@@ -194,6 +209,57 @@ export function boardRoutes(services: Services) {
   app.get('/t/:handle/p/:postId', async (c) => topicPage(c, services));
 
   return app;
+}
+
+interface BoardStats {
+  topics: number;
+  posts: number;
+  members: number;
+  online: number;
+  newest: string | null;
+}
+
+/**
+ * The statistics strip every phpBB and vBulletin board has carried for twenty
+ * years. It is not decoration: on a quiet board it is the only thing that says
+ * anybody is here at all.
+ */
+async function boardStats(): Promise<BoardStats> {
+  const row = await one<{ topics: number; posts: number; members: number; online: number }>(
+    `SELECT
+       (SELECT COUNT(*) FROM topics WHERE is_deleted = 0 AND is_hidden = 0) AS topics,
+       (SELECT COUNT(*) FROM posts  WHERE is_deleted = 0 AND is_hidden = 0) AS posts,
+       (SELECT COUNT(*) FROM users  WHERE is_deleted = 0) AS members,
+       (SELECT COUNT(*) FROM users  WHERE is_deleted = 0 AND last_seen_at > ?) AS online`,
+    [Date.now() - 15 * 60_000],
+  );
+  const newest = await one<{ username: string }>(
+    'SELECT username FROM users WHERE is_deleted = 0 ORDER BY created_at DESC LIMIT 1',
+  );
+  return {
+    topics: Number(row?.topics ?? 0),
+    posts: Number(row?.posts ?? 0),
+    members: Number(row?.members ?? 0),
+    online: Number(row?.online ?? 0),
+    newest: newest?.username ?? null,
+  };
+}
+
+function boardStatsPanel(stats: BoardStats) {
+  return Card(html`
+    ${CardHeader('Board statistics')}
+    <div class="board-stats">
+      <div class="board-stat"><strong>${formatCount(stats.topics)}</strong><span>Topics</span></div>
+      <div class="board-stat"><strong>${formatCount(stats.posts)}</strong><span>Posts</span></div>
+      <div class="board-stat"><strong>${formatCount(stats.members)}</strong><span>Members</span></div>
+      <div class="board-stat"><strong>${formatCount(stats.online)}</strong><span>Online now</span></div>
+    </div>
+    ${stats.newest
+      ? html`<div class="board-newest">
+          Welcome to our newest member, <a href="/u/${stats.newest}">${stats.newest}</a>
+        </div>`
+      : ''}
+  `);
 }
 
 function topicIdFromHandle(handle: string): number {

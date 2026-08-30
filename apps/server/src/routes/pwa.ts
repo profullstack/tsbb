@@ -59,8 +59,8 @@ export function pwaRoutes(_services: Services) {
         orientation: 'any',
         // Matches --background in each theme, so the splash screen does not
         // flash the wrong colour before the page paints.
-        background_color: '#ffffff',
-        theme_color: '#4f39f6',
+        background_color: '#fffcf9',
+        theme_color: '#f15b00',
         categories: ['social', 'news'],
         icons: [
           { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },

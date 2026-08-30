@@ -22,8 +22,11 @@
   height: 2.25rem;
   padding-inline: 1rem;
   border: 1px solid transparent;
-  background: var(--primary);
+  /* A gradient plus a coloured shadow, so the primary action is the brightest
+     thing on the page rather than merely the filled thing. */
+  background: var(--gradient-brand);
   color: var(--primary-foreground);
+  box-shadow: 0 1px 2px oklch(0 0 0 / 0.08), 0 4px 14px -6px oklch(0.66 0.2 42 / 0.55);
   cursor: pointer;
   text-decoration: none;
   transition:
@@ -34,7 +37,11 @@
   user-select: none;
 }
 
-.btn:hover { background: color-mix(in oklab, var(--primary) 90%, black); text-decoration: none; }
+.btn:hover {
+  filter: saturate(1.08) brightness(1.04);
+  box-shadow: 0 2px 4px oklch(0 0 0 / 0.1), 0 8px 22px -6px oklch(0.66 0.2 42 / 0.6);
+  text-decoration: none;
+}
 .btn:active { transform: translateY(0.5px); }
 .btn:disabled,
 .btn[aria-disabled='true'] {
@@ -44,12 +51,14 @@
 
 .btn-secondary {
   background: var(--secondary);
+  box-shadow: none;
   color: var(--secondary-foreground);
 }
 .btn-secondary:hover { background: color-mix(in oklab, var(--secondary) 85%, var(--foreground) 8%); }
 
 .btn-outline {
   background: var(--background);
+  box-shadow: none;
   color: var(--foreground);
   border-color: var(--border);
 }
@@ -57,18 +66,21 @@
 
 .btn-ghost {
   background: transparent;
+  box-shadow: none;
   color: var(--foreground);
 }
 .btn-ghost:hover { background: var(--accent); color: var(--accent-foreground); }
 
 .btn-destructive {
   background: var(--destructive);
+  box-shadow: none;
   color: var(--destructive-foreground);
 }
 .btn-destructive:hover { background: color-mix(in oklab, var(--destructive) 90%, black); }
 
 .btn-link {
   background: transparent;
+  box-shadow: none;
   color: var(--primary);
   height: auto;
   padding: 0;
@@ -85,6 +97,7 @@
 
 .card {
   background: var(--card);
+  transition: box-shadow 0.18s ease, border-color 0.18s ease;
   color: var(--card-foreground);
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -124,7 +137,7 @@
   font-weight: 600;
   line-height: 1.25;
   letter-spacing: 0.01em;
-  background: var(--primary);
+  background: var(--gradient-brand);
   color: var(--primary-foreground);
   white-space: nowrap;
 }

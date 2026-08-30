@@ -19,9 +19,15 @@ export interface ForumRowNode extends Forum {
   unread?: boolean;
 }
 
-export function ForumRow(forum: ForumRowNode) {
+/**
+ * The accent hue is passed in rather than chosen by :nth-child, because
+ * nth-child counts within one card — so a board with several categories
+ * restarts at the first hue in each and only ever shows the first few.
+ */
+export function ForumRow(forum: ForumRowNode, hue = 0) {
   const href = forum.kind === 'link' ? (forum.linkUrl ?? '#') : `/f/${forum.slug}`;
-  return html`<div class="${forum.unread ? 'forum-row unread' : 'forum-row'}">
+  const tone = `tone-${(hue % 6) + 1}`;
+  return html`<div class="${['forum-row', forum.unread ? 'unread' : '', tone].filter(Boolean).join(' ')}">
     <span class="forum-icon" aria-hidden="true">${IconFolder()}</span>
     <div class="grow">
       <a class="forum-name" href="${href}">${forum.name}</a>

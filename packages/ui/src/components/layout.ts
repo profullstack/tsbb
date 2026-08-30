@@ -77,8 +77,8 @@ export function Layout(props: LayoutProps) {
       Two theme-colors so the browser chrome follows the reader's theme. A
       single one paints a light bar above a dark page on every mobile browser.
     -->
-    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#09090b" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#fffcf9" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#1a120c" media="(prefers-color-scheme: dark)" />
     <!--
       The only script the board serves, and it is pure enhancement: it registers
       a service worker for offline reading and installability. Every page is

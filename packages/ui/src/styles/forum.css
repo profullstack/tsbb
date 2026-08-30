@@ -4,6 +4,11 @@
   display: flex;
   flex-direction: column;
   min-height: 100dvh;
+  /* A warm wash behind the whole page. Fixed, so it does not slide under the
+     content while scrolling and turn into a distraction. */
+  background: var(--page-wash);
+  background-attachment: fixed;
+  background-repeat: no-repeat;
 }
 
 .container {
@@ -21,9 +26,20 @@
   position: sticky;
   top: 0;
   z-index: 40;
-  background: color-mix(in oklab, var(--background) 85%, transparent);
-  backdrop-filter: blur(12px);
+  background: color-mix(in oklab, var(--background) 82%, transparent);
+  backdrop-filter: blur(14px) saturate(1.4);
   border-bottom: 1px solid var(--border);
+}
+/* A hairline of brand colour under the header, so the chrome is not one flat
+   band of neutral across the top of every page. */
+.site-header::after {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  bottom: -1px;
+  height: 2px;
+  background: linear-gradient(90deg, var(--primary), var(--primary-hot) 40%, transparent 85%);
+  opacity: 0.85;
 }
 
 .site-header-inner {
@@ -50,10 +66,11 @@
   width: 1.75rem;
   height: 1.75rem;
   border-radius: calc(var(--radius) - 3px);
-  background: var(--primary);
+  background: var(--gradient-brand);
   color: var(--primary-foreground);
   font-size: 0.75rem;
-  font-weight: 700;
+  font-weight: 800;
+  box-shadow: var(--glow-primary);
 }
 
 .site-nav {
@@ -76,7 +93,11 @@
   white-space: nowrap;
 }
 .nav-link:hover { color: var(--foreground); background: var(--accent); text-decoration: none; }
-.nav-link.active { color: var(--foreground); background: var(--accent); }
+.nav-link.active {
+  color: var(--accent-foreground);
+  background: var(--accent);
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--primary) 22%, transparent);
+}
 
 .header-actions { display: flex; align-items: center; gap: 0.5rem; flex: none; }
 
@@ -116,11 +137,26 @@
   padding-inline: 0.125rem;
 }
 .category-title {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 0.625rem;
   font-size: 0.75rem;
-  font-weight: 700;
+  font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--muted-foreground);
+  letter-spacing: 0.08em;
+  color: var(--foreground);
+}
+
+/* A short gradient rule after each category name — the cheapest way to make a
+   long index scan as sections rather than one undifferentiated list. */
+.category-title::after {
+  content: '';
+  flex: 1;
+  height: 2px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--primary) 0%, transparent 70%);
+  opacity: 0.55;
 }
 
 .forum-row {
@@ -132,22 +168,40 @@
   border-bottom: 1px solid var(--border);
 }
 .forum-row:last-child { border-bottom: none; }
-.forum-row:hover { background: color-mix(in oklab, var(--muted) 45%, transparent); }
+.forum-row { transition: background-color 0.15s ease; }
+.forum-row:hover { background: var(--row-hover); }
 
+/*
+ * Forum icons take one of six hues rather than all being the accent. A board
+ * index is the page people scan most, and a column of identical marks gives the
+ * eye nothing to land on. The hue is assigned by position, so it is stable.
+ */
 .forum-icon {
   display: grid;
   place-items: center;
   width: 2.5rem;
   height: 2.5rem;
   border-radius: calc(var(--radius) - 2px);
-  background: color-mix(in oklab, var(--primary) 12%, transparent);
-  color: var(--primary);
-  font-size: 1rem;
+  background: color-mix(in oklab, var(--forum-hue, var(--primary)) 46%, var(--card));
+  color: color-mix(in oklab, var(--forum-hue, var(--primary)) 42%, black);
+  font-size: 1.0625rem;
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--forum-hue, var(--primary)) 70%, transparent);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
+.forum-row.tone-1 { --forum-hue: var(--hue-1); }
+.forum-row.tone-2 { --forum-hue: var(--hue-2); }
+.forum-row.tone-3 { --forum-hue: var(--hue-3); }
+.forum-row.tone-4 { --forum-hue: var(--hue-4); }
+.forum-row.tone-5 { --forum-hue: var(--hue-5); }
+.forum-row.tone-6 { --forum-hue: var(--hue-6); }
+
+.forum-row:hover .forum-icon { transform: scale(1.06); }
 .forum-row.unread .forum-icon {
-  background: var(--primary);
-  color: var(--primary-foreground);
+  background: var(--forum-hue, var(--primary));
+  color: var(--background);
+  box-shadow: 0 4px 14px -4px color-mix(in oklab, var(--forum-hue, var(--primary)) 60%, transparent);
 }
+
 
 .forum-name { font-weight: 600; font-size: 0.9375rem; color: var(--foreground); }
 .forum-name:hover { color: var(--primary); }
@@ -171,7 +225,18 @@
 }
 .forum-stat { display: none; }
 @media (min-width: 40rem) { .forum-stat { display: block; min-width: 3.5rem; } }
-.forum-stat strong { display: block; color: var(--foreground); font-size: 0.8125rem; font-weight: 600; }
+.forum-stat strong {
+  display: inline-block;
+  min-width: 2.25rem;
+  padding: 0.0625rem 0.375rem;
+  margin-bottom: 0.125rem;
+  border-radius: 9999px;
+  background: var(--muted);
+  color: var(--foreground);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
 .forum-last { display: none; max-width: 14rem; }
 @media (min-width: 60rem) { .forum-last { display: block; } }
 .forum-last-title {
@@ -194,11 +259,17 @@
   border-bottom: 1px solid var(--border);
 }
 .topic-row:last-child { border-bottom: none; }
-.topic-row:hover { background: color-mix(in oklab, var(--muted) 45%, transparent); }
+.topic-row { transition: background-color 0.15s ease; }
+.topic-row:hover { background: var(--row-hover); }
 
 /* An unread topic gets a rail rather than a bold row: it marks the row without
    changing its height, so the list does not reflow as things are read. */
-.topic-row.unread { box-shadow: inset 2px 0 0 var(--unread); }
+/* A rail plus a soft bloom: visible at a glance without changing row height,
+   so the list does not reflow as things are read. */
+.topic-row.unread {
+  box-shadow: inset 3px 0 0 var(--unread);
+  background: linear-gradient(90deg, oklch(0.66 0.2 42 / 0.06) 0%, transparent 22%);
+}
 .topic-row.unread .topic-title { font-weight: 650; }
 
 .topic-title {
@@ -233,7 +304,17 @@
 }
 .topic-count { display: none; }
 @media (min-width: 40rem) { .topic-count { display: block; min-width: 3rem; } }
-.topic-count strong { display: block; color: var(--foreground); font-size: 0.8125rem; }
+.topic-count strong {
+  display: inline-block;
+  min-width: 2rem;
+  padding: 0.0625rem 0.375rem;
+  border-radius: 9999px;
+  background: var(--muted);
+  color: var(--foreground);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
 
 /* --- Topic view ---------------------------------------------------------- */
 
@@ -278,7 +359,9 @@
   gap: 0.625rem;
   padding: 0.875rem 1rem;
   border-bottom: 1px solid var(--border);
-  background: color-mix(in oklab, var(--muted) 35%, transparent);
+  background:
+    linear-gradient(180deg, color-mix(in oklab, var(--primary) 6%, transparent) 0%, transparent 55%),
+    color-mix(in oklab, var(--muted) 45%, transparent);
 }
 @media (min-width: 48rem) {
   .post-author {
@@ -376,7 +459,8 @@
 .bb-video iframe { width: 100%; height: 100%; border: 0; border-radius: calc(var(--radius) - 2px); }
 
 .mention {
-  font-weight: 550;
+  font-weight: 600;
+  color: var(--primary);
   background: color-mix(in oklab, var(--primary) 12%, transparent);
   padding: 0.0625rem 0.25rem;
   border-radius: calc(var(--radius) - 5px);
@@ -503,4 +587,66 @@
   letter-spacing: 0.06em;
   color: var(--muted-foreground);
   padding: 0.75rem 0.625rem 0.25rem;
+}
+
+
+/* --- Board statistics (the vBulletin strip) ------------------------------- */
+
+.board-stats {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  padding: 1rem 1.25rem;
+}
+@media (min-width: 48rem) {
+  .board-stats { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+
+.board-stat {
+  position: relative;
+  padding: 0.75rem 0.875rem;
+  border-radius: calc(var(--radius) - 2px);
+  background:
+    linear-gradient(180deg, color-mix(in oklab, var(--stat-hue, var(--primary)) 12%, transparent), transparent 70%),
+    var(--muted);
+  overflow: hidden;
+}
+.board-stat::before {
+  content: '';
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  width: 3px;
+  background: var(--stat-hue, var(--primary));
+}
+.board-stat strong {
+  display: block;
+  font-size: 1.375rem;
+  font-weight: 750;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  font-variant-numeric: tabular-nums;
+  color: var(--foreground);
+}
+.board-stat span {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted-foreground);
+}
+.board-stat:nth-child(1) { --stat-hue: var(--hue-2); }
+.board-stat:nth-child(2) { --stat-hue: var(--hue-4); }
+.board-stat:nth-child(3) { --stat-hue: var(--hue-5); }
+.board-stat:nth-child(4) { --stat-hue: var(--hue-6); }
+
+.board-newest {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  border-top: 1px solid var(--border);
+  font-size: 0.8125rem;
+  color: var(--muted-foreground);
+  background: color-mix(in oklab, var(--muted) 40%, transparent);
 }

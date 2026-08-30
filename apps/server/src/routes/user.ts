@@ -43,6 +43,9 @@ import {
 import { render, slot, type AppEnv, type Services } from '../context.ts';
 
 /** Only these are ever written to disk, and the extension comes from this map — never from the filename. */
+/** The only values the avatar selector may set. Anything else is not a choice. */
+const AVATAR_KINDS = new Set(['identicon', 'gravatar', 'upload', 'none']);
+
 const IMAGE_TYPES: Record<string, string> = {
   'image/png': '.png',
   'image/jpeg': '.jpg',
@@ -265,7 +268,12 @@ export function userRoutes(services: Services) {
 
   // --- Settings -----------------------------------------------------------
 
-  app.get('/settings', async (c) => settingsPage(c, services));
+  app.get('/settings', async (c) =>
+    settingsPage(c, services, {
+      saved: c.req.query('saved') === '1',
+      note: c.req.query('note') ?? undefined,
+    }),
+  );
 
   app.post('/settings', async (c) => {
     const viewer = c.get('viewer');
@@ -288,14 +296,28 @@ export function userRoutes(services: Services) {
     }
 
     const maxSignature = Number(settings['signatures.maxLength'] ?? 400);
-    await updateProfile(viewer.user.id, {
+    const patch: Parameters<typeof updateProfile>[1] = {
       displayName: String(form.displayName ?? '').trim() || null,
       location: String(form.location ?? '').trim() || null,
       website: String(form.website ?? '').trim() || null,
       bio: String(form.bio ?? '').trim().slice(0, 1000) || null,
       signature: String(form.signature ?? '').trim().slice(0, maxSignature) || null,
-      avatarKind: String(form.avatarKind ?? 'identicon'),
-    });
+    };
+
+    /*
+     * Only touch the avatar when the form actually carried the field.
+     *
+     * A missing SELECT means "this form was not editing that", which is the
+     * opposite of a missing CHECKBOX, where absence means "off". Defaulting the
+     * absent case to 'identicon' meant the profile form — which has no avatar
+     * field at all — silently reset the avatar on every save, and a refresh
+     * re-submitted the POST and did it again.
+     */
+    if (typeof form.avatarKind === 'string' && AVATAR_KINDS.has(form.avatarKind)) {
+      patch.avatarKind = form.avatarKind;
+    }
+
+    await updateProfile(viewer.user.id, patch);
 
     await run('UPDATE user_prefs SET show_signatures = ?, show_avatars = ?, auto_subscribe = ?, updated_at = ? WHERE user_id = ?', [
       form.showSignatures ? 1 : 0,
@@ -305,7 +327,9 @@ export function userRoutes(services: Services) {
       viewer.user.id,
     ]);
 
-    return settingsPage(c, services, { saved: true });
+    // Redirect rather than render: otherwise refreshing the page re-submits the
+    // whole form, which is how a save can silently happen again and again.
+    return c.redirect('/settings?saved=1', 303);
   });
 
   /**
@@ -367,10 +391,8 @@ export function userRoutes(services: Services) {
       [name, image.mime, image.bytes, image.bytes.length, viewer.user.id, now()],
     );
     await updateProfile(viewer.user.id, { avatarKind: 'upload', avatarUrl: `/uploads/${name}` });
-    return settingsPage(c, services, {
-      saved: true,
-      note: `Resized to ${image.width}px — ${formatBytes(image.originalBytes)} became ${formatBytes(image.bytes.length)}.`,
-    });
+    const note = `Resized to ${image.width}px — ${formatBytes(image.originalBytes)} became ${formatBytes(image.bytes.length)}.`;
+    return c.redirect(`/settings?saved=1&note=${encodeURIComponent(note)}`, 303);
   });
 
   app.post('/settings/notifications', async (c) => {
