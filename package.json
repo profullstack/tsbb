@@ -1,0 +1,23 @@
+{
+  "name": "tsbb",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.18.0",
+  "engines": { "node": ">=24" },
+  "scripts": {
+    "dev": "node --env-file-if-exists=.env apps/server/src/index.ts",
+    "start": "node --env-file-if-exists=.env apps/server/src/index.ts",
+    "worker": "node --env-file-if-exists=.env apps/worker/src/index.ts",
+    "migrate": "node --env-file-if-exists=.env packages/db/src/migrate.ts",
+    "seed": "node --env-file-if-exists=.env packages/db/src/seed.ts",
+    "tui": "node apps/tui/src/index.ts",
+    "test": "node --test --experimental-test-module-mocks \"test/**/*.test.ts\"",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "format": "prettier --write ."
+  },
+  "devDependencies": {
+    "@types/node": "^24.3.0",
+    "prettier": "^3.3.3",
+    "typescript": "^5.9.2"
+  }
+}

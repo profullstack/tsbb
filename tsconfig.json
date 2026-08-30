@@ -1,0 +1,37 @@
+{
+  "compilerOptions": {
+    "target": "ES2024",
+    "lib": ["ES2024", "DOM"],
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "allowImportingTsExtensions": true,
+    "rewriteRelativeImportExtensions": true,
+    "erasableSyntaxOnly": true,
+    "verbatimModuleSyntax": true,
+    "noEmit": true,
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "exactOptionalPropertyTypes": false,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "jsx": "react-jsx",
+    "jsxImportSource": "hono/jsx",
+    "types": ["node"],
+    "baseUrl": ".",
+    "paths": {
+      "@tsbb/db": ["packages/db/src/index.ts"],
+      "@tsbb/db/*": ["packages/db/src/*"],
+      "@tsbb/core": ["packages/core/src/index.ts"],
+      "@tsbb/core/*": ["packages/core/src/*"],
+      "@tsbb/plugin-api": ["packages/plugin-api/src/index.ts"],
+      "@tsbb/plugin-host": ["packages/plugin-host/src/index.ts"],
+      "@tsbb/ui": ["packages/ui/src/index.ts"],
+      "@tsbb/ui/*": ["packages/ui/src/*"],
+      "@tsbb/markup": ["packages/markup/src/index.ts"],
+      "@tsbb/mail": ["packages/mail/src/index.ts"]
+    }
+  },
+  "include": ["packages/**/*.ts", "packages/**/*.tsx", "apps/**/*.ts", "apps/**/*.tsx", "plugins/**/*.ts", "test/**/*.ts"],
+  "exclude": ["node_modules", "**/node_modules", "**/dist"]
+}

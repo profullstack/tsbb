@@ -1,0 +1,14 @@
+{
+  "name": "@tsbb/db",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./migrate": "./src/migrate.ts",
+    "./fts": "./src/fts.ts"
+  },
+  "dependencies": {
+    "@libsql/client": "^0.15.4"
+  }
+}
