@@ -15,8 +15,6 @@
     "exactOptionalPropertyTypes": false,
     "skipLibCheck": true,
     "resolveJsonModule": true,
-    "jsx": "react-jsx",
-    "jsxImportSource": "hono/jsx",
     "types": ["node"],
     "baseUrl": ".",
     "paths": {
@@ -29,9 +27,10 @@
       "@tsbb/ui": ["packages/ui/src/index.ts"],
       "@tsbb/ui/*": ["packages/ui/src/*"],
       "@tsbb/markup": ["packages/markup/src/index.ts"],
-      "@tsbb/mail": ["packages/mail/src/index.ts"]
+      "@tsbb/mail": ["packages/mail/src/index.ts"],
+      "@tsbb/plugin-host": ["packages/plugin-host/src/index.ts"]
     }
   },
-  "include": ["packages/**/*.ts", "packages/**/*.tsx", "apps/**/*.ts", "apps/**/*.tsx", "plugins/**/*.ts", "test/**/*.ts"],
+  "include": ["packages/**/*.ts", "apps/**/*.ts", "plugins/**/*.ts", "test/**/*.ts"],
   "exclude": ["node_modules", "**/node_modules", "**/dist"]
 }
