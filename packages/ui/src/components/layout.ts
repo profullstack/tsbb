@@ -136,6 +136,11 @@ export function Layout(props: LayoutProps) {
       </footer>
     </div>
     ${trusted(slots.bodyEnd)}
+      <div data-cp-ad data-slot="178d4e1e-7970-4d25-ae84-ab1dd4327b23" data-format="banner_300x250"></div>
+    <div data-cp-ad data-slot="178d4e1e-7970-4d25-ae84-ab1dd4327b23" data-format="banner_728x90"></div>
+    <div data-cp-ad data-slot="178d4e1e-7970-4d25-ae84-ab1dd4327b23" data-format="banner_320x50"></div>
+    <div data-cp-ad data-slot="178d4e1e-7970-4d25-ae84-ab1dd4327b23" data-format="text_link"></div>
+    <script src="https://crawlproof.com/ad.js" async></script>
   </body>
 </html>`;
 }
