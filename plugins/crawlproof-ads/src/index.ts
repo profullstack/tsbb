@@ -36,55 +36,51 @@ type Placement = {
   /** Formats that cannot crop in this position. See the note on widths below. */
   format: string;
 };
+/*
+ * Every placement is a THIN BAR, and that is a constraint rather than a default.
+ *
+ * `text_link` is the only fluid format the network serves: full width, 40px
+ * tall, carrying its own "Sponsored" mark inside the frame. Every banner
+ * creative hard-codes its format's pixel width, so a narrower column CROPS it
+ * rather than reflowing — which is why a 300x250 square in a content column is
+ * not merely ugly, it is broken on a phone.
+ *
+ * The obvious alternative — render a desktop banner and a mobile one and hide
+ * whichever does not fit — is wrong and expensive: both fill, and filling is
+ * what meters the impression, so the hidden one burns an impression nobody saw.
+ * A server cannot measure the viewport, so it picks one format that works at
+ * every width. That format is text_link.
+ *
+ * banner_728x90 is offered for a board that knows its readers are on desktop,
+ * but it is never the default: it crops below 728px.
+ */
+const FORMAT_CHOICES = [
+  { value: 'text_link', label: 'Thin bar — fluid, 40px, works at any width' },
+  { value: 'banner_728x90', label: 'Leaderboard 728x90 — crops below 728px' },
+];
 
 /*
- * Every banner creative hard-codes its format's pixel width, so a narrower
- * container crops it rather than reflowing. `text_link` is the only fluid
- * format — full width, 40px tall, carries its own "Sponsored" mark — which
- * makes it the only safe choice for a full-width position on a board that is
- * read on phones. `banner_300x250` is the widest fixed creative that fits a
- * 320px viewport, so it is what the block positions use.
- *
- * The obvious alternative — render a desktop and a mobile unit and hide one
- * with CSS — is wrong and expensive: both fill, and filling is what meters the
- * impression, so the hidden one burns an impression nobody ever saw.
+ * Placements sit at the EDGES of content, never inside it. A unit between two
+ * posts interrupts the only thing anybody came to the page for.
  */
 const PLACEMENTS: Placement[] = [
-  {
-    slot: 'board:below_categories',
-    key: 'placement.boardIndex',
-    label: 'Board index, below the forum list',
-    defaultOn: true,
-    format: 'banner_300x250',
-  },
-  {
-    slot: 'forum:below_topics',
-    key: 'placement.forum',
-    label: 'Forum page, below the topic list',
-    defaultOn: false,
-    format: 'text_link',
-  },
-  {
-    slot: 'topic:above_posts',
-    key: 'placement.topicTop',
-    label: 'Topic page, above the first post',
-    defaultOn: false,
-    format: 'text_link',
-  },
-  {
-    slot: 'topic:below_posts',
-    key: 'placement.topicBottom',
-    label: 'Topic page, below the last post',
-    defaultOn: true,
-    format: 'banner_300x250',
-  },
+  { slot: 'layout:header', key: 'placement.header',
+    label: 'Under the navigation, on every page', defaultOn: false, format: 'text_link' },
+  { slot: 'board:below_categories', key: 'placement.boardIndex',
+    label: 'Board index, under the forum list', defaultOn: true, format: 'text_link' },
+  { slot: 'forum:below_topics', key: 'placement.forum',
+    label: 'Forum page, under the topic list', defaultOn: true, format: 'text_link' },
+  { slot: 'topic:below_posts', key: 'placement.topicBottom',
+    label: 'Thread page, under the last post', defaultOn: true, format: 'text_link' },
+  { slot: 'topic:between_posts', key: 'placement.betweenPosts',
+    label: 'Thread page, between posts (interrupts reading)', defaultOn: false, format: 'text_link' },
+  { slot: 'layout:footer', key: 'placement.footer',
+    label: 'Above the footer, on every page', defaultOn: false, format: 'text_link' },
 ];
 
 const FRAME_HEIGHT: Record<string, number> = {
   text_link: 40,
-  banner_300x250: 250,
   banner_728x90: 90,
-  banner_320x50: 50,
 };
 
 const ORIGIN = 'https://crawlproof.com';
@@ -132,6 +128,15 @@ export default definePlugin({
         default: false,
         help: 'Most boards show ads to everyone. Turn this on to make an account ad-free.',
       },
+      {
+        key: 'format',
+        label: 'Unit format',
+        type: 'select',
+        default: 'text_link',
+        options: FORMAT_CHOICES,
+        help:
+          'The thin bar is fluid and safe at every width. The leaderboard is wider but crops below 728px, so pick it only if your readers are on desktop.',
+      },
       ...PLACEMENTS.map((p) => ({
         key: p.key,
         label: p.label,
@@ -159,14 +164,20 @@ export default definePlugin({
       // finished, not broken.
       if (!slotId) return null;
 
-      const height = FRAME_HEIGHT[format] ?? 250;
+      const height = FRAME_HEIGHT[format] ?? 40;
       const src = `${ORIGIN}/api/ads/frame?slot=${encodeURIComponent(slotId)}&format=${encodeURIComponent(format)}`;
 
+      /*
+       * Kept deliberately quiet: no border, no card, no heading, and a max
+       * width matched to the content column so it reads as a footnote rather
+       * than a billboard. The creative carries its own "Sponsored" mark, so
+       * adding a label here would say it twice.
+       */
       return (
-        `<div class="cp-ad-unit" style="display:flex;justify-content:center;margin:1.25rem 0">` +
+        `<div class="cp-ad-unit" role="complementary" aria-label="Advertisement">` +
         `<iframe src="${escapeAttribute(src)}" width="100%" height="${height}" loading="lazy" ` +
         `title="Advertisement" scrolling="no" ` +
-        `style="border:0;display:block;max-width:100%;height:${height}px;color-scheme:light dark" ` +
+        `style="border:0;display:block;width:100%;height:${height}px;color-scheme:light dark" ` +
         `sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox"></iframe>` +
         `</div>`
       );
@@ -185,7 +196,9 @@ export default definePlugin({
             return null;
           }
 
-          return unit(placement.format);
+          // One format across the whole board: mixing them per placement makes
+          // a page look assembled out of spare parts.
+          return unit(String(ctx.settings.get('format') ?? placement.format));
         },
         // A late weight keeps ads below whatever else a slot is carrying.
         100,

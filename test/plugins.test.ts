@@ -74,6 +74,29 @@ describe('the plugin host', () => {
     assert.ok(!csp.includes('unsafe-inline'), 'and nothing else was loosened');
   });
 
+  it('only ever offers thin, fluid formats — never a square in a content column', async () => {
+    /*
+     * Every banner creative hard-codes its format's pixel width, so a narrower
+     * column crops it rather than reflowing. text_link is the only fluid one,
+     * which is why it is the default and the square formats are not offered at
+     * all. Rendering a desktop and a mobile unit and hiding one is worse: both
+     * fill, and filling is what meters the impression.
+     */
+    const source = await import('node:fs').then((fs) =>
+      fs.readFileSync(new URL('../plugins/crawlproof-ads/src/index.ts', import.meta.url), 'utf8'),
+    );
+    assert.ok(!source.includes('banner_300x250'), 'no 300x250 square anywhere');
+    assert.ok(!source.includes('banner_320x50'), 'no fixed mobile banner either');
+
+    const manifest = registry.plugins.get('crawlproof-ads')?.manifest;
+    const format = manifest?.settings?.find((s) => s.key === 'format');
+    assert.equal(format?.default, 'text_link', 'the thin bar is the default');
+
+    // The one placement that sits inside the content is off unless asked for.
+    const between = manifest?.settings?.find((s) => s.key === 'placement.betweenPosts');
+    assert.equal(between?.default, false, 'nothing interrupts a thread by default');
+  });
+
   it('takes the CSP permission away again when the plugin is disabled', async () => {
     await registry.setEnabled('crawlproof-ads', false);
     const response = await app.fetch(new Request(url('/')));
