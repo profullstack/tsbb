@@ -136,6 +136,7 @@ export function Layout(props: LayoutProps) {
       </footer>
     </div>
     ${trusted(slots.bodyEnd)}
+      <script data-site="43769ccb-9264-4172-9cb7-1737b62947ce" src="https://crawlproof.com/stats.js" async></script>
   </body>
 </html>`;
 }
