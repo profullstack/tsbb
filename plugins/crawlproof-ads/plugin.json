@@ -1,0 +1,8 @@
+{
+  "slug": "crawlproof-ads",
+  "name": "CrawlProof Ads",
+  "description": "Serve ads from the crawlproof.com/ads network. On by default; an administrator can switch it off or change where the units appear.",
+  "author": "Profullstack, Inc.",
+  "homepage": "https://crawlproof.com/ads",
+  "license": "MIT"
+}

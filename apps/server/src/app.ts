@@ -61,6 +61,52 @@ export function createApp(registry: Registry, baseUrl: string): Hono<AppEnv> {
     await next();
   });
 
+  /*
+   * Content-Security-Policy, assembled through a filter so a plugin can widen
+   * it for what it actually needs and the permission disappears when the plugin
+   * is disabled.
+   *
+   * The base policy has no 'unsafe-inline' anywhere, which the board can afford
+   * because it ships no inline styles and no script at all. That is precisely
+   * why the ads plugin uses the cross-origin frame endpoint rather than ad.js:
+   * ad.js renders its creative into a srcdoc iframe, and a srcdoc document
+   * inherits this policy.
+   */
+  app.use('*', async (c, next) => {
+    await next();
+    if (!c.res.headers.get('content-type')?.includes('text/html')) return;
+
+    const base: Record<string, string[]> = {
+      'default-src': ["'self'"],
+      'script-src': ["'none'"],
+      'style-src': ["'self'"],
+      'img-src': ["'self'", 'data:', 'https:'],
+      'font-src': ["'self'"],
+      'connect-src': ["'self'"],
+      'frame-src': ["'self'"],
+      'frame-ancestors': ["'none'"],
+      'form-action': ["'self'"],
+      'base-uri': ["'none'"],
+      'object-src': ["'none'"],
+    };
+
+    const url = new URL(c.req.url);
+    const directives = await registry.bus.applyFilter('security:csp', base, {
+      viewer: c.get('viewer'),
+      url,
+      settings: (c.get('settings') ?? {}) as Record<string, unknown>,
+    });
+
+    c.res.headers.set(
+      'content-security-policy',
+      Object.entries(directives)
+        .map(([name, values]) => `${name} ${[...new Set(values)].join(' ')}`)
+        .join('; '),
+    );
+    c.res.headers.set('referrer-policy', 'strict-origin-when-cross-origin');
+    c.res.headers.set('x-content-type-options', 'nosniff');
+  });
+
   app.route('/', authRoutes(services));
   app.route('/', writeRoutes(services));
   app.route('/', boardRoutes(services));

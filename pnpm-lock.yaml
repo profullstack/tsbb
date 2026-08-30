@@ -114,6 +114,18 @@ importers:
         specifier: '*'
         version: 4.13.5
 
+  plugins/crawlproof-ads:
+    dependencies:
+      '@tsbb/plugin-api':
+        specifier: workspace:*
+        version: link:../../packages/plugin-api
+
+  plugins/hello-world:
+    dependencies:
+      '@tsbb/plugin-api':
+        specifier: workspace:*
+        version: link:../../packages/plugin-api
+
 packages:
 
   '@hono/node-server@1.19.17':

@@ -1,0 +1,10 @@
+{
+  "name": "@tsbb/plugin-crawlproof-ads",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "dependencies": {
+    "@tsbb/plugin-api": "workspace:*"
+  }
+}
