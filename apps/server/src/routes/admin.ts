@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import type { Context } from 'hono';
 import { html, raw } from 'hono/html';
 import { all, now, one, run } from '@tsbb/db';
 import {
@@ -73,8 +74,8 @@ export function adminRoutes(services: Services) {
     await next();
   });
 
-  const page = (c: Parameters<Parameters<Hono<AppEnv>['get']>[1]>[0], title: string, body: unknown) =>
-    render(c as never, services, {
+  const page = (c: Context<AppEnv>, title: string, body: unknown) =>
+    render(c, services, {
       title: `${title} · Administration`,
       body: html`<div class="admin-layout">
         <nav class="admin-nav">

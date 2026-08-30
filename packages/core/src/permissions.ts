@@ -52,9 +52,17 @@ export const MEMBER_DEFAULTS: Permissions = {
   canModerate: false,
 };
 
-export const ALL_ALLOWED: Permissions = Object.fromEntries(
-  PERMISSION_KEYS.map((k) => [k, true]),
-) as Permissions;
+export const ALL_ALLOWED: Permissions = {
+  canView: true,
+  canRead: true,
+  canPost: true,
+  canReply: true,
+  canEditOwn: true,
+  canDeleteOwn: true,
+  canAttach: true,
+  canPoll: true,
+  canModerate: true,
+};
 
 interface PermissionRow {
   forum_id: number | null;

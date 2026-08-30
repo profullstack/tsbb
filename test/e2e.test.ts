@@ -318,7 +318,7 @@ describe('a board end to end', () => {
     await db.run(
       `INSERT INTO forum_permissions (forum_id, group_id, can_view, can_read) VALUES (?, ?, 0, 0)
        ON CONFLICT (forum_id, group_id) DO UPDATE SET can_view = 0, can_read = 0`,
-      [forum?.id, guests?.id],
+      [forum?.id ?? 0, guests?.id ?? 0],
     );
     const response = await app.fetch(new Request(url('/f/bugs/feed.xml')));
     assert.equal(response.status, 403);

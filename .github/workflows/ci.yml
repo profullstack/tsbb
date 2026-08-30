@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
+      - uses: actions/setup-node@v4
+        with:
+          # The board runs .ts unbuilt through type stripping, which needs 24.
+          node-version: 24
+          cache: pnpm
+
+      # --ignore-scripts because nothing here needs a postinstall, and a
+      # dependency that suddenly wants one should fail review, not CI.
+      - run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Test
+        run: pnpm test
+
+      - name: Boot the board and check it serves
+        run: |
+          node packages/db/src/seed.ts
+          node apps/server/src/index.ts &
+          for i in $(seq 1 40); do
+            curl -sf -o /dev/null http://localhost:3000/healthz && break
+            sleep 0.5
+          done
+          curl -sf http://localhost:3000/healthz
+          curl -sf -o /dev/null -w '%{http_code}\n' http://localhost:3000/
+        env:
+          TSBB_DATABASE_URL: file:./data/ci.db
+          TSBB_SESSION_SECRET: ci-only-not-a-real-secret
+          TSBB_BASE_URL: http://localhost:3000

@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import type { Context } from 'hono';
 import { html } from 'hono/html';
 import {
   ancestryOf,
@@ -181,7 +182,7 @@ function topicIdFromHandle(handle: string): number {
   return Number.isFinite(id) ? id : 0;
 }
 
-async function topicPage(c: Parameters<Parameters<Hono<AppEnv>['get']>[1]>[0], services: Services) {
+async function topicPage(c: Context<AppEnv>, services: Services) {
   const viewer = c.get('viewer') as Viewer;
   const settings = c.get('settings') as Settings;
   const handle = c.req.param('handle') ?? '';
@@ -368,11 +369,11 @@ async function topicPage(c: Parameters<Parameters<Hono<AppEnv>['get']>[1]>[0], s
 }
 
 export async function forbidden(
-  c: Parameters<Parameters<Hono<AppEnv>['get']>[1]>[0],
+  c: Context<AppEnv>,
   services: Services,
   message: string,
 ) {
-  return render(c as never, services, {
+  return render(c, services, {
     title: 'Not allowed',
     status: 403,
     body: Card(CardContent(Empty('Not allowed', message))),

@@ -65,7 +65,11 @@ export function smtpTransport(url: string, from: string): Transport {
     async send(email) {
       let nodemailer: { createTransport: (u: string) => { sendMail: (o: unknown) => Promise<unknown> } };
       try {
-        nodemailer = (await import('nodemailer')) as never;
+        // The specifier goes through a variable so TypeScript does not try to
+        // resolve a package that is deliberately optional. The import is
+        // guarded and reports what to install if it is absent.
+        const specifier = 'nodemailer';
+        nodemailer = (await import(specifier)) as never;
       } catch {
         throw new Error(
           'TSBB_MAIL_TRANSPORT=smtp needs nodemailer. Run: pnpm add nodemailer',

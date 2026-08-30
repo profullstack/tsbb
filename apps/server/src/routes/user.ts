@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import type { Context } from 'hono';
 import { html } from 'hono/html';
 import { createHash, randomBytes } from 'node:crypto';
 import { mkdirSync, writeFileSync } from 'node:fs';
@@ -463,7 +464,7 @@ function sniffImage(bytes: Buffer): string | null {
 }
 
 async function settingsPage(
-  c: Parameters<Parameters<Hono<AppEnv>['get']>[1]>[0],
+  c: Context<AppEnv>,
   services: Services,
   state: { saved?: boolean; error?: string; newToken?: string } = {},
 ) {
@@ -614,5 +615,5 @@ async function settingsPage(
     `)}
   </div>`;
 
-  return render(c as never, services, { title: 'Settings', body });
+  return render(c, services, { title: 'Settings', body });
 }

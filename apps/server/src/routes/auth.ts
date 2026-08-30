@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import type { Context } from 'hono';
 import { html } from 'hono/html';
 import { deleteCookie, getCookie, setCookie } from 'hono/cookie';
 import {
@@ -206,7 +207,7 @@ function clientIp(c: { req: { header: (name: string) => string | undefined } }):
 }
 
 async function authPage(
-  c: Parameters<Parameters<Hono<AppEnv>['get']>[1]>[0],
+  c: Context<AppEnv>,
   services: Services,
   state: { sent: boolean; email?: string; error?: string; isSignup?: boolean },
 ) {
@@ -251,5 +252,5 @@ async function authPage(
     `)}
   </div>`;
 
-  return render(c as never, services, { title: heading, body });
+  return render(c, services, { title: heading, body });
 }

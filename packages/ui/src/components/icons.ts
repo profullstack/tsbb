@@ -1,5 +1,4 @@
 import { html, raw } from 'hono/html';
-import type { HtmlEscapedString } from 'hono/utils/html';
 
 /**
  * Inline SVG icons, sized in em so they track the text beside them.
@@ -8,7 +7,7 @@ import type { HtmlEscapedString } from 'hono/utils/html';
  * self-host it, and every extra asset is one more thing to lose. The paths are
  * Lucide's, which is what shadcn itself uses.
  */
-function icon(body: string, label?: string): HtmlEscapedString {
+function icon(body: string, label?: string) {
   return html`<svg
     xmlns="http://www.w3.org/2000/svg"
     width="1em"

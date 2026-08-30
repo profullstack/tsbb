@@ -68,7 +68,18 @@ export const DEFAULT_SETTINGS = {
 } as const;
 
 export type SettingKey = keyof typeof DEFAULT_SETTINGS;
-export type Settings = Record<string, unknown> & { [K in SettingKey]: (typeof DEFAULT_SETTINGS)[K] };
+
+/**
+ * `as const` above gives every default a LITERAL type, which is right for
+ * documentation and wrong for reading: a setting typed `true` makes
+ * `settings['x'] !== false` a comparison the compiler can prove, so the guard
+ * silently becomes dead code. Widen each literal back to its base type.
+ */
+type Widen<T> = T extends boolean ? boolean : T extends number ? number : T extends string ? string : T;
+
+export type Settings = Record<string, unknown> & {
+  [K in SettingKey]: Widen<(typeof DEFAULT_SETTINGS)[K]>;
+};
 
 let cache: Settings | null = null;
 

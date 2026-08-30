@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import type { Context } from 'hono';
 import { html } from 'hono/html';
 import { now, run } from '@tsbb/db';
 import {
@@ -390,7 +391,7 @@ function composerPage(
 }
 
 async function composerError(
-  c: Parameters<Parameters<Hono<AppEnv>['post']>[1]>[0],
+  c: Context<AppEnv>,
   services: Services,
   error: unknown,
   options: Omit<ComposerOptions, 'settings'>,
@@ -398,7 +399,7 @@ async function composerError(
   const message =
     error instanceof PostError ? error.message : 'Something went wrong saving that. Try again.';
   if (!(error instanceof PostError)) console.error('[write]', error);
-  return render(c as never, services, {
+  return render(c, services, {
     title: options.heading,
     status: error instanceof PostError ? 400 : 500,
     body: composerPage(c, services, { ...options, settings: c.get('settings'), error: message }),

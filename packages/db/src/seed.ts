@@ -146,7 +146,7 @@ async function insertForum(input: {
       now(),
     ],
   );
-  return Number((result.rows[0] as { id: number }).id);
+  return Number((result.rows[0] as unknown as { id: number }).id);
 }
 
 if (import.meta.filename === process.argv[1]) {

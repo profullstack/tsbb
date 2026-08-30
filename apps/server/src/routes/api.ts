@@ -149,7 +149,8 @@ export function apiRoutes(services: Services) {
     const permissions = await resolvePermissions(viewer, forum, await ancestryOf(forum.id));
     if (!permissions.canReply || topic.isLocked) return c.json({ error: 'forbidden' }, 403);
 
-    const payload = await c.req.json<{ body?: string; format?: string }>().catch(() => ({}));
+    type ReplyBody = { body?: string; format?: string };
+    const payload: ReplyBody = await c.req.json<ReplyBody>().catch(() => ({}) as ReplyBody);
     try {
       const post = await reply({
         topic,
@@ -173,7 +174,8 @@ export function apiRoutes(services: Services) {
     const permissions = await resolvePermissions(viewer, forum, await ancestryOf(forum.id));
     if (!permissions.canPost || forum.isLocked) return c.json({ error: 'forbidden' }, 403);
 
-    const payload = await c.req.json<{ title?: string; body?: string; format?: string }>().catch(() => ({}));
+    type TopicBody = { title?: string; body?: string; format?: string };
+    const payload: TopicBody = await c.req.json<TopicBody>().catch(() => ({}) as TopicBody);
     try {
       const { topic, post } = await createTopic({
         forum,
@@ -235,7 +237,8 @@ export function apiRoutes(services: Services) {
   // approves it in a browser, and the terminal polls for the token.
 
   app.post('/api/v1/device/start', async (c) => {
-    const payload = await c.req.json<{ label?: string; publicKey?: string }>().catch(() => ({}));
+    type StartBody = { label?: string; publicKey?: string };
+    const payload: StartBody = await c.req.json<StartBody>().catch(() => ({}) as StartBody);
     const grant = await startDeviceAuth({
       publicKey: String(payload.publicKey ?? 'none'),
       label: payload.label ? String(payload.label).slice(0, 60) : 'Terminal',
@@ -251,7 +254,8 @@ export function apiRoutes(services: Services) {
   });
 
   app.post('/api/v1/device/poll', async (c) => {
-    const payload = await c.req.json<{ deviceCode?: string }>().catch(() => ({}));
+    type PollBody = { deviceCode?: string };
+    const payload: PollBody = await c.req.json<PollBody>().catch(() => ({}) as PollBody);
     const result = await pollDeviceCode(String(payload.deviceCode ?? ''));
     return c.json(result, result.status === 'expired' ? 410 : 200);
   });
@@ -301,6 +305,7 @@ function flattenTopic(topic: {
   authorName: string | null;
   lastPosterName: string | null;
   unread: boolean;
+  hasPoll?: boolean;
 }): unknown {
   return {
     id: topic.id,

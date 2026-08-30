@@ -3,7 +3,13 @@ import type { HtmlEscapedString } from 'hono/utils/html';
 import { avatarUrlFor, formatCount, relativeTime } from '@tsbb/core';
 import type { User } from '@tsbb/plugin-api';
 
-export type Renderable = HtmlEscapedString | Promise<HtmlEscapedString> | string | null | undefined;
+type RenderableLeaf = HtmlEscapedString | Promise<HtmlEscapedString> | string | null | undefined;
+
+/**
+ * Arrays are included because `html` interpolates them, and every list the
+ * board renders — topic rows, forum rows, search results — arrives as one.
+ */
+export type Renderable = RenderableLeaf | RenderableLeaf[];
 
 /**
  * Interpolating a value into an `html` template escapes it. Anything already

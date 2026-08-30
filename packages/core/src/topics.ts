@@ -130,7 +130,7 @@ export async function listTopics(options: ListTopicsOptions = {}): Promise<Topic
       WHERE ${where.join(' AND ')}
       ORDER BY ${kindRank}, ${order}
       LIMIT ? OFFSET ?`,
-    [viewerId, ...args, options.limit ?? 30, options.offset ?? 0],
+    [viewerId, ...args, options.limit ?? 30, options.offset ?? 0] as never,
   );
 
   return rows.map((row) => ({

@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import type { Context } from 'hono';
 import { html } from 'hono/html';
 import { ancestryOf, forumBySlug, listTopics, resolvePermissions, searchPosts, visibleForumIds } from '@tsbb/core';
 import { escapeHtml, excerpt } from '@tsbb/markup';
@@ -100,7 +101,7 @@ export function discoverRoutes(services: Services) {
 }
 
 async function feed(
-  c: Parameters<Parameters<Hono<AppEnv>['get']>[1]>[0],
+  c: Context<AppEnv>,
   services: Services,
   options: {
     title: string;
