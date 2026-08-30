@@ -115,6 +115,15 @@ export default definePlugin({
           'Create a slot at crawlproof.com/ads/slots and paste its ID here. New slots are created INACTIVE and serve nothing until you activate them there — an inactive slot looks exactly like a misconfigured one.',
       },
       {
+        key: 'statsSiteId',
+        label: 'Analytics site ID',
+        type: 'string',
+        default: '',
+        placeholder: 'from crawlproof.com/stats',
+        help:
+          'Optional. Adds the CrawlProof analytics tag. Leave empty and no third-party script is loaded at all — the board ships none of its own.',
+      },
+      {
         key: 'hideForStaff',
         label: 'Hide ads from administrators and moderators',
         type: 'boolean',
@@ -152,10 +161,35 @@ export default definePlugin({
      * added through the filter rather than being written into the server, so
      * disabling the plugin takes the permission away with it.
      */
-    ctx.filter('security:csp', (directives) => ({
-      ...directives,
-      'frame-src': [...(directives['frame-src'] ?? ["'self'"]), ORIGIN],
-    }));
+    /*
+     * The board's own policy is script-src 'self' with no 'unsafe-inline'
+     * anywhere, so a third-party tag pasted into the layout is simply blocked —
+     * silently, which is the worst way for analytics to fail. Widening the
+     * policy therefore has to be the plugin's doing, so that turning the plugin
+     * off takes the permission with it. Nothing is granted that is not used:
+     * script-src is only widened when an analytics ID is actually set.
+     */
+    ctx.filter('security:csp', (directives) => {
+      const next: typeof directives = {
+        ...directives,
+        'frame-src': [...(directives['frame-src'] ?? ["'self'"]), ORIGIN],
+      };
+      if (String(ctx.settings.get('statsSiteId') ?? '').trim()) {
+        next['script-src'] = [...(directives['script-src'] ?? ["'self'"]), ORIGIN];
+        next['connect-src'] = [...(directives['connect-src'] ?? ["'self'"]), ORIGIN];
+      }
+      return next;
+    });
+
+    // The analytics tag, injected at the end of the body like any other slot.
+    ctx.slot('layout:body_end', () => {
+      const siteId = String(ctx.settings.get('statsSiteId') ?? '').trim();
+      if (!siteId) return null;
+      return (
+        `<script data-site="${escapeAttribute(siteId)}" ` +
+        `src="${ORIGIN}/stats.js" async></script>`
+      );
+    });
 
     const unit = (format: string) => {
       const slotId = String(ctx.settings.get('slotId') ?? '').trim();
