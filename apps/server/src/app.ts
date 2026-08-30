@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import type { Context } from 'hono';
 import { loadSettings, touchLastSeen, viewerFromToken } from '@tsbb/core';
-import { Card, CardContent, Empty, stylesheet } from '@tsbb/ui';
+import { Card, CardContent, Empty, stylesheet, stylesheetForHash } from '@tsbb/ui';
 import type { Registry } from '@tsbb/plugin-host';
 import type { PluginRequest, Viewer } from '@tsbb/plugin-api';
 import { readTheme, render, resolveViewer, type AppEnv, type Services } from './context.ts';
@@ -36,11 +36,14 @@ export function createApp(registry: Registry, baseUrl: string): Hono<AppEnv> {
    * falls through to the 404 handler and the board renders unstyled.
    */
   app.get('/assets/:file', (c) => {
-    const sheet = stylesheet();
-    const file = c.req.param('file');
-    const match = /^app\.([0-9a-f]+)\.css$/.exec(file);
-    if (!match) return c.notFound();
-    if (match[1] !== sheet.hash) return c.redirect(`/assets/app.${sheet.hash}.css`, 302);
+    const match = /^app\.([0-9a-f]+)\.css$/.exec(c.req.param('file'));
+    if (!match?.[1]) return c.notFound();
+
+    // Any skin's hash is valid: a reader mid-navigation when the board switches
+    // skins must still get the sheet their page asked for.
+    const sheet = stylesheetForHash(match[1]);
+    if (!sheet) return c.redirect(`/assets/app.${stylesheet('modern').hash}.css`, 302);
+
     return c.body(sheet.css, 200, {
       'content-type': 'text/css; charset=utf-8',
       'cache-control': 'public, max-age=31536000, immutable',
@@ -51,15 +54,12 @@ export function createApp(registry: Registry, baseUrl: string): Hono<AppEnv> {
    * One canonical host.
    *
    * www is redirected, never served. Serving both means two origins for the
-   * same board, and that is not merely untidy: a session cookie set on one is
-   * not sent to the other, so a magic link opened on www signs you in to a host
-   * you then leave — and a passkey registered on the apex cannot be asserted on
-   * www at all. Redirecting first means no credential is ever minted against a
-   * hostname the board does not consider its own.
+   * same board, and a session cookie set on one is not sent to the other — so a
+   * magic link opened on www signs you in to a host you then leave, and a
+   * passkey registered on the apex cannot be asserted on www at all.
    *
-   * 308 rather than 301/302 because a 308 requires the method and body to be
-   * preserved: a form POST to www must arrive at the apex as the same POST, not
-   * silently downgraded to a GET that loses what somebody just wrote.
+   * 308 rather than 302 because only 308 requires the method and body to be
+   * preserved: a form POST to www must arrive at the apex as the same POST.
    */
   const canonicalHost = (() => {
     try {

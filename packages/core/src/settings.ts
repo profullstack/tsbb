@@ -13,6 +13,8 @@ export const DEFAULT_SETTINGS = {
   'board.language': 'en',
   'board.timezone': 'UTC',
   'board.theme': 'system',
+  /** 'modern' or 'classic' — the 2000s bulletin-board skin. */
+  'board.skin': 'modern',
   'board.accent': '#4f46e5',
   'board.logoUrl': '',
   'board.faviconUrl': '',

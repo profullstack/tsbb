@@ -1,0 +1,295 @@
+/*
+ * The "classic" skin: a 2000s bulletin board, in orange, black and white.
+ *
+ * This is a LAYER over the modern sheet, not a replacement — every component's
+ * structure stays defined in one place and this file only argues about how it
+ * looks. Two full stylesheets would drift apart within a week.
+ *
+ * The period signatures are reproduced rather than softened, because softening
+ * them is what makes a revival read as a costume:
+ *   - square corners everywhere (radius 0); rounding is the giveaway
+ *   - gradient title bars, 1px borders, alternating row stripes
+ *   - Verdana at 11-12px, the actual type of the era
+ *   - a black masthead over an orange navigation strip
+ */
+
+:root {
+  --radius: 0;
+  --classic-line: oklch(0.82 0.02 65);
+  --classic-line-dark: oklch(0.62 0.03 60);
+  --classic-bar-a: oklch(0.24 0.02 45);
+  --classic-bar-b: oklch(0.12 0.015 40);
+  --classic-head-a: oklch(0.94 0.012 70);
+  --classic-head-b: oklch(0.87 0.018 68);
+  --classic-stripe: oklch(0.985 0.006 70);
+  --font-sans: Verdana, Tahoma, Geneva, "DejaVu Sans", sans-serif;
+}
+
+/*
+ * Dark values go inside the media query, exactly as the base tokens do. Written
+ * as a bare :root:not([data-theme='light']) they match in LIGHT mode too — the
+ * selector only excludes an explicit light choice, not the default — so the
+ * dark stripe painted over a light page and its text disappeared into it.
+ */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --classic-line: oklch(1 0 0 / 14%);
+    --classic-line-dark: oklch(1 0 0 / 22%);
+    --classic-head-a: oklch(0.3 0.02 50);
+    --classic-head-b: oklch(0.24 0.02 48);
+    --classic-stripe: oklch(0.19 0.015 50);
+  }
+}
+:root[data-theme='dark'] {
+  --classic-line: oklch(1 0 0 / 14%);
+  --classic-line-dark: oklch(1 0 0 / 22%);
+  --classic-head-a: oklch(0.3 0.02 50);
+  --classic-head-b: oklch(0.24 0.02 48);
+  --classic-stripe: oklch(0.19 0.015 50);
+}
+
+body { font-size: 11px; line-height: 1.5; }
+.shell { background: none; }
+
+h1, h2, h3 { letter-spacing: 0; }
+a:hover { text-decoration: underline; }
+
+/* --- Masthead over navigation strip -------------------------------------- */
+/*
+ * The two-bar header is produced by letting the nav wrap onto its own row and
+ * giving it the orange strip — the markup is untouched.
+ */
+.site-header {
+  background: linear-gradient(180deg, var(--classic-bar-a) 0%, var(--classic-bar-b) 100%);
+  backdrop-filter: none;
+  border-bottom: 1px solid #000;
+  padding: 0;
+}
+.site-header::after { display: none; }
+.site-header-inner {
+  flex-wrap: wrap;
+  height: auto;
+  row-gap: 0;
+  padding-block: 0;
+}
+.brand { padding-block: 9px; }
+.brand span:last-child { color: var(--primary); font-size: 19px; font-weight: 800; letter-spacing: -0.4px; }
+.brand-mark { display: none; }
+.header-actions { padding-block: 9px; margin-left: auto; }
+
+.site-nav {
+  order: 3;
+  flex-basis: 100%;
+  gap: 2px;
+  margin-inline: -1rem;
+  padding-inline: 1rem;
+  background: linear-gradient(180deg,
+    color-mix(in oklab, var(--primary) 82%, white) 0%,
+    var(--primary) 55%,
+    color-mix(in oklab, var(--primary) 78%, black) 100%);
+  border-top: 1px solid #000;
+}
+.nav-link {
+  border-radius: 0;
+  padding: 6px 11px;
+  font-weight: 700;
+  font-size: 11px;
+  color: oklch(0.15 0.02 40);
+  text-shadow: 0 1px 0 rgb(255 255 255 / 0.3);
+}
+.nav-link:hover { background: rgb(0 0 0 / 0.18); color: #fff; }
+.nav-link.active { background: rgb(0 0 0 / 0.32); color: #fff; box-shadow: none; }
+
+.site-header .input { border-radius: 0; height: 1.75rem; min-height: 1.75rem; }
+
+/* --- Panels become bordered tables ---------------------------------------- */
+.card {
+  border: 1px solid var(--classic-line-dark);
+  border-radius: 0;
+  box-shadow: none;
+}
+.card-header {
+  background: linear-gradient(180deg, var(--classic-bar-a), var(--classic-bar-b));
+  border-bottom: 1px solid #000;
+  padding: 6px 9px;
+}
+.card-title { color: #fff; font-size: 12px; font-weight: 700; }
+.card-description { color: oklch(0.78 0.02 60); font-size: 10px; }
+
+/* The category name becomes the title bar, with a collapse affordance. */
+.category-header { margin-bottom: 0; }
+.category-title {
+  display: flex;
+  justify-content: space-between;
+  background: linear-gradient(180deg, var(--classic-bar-a), var(--classic-bar-b));
+  border: 1px solid #000;
+  border-bottom: none;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: none;
+  padding: 6px 9px;
+  margin: 0;
+}
+.category-title::after {
+  content: '−';
+  flex: none;
+  height: auto;
+  width: 15px;
+  background: color-mix(in oklab, var(--primary) 30%, black);
+  border: 1px solid color-mix(in oklab, var(--primary) 60%, black);
+  color: var(--primary);
+  text-align: center;
+  line-height: 13px;
+  opacity: 1;
+  border-radius: 0;
+}
+
+/* --- Rows: dense, striped, ruled ------------------------------------------ */
+.forum-row, .topic-row {
+  padding: 7px 9px;
+  border-bottom: 1px solid var(--classic-line);
+  gap: 0.625rem;
+}
+.forum-row:nth-child(odd), .topic-row:nth-child(odd) { background: var(--classic-stripe); }
+.forum-row:hover, .topic-row:hover { background: color-mix(in oklab, var(--primary) 8%, var(--card)); }
+
+.forum-icon {
+  border-radius: 0;
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--classic-line-dark);
+  background: linear-gradient(180deg, var(--card), color-mix(in oklab, var(--muted) 70%, var(--card)));
+  box-shadow: none;
+}
+.forum-row.unread .forum-icon {
+  background: linear-gradient(180deg,
+    color-mix(in oklab, var(--primary) 80%, white), var(--primary));
+  border-color: color-mix(in oklab, var(--primary) 70%, black);
+  color: #fff;
+  box-shadow: none;
+}
+.forum-row:hover .forum-icon { transform: none; }
+.forum-name { font-size: 12px; font-weight: 700; color: var(--primary); }
+.forum-desc, .topic-sub, .forum-meta, .topic-meta { font-size: 10px; }
+
+.forum-stat strong, .topic-count strong {
+  background: none;
+  border-radius: 0;
+  /* The modern skin sets these as pills on their own line; here they run inline
+     with the label, so they need the space a block element was providing. */
+  padding: 0 0.25em 0 0;
+  min-width: 0;
+  font-weight: 400;
+  font-size: 11px;
+}
+
+.topic-title { font-size: 12px; font-weight: 700; color: var(--primary); }
+.topic-row.unread { box-shadow: inset 3px 0 0 var(--primary); background: var(--classic-stripe); }
+.topic-row .avatar { border-radius: 0; border: 1px solid var(--classic-line-dark); }
+
+.badge { border-radius: 0; font-size: 9px; padding: 0 4px; }
+
+/* --- Postbit -------------------------------------------------------------- */
+.post {
+  border: 1px solid var(--classic-line-dark);
+  border-radius: 0;
+  margin-bottom: 8px;
+}
+.post-header {
+  background: linear-gradient(180deg, var(--classic-head-a), var(--classic-head-b));
+  border-bottom: 1px solid var(--classic-line-dark);
+  padding: 4px 9px;
+  font-size: 10px;
+}
+.post-author {
+  background: var(--classic-stripe);
+  border-right: 1px solid var(--classic-line);
+  align-items: flex-start;
+  text-align: left;
+  padding: 9px;
+}
+.post-author .avatar {
+  border-radius: 0;
+  border: 1px solid var(--classic-line-dark);
+  padding: 2px;
+  background: var(--card);
+}
+.post-author-name { font-size: 12px; color: var(--primary); }
+.post-body { font-size: 12px; line-height: 1.65; padding: 10px 12px; }
+.post-body blockquote, .post-body .bb-quote {
+  border: 1px solid var(--classic-line-dark);
+  border-left-width: 1px;
+  border-radius: 0;
+  background: color-mix(in oklab, var(--primary) 5%, var(--card));
+}
+.post-signature { font-size: 10px; }
+.post-signature::before {
+  content: '__________________';
+  display: block;
+  color: var(--muted-foreground);
+  letter-spacing: -1px;
+  margin-bottom: 2px;
+}
+.post-footer {
+  background: linear-gradient(180deg, var(--classic-head-a), var(--classic-head-b));
+  border-top: 1px solid var(--classic-line-dark);
+  padding: 4px 9px;
+}
+
+/* --- Controls ------------------------------------------------------------- */
+.btn {
+  border-radius: 0;
+  border: 1px solid var(--classic-line-dark);
+  background: linear-gradient(180deg, var(--card), color-mix(in oklab, var(--muted) 80%, var(--card)));
+  color: var(--foreground);
+  box-shadow: none;
+  height: 1.75rem;
+  padding-inline: 0.625rem;
+  font-size: 11px;
+  font-weight: 700;
+}
+.btn:hover { filter: none; background: color-mix(in oklab, var(--primary) 12%, var(--card)); box-shadow: none; }
+.btn-sm { height: 1.5rem; font-size: 10px; }
+.btn:not(.btn-secondary):not(.btn-outline):not(.btn-ghost):not(.btn-destructive):not(.btn-link) {
+  background: linear-gradient(180deg,
+    color-mix(in oklab, var(--primary) 82%, white), var(--primary));
+  border-color: color-mix(in oklab, var(--primary) 65%, black);
+  color: oklch(0.15 0.02 40);
+}
+.input, .textarea, .select { border-radius: 0; }
+.tabs-list, .tabs-trigger { border-radius: 0; }
+.pagination-item {
+  border-radius: 0;
+  border: 1px solid var(--classic-line-dark);
+  background: linear-gradient(180deg, var(--card), color-mix(in oklab, var(--muted) 80%, var(--card)));
+  font-weight: 700;
+  margin-right: 2px;
+}
+.pagination-item[aria-current='page'] { background: var(--primary); color: oklch(0.15 0.02 40); }
+
+.alert { border-radius: 0; }
+.board-stat { border-radius: 0; }
+.board-stat strong { font-size: 15px; }
+.avatar { border-radius: 0; }
+.avatar-sm { border-radius: 0; }
+
+.site-footer {
+  border-top: 1px solid var(--classic-line-dark);
+  background: linear-gradient(180deg, var(--classic-head-a), var(--classic-head-b));
+  font-size: 10px;
+  padding-block: 8px;
+}
+.cp-ad-unit iframe { border-radius: 0; }
+
+
+/* The statistics tiles are the one place the modern skin's roundness survived. */
+.board-stats { gap: 1px; padding: 1px; background: var(--classic-line); }
+.board-stat {
+  border-radius: 0;
+  background: linear-gradient(180deg, var(--classic-head-a), var(--classic-head-b));
+  padding: 8px 10px;
+}
+.board-stat::before { width: 2px; }
+.board-newest { border-radius: 0; font-size: 10px; }

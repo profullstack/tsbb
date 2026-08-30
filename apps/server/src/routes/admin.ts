@@ -160,7 +160,7 @@ export function adminRoutes(services: Services) {
   // --- Board settings -----------------------------------------------------
 
   const SETTING_GROUPS: { title: string; keys: string[] }[] = [
-    { title: 'Identity', keys: ['board.name', 'board.tagline', 'board.description'] },
+    { title: 'Identity', keys: ['board.name', 'board.tagline', 'board.description', 'board.skin'] },
     { title: 'Registration', keys: ['registration.mode', 'registration.minUsernameLength', 'registration.maxUsernameLength'] },
     { title: 'Posting', keys: ['posts.defaultFormat', 'posts.perPage', 'posts.minLength', 'posts.maxLength', 'posts.editWindowMinutes', 'posts.floodSeconds', 'topics.perPage', 'topics.titleMaxLength'] },
     { title: 'Signatures', keys: ['signatures.enabled', 'signatures.minPosts', 'signatures.maxLength'] },
@@ -170,6 +170,8 @@ export function adminRoutes(services: Services) {
   ];
 
   const HELP: Record<string, string> = {
+    'board.skin':
+      'modern is cards and generous spacing. classic is a 2000s bulletin board: boxy, dense, gradient title bars. Same board either way — only the stylesheet changes.',
     'signatures.minPosts':
       'How many posts before a signature is shown. A new account with a link-filled signature is the shape of every piece of forum spam, so this is 10 by default.',
     'posts.floodSeconds': 'Seconds between posts by the same account. 0 turns flood control off.',
@@ -643,8 +645,13 @@ function settingField(key: string, value: unknown, help?: string) {
       <div><label for="${key}">${label}</label>${help ? html`<div class="field-hint">${help}</div>` : ''}</div>
     </div>`;
   }
-  if (key === 'posts.defaultFormat' || key === 'registration.mode') {
-    const options = key === 'posts.defaultFormat' ? ['markdown', 'bbcode'] : ['open', 'invite', 'closed'];
+  if (key === 'posts.defaultFormat' || key === 'registration.mode' || key === 'board.skin') {
+    const options =
+      key === 'posts.defaultFormat'
+        ? ['markdown', 'bbcode']
+        : key === 'board.skin'
+          ? ['modern', 'classic']
+          : ['open', 'invite', 'closed'];
     return html`<div class="field">
       <label class="label" for="${key}">${label}</label>
       <select class="select" id="${key}" name="${key}">

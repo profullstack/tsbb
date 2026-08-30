@@ -459,3 +459,50 @@ describe('a board end to end', () => {
     assert.ok(Array.isArray(health.plugins));
   });
 });
+
+describe('skins', () => {
+  it('serves a different stylesheet per skin, each under its own hash', async () => {
+    const { stylesheet } = await import('../packages/ui/src/index.ts');
+    const modern = stylesheet('modern');
+    const classic = stylesheet('classic');
+
+    assert.notEqual(modern.hash, classic.hash, 'a shared hash would serve one skin as the other');
+    assert.ok(classic.css.length > modern.css.length, 'classic is a layer ON TOP of modern');
+    assert.ok(classic.css.includes(modern.css.slice(0, 400)), 'and it starts from the same base');
+
+    // The classic layer must not reintroduce the trap that made rows unreadable:
+    // a bare :root:not([data-theme='light']) matches in LIGHT mode too.
+    const bare = /\n:root:not\(\[data-theme='light'\]\)/.test(
+      classic.css.slice(classic.css.indexOf('/*\n * The "classic" skin')),
+    );
+    assert.equal(bare, false, "classic dark values must sit inside a prefers-color-scheme query");
+  });
+
+  it('serves either skin from the asset route, whichever hash is asked for', async () => {
+    const { stylesheet } = await import('../packages/ui/src/index.ts');
+    for (const skin of ['modern', 'classic'] as const) {
+      const response = await get(`/assets/app.${stylesheet(skin).hash}.css`, false);
+      assert.equal(response.status, 200, skin);
+      assert.match(response.headers.get('cache-control') ?? '', /immutable/);
+    }
+    // An unknown hash falls back rather than 404ing a page's stylesheet.
+    assert.equal((await get('/assets/app.deadbeef.css', false)).status, 302);
+  });
+
+  it('follows the board setting', async () => {
+    const { stylesheet } = await import('../packages/ui/src/index.ts');
+    await core.setSettings({ 'board.skin': 'classic' });
+    let html = await (await get('/', false)).text();
+    assert.ok(html.includes(stylesheet('classic').hash), 'classic board serves the classic sheet');
+
+    await core.setSettings({ 'board.skin': 'modern' });
+    html = await (await get('/', false)).text();
+    assert.ok(html.includes(stylesheet('modern').hash));
+
+    // A nonsense value must not break the page.
+    await core.setSettings({ 'board.skin': 'neon' });
+    html = await (await get('/', false)).text();
+    assert.ok(html.includes(stylesheet('modern').hash), 'an unknown skin falls back to modern');
+    await core.setSettings({ 'board.skin': 'modern' });
+  });
+});

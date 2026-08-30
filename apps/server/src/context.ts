@@ -3,7 +3,13 @@ import { getCookie } from 'hono/cookie';
 import type { NavItem, Viewer } from '@tsbb/plugin-api';
 import type { Registry } from '@tsbb/plugin-host';
 import { guestViewer, loadSettings, unreadCount, viewerFromSession, type Settings } from '@tsbb/core';
-import { Layout, stylesheetUrl, type LayoutSlots, type ThemeChoice } from '@tsbb/ui';
+import { Layout, isSkin, stylesheetUrl, type LayoutSlots, type Skin, type ThemeChoice } from '@tsbb/ui';
+
+/** The board's chosen skin, defaulting to modern for an unset or bad value. */
+export function skinOf(settings: Record<string, unknown>): Skin {
+  const value = settings['board.skin'];
+  return isSkin(value) ? value : 'modern';
+}
 
 export const SESSION_COOKIE = 'tsbb_session';
 export const THEME_COOKIE = 'tsbb_theme';
@@ -109,7 +115,7 @@ export async function render(
     viewer,
     nav,
     unread,
-    stylesheetUrl: stylesheetUrl(),
+    stylesheetUrl: stylesheetUrl(skinOf(settings)),
     canonical: options.canonical ?? new URL(url.pathname, services.baseUrl).toString(),
     feedUrl: options.feedUrl,
     slots,

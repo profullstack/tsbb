@@ -7,27 +7,58 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const TOKENS = join(HERE, '../../../design-tokens/src/tokens.css');
 
 /**
- * One stylesheet, assembled at boot and served with a content hash in its URL.
+ * The board ships two skins over one set of markup.
+ *
+ *   modern   cards, generous spacing, soft shadows
+ *   classic  a 2000s bulletin board: boxy, dense, gradient title bars
+ *
+ * `classic` is a layer ON TOP of the modern sheet rather than a replacement, so
+ * there is exactly one place where a component's structure is defined and the
+ * skin only argues about how it looks. A second full stylesheet would drift
+ * from the first within a week.
+ */
+export type Skin = 'modern' | 'classic';
+
+const BASE = ['base.css', 'components.css', 'forum.css'];
+
+/**
+ * One stylesheet per skin, assembled at boot and served under a content hash.
  *
  * A hashed filename is what makes a long cache lifetime safe: the URL changes
  * whenever the bytes do, so a CSS fix reaches a returning reader immediately
  * instead of waiting out whatever max-age the last deploy set. A stylesheet
  * cached for an hour under a stable name is a fix nobody can see.
  */
-const PARTS = ['base.css', 'components.css', 'forum.css'];
+const cache = new Map<Skin, { css: string; hash: string }>();
 
-let cached: { css: string; hash: string } | null = null;
+export function stylesheet(skin: Skin = 'modern'): { css: string; hash: string } {
+  const hit = cache.get(skin);
+  if (hit) return hit;
 
-export function stylesheet(): { css: string; hash: string } {
-  if (cached) return cached;
   const chunks = [readFileSync(TOKENS, 'utf8')];
-  for (const part of PARTS) chunks.push(readFileSync(join(HERE, part), 'utf8'));
+  for (const part of BASE) chunks.push(readFileSync(join(HERE, part), 'utf8'));
+  if (skin === 'classic') chunks.push(readFileSync(join(HERE, 'classic.css'), 'utf8'));
+
   const css = chunks.join('\n');
   const hash = createHash('sha256').update(css).digest('hex').slice(0, 12);
-  cached = { css, hash };
-  return cached;
+  const built = { css, hash };
+  cache.set(skin, built);
+  return built;
 }
 
-export function stylesheetUrl(): string {
-  return `/assets/app.${stylesheet().hash}.css`;
+/** Every skin's hash, so the asset route can answer for any of them. */
+export function stylesheetForHash(hash: string): { css: string; hash: string } | null {
+  for (const skin of ['modern', 'classic'] as const) {
+    const sheet = stylesheet(skin);
+    if (sheet.hash === hash) return sheet;
+  }
+  return null;
+}
+
+export function stylesheetUrl(skin: Skin = 'modern'): string {
+  return `/assets/app.${stylesheet(skin).hash}.css`;
+}
+
+export function isSkin(value: unknown): value is Skin {
+  return value === 'modern' || value === 'classic';
 }
