@@ -256,6 +256,123 @@ describe('a board end to end', () => {
     assert.equal(stale.status, 302);
   });
 
+  it('never 500s on punctuation in the search box', async () => {
+    // FTS5 MATCH takes a query language, not a string, so raw input containing
+    // punctuation raises a syntax error — and pasting an error message into a
+    // forum's search box is exactly what people do.
+    for (const query of [
+      'Error: cannot read property "x" of undefined',
+      'a@b.com',
+      'C++ / C#',
+      '((()))',
+      'NEAR(a b)',
+      '"unterminated',
+      '*',
+      '-',
+    ]) {
+      const response = await get(`/search?q=${encodeURIComponent(query)}`, false);
+      assert.equal(response.status, 200, `search 500d on ${query}`);
+    }
+  });
+
+  it('serves a well-formed feed with everything escaped', async () => {
+    const response = await get('/feed.xml', false);
+    assert.equal(response.status, 200);
+    assert.match(response.headers.get('content-type') ?? '', /application\/rss\+xml/);
+    const body = await response.text();
+    assert.ok(body.startsWith('<?xml version="1.0"'));
+    assert.ok(body.includes('<atom:link'), 'a self link, so a reader can find its way back');
+
+    // Check the *content* of each title rather than pattern-matching the raw
+    // document: a character class next to the closing tag backtracks onto it
+    // and reports every well-formed feed as broken.
+    for (const match of body.matchAll(/<title>([\s\S]*?)<\/title>/g)) {
+      const text = match[1] ?? '';
+      assert.ok(!/[<>]/.test(text), `raw angle bracket in a title: ${text}`);
+      assert.ok(!/&(?!(amp|lt|gt|quot|apos|#\d+|#x[0-9a-f]+);)/i.test(text), `bare ampersand in: ${text}`);
+    }
+  });
+
+  it('escapes a hostile topic title into the feed', async () => {
+    const forum = await db.one<{ id: number }>("SELECT id FROM forums WHERE slug = 'introductions'");
+    const ann = await core.userByEmail('ann@example.com');
+    assert.ok(forum && ann);
+    await core.setSettings({ 'posts.floodSeconds': 0 });
+    await core.createTopic({
+      forum: (await core.forumBySlug('introductions'))!,
+      viewer: { user: ann, groupIds: [], isAdmin: true, isModerator: true, viaToken: false },
+      title: 'Tom & Jerry <script>alert(1)</script>',
+      body: 'A body long enough to pass validation.',
+    });
+
+    const body = await (await get('/feed.xml', false)).text();
+    assert.ok(body.includes('Tom &amp; Jerry &lt;script&gt;'), 'escaped, not stripped');
+    assert.ok(!body.includes('<script>'), 'and no live tag reached the document');
+  });
+
+  it('refuses a feed for a forum the viewer cannot read', async () => {
+    // A feed must answer exactly what the page would: a restricted forum does
+    // not become readable by asking for its RSS instead.
+    const guests = await db.one<{ id: number }>("SELECT id FROM groups WHERE slug = 'guests'");
+    const forum = await db.one<{ id: number }>("SELECT id FROM forums WHERE slug = 'bugs'");
+    await db.run(
+      `INSERT INTO forum_permissions (forum_id, group_id, can_view, can_read) VALUES (?, ?, 0, 0)
+       ON CONFLICT (forum_id, group_id) DO UPDATE SET can_view = 0, can_read = 0`,
+      [forum?.id, guests?.id],
+    );
+    const response = await app.fetch(new Request(url('/f/bugs/feed.xml')));
+    assert.equal(response.status, 403);
+    const page = await app.fetch(new Request(url('/f/bugs')));
+    assert.equal(page.status, 403, 'and the page agrees with the feed');
+  });
+
+  it('rejects an avatar upload that is not really an image', async () => {
+    // The declared content-type is attacker-controlled, so the magic bytes
+    // decide. A file that is not an image never reaches the disk.
+    const form = new FormData();
+    form.set('avatar', new File([Buffer.from('<?php echo 1; ?>')], 'x.png', { type: 'image/png' }));
+    const response = await app.fetch(
+      new Request(url('/settings/avatar'), { method: 'POST', headers: { cookie }, body: form }),
+    );
+    const body = await response.text();
+    assert.ok(body.includes('not a PNG, JPEG, GIF or WebP image'), 'refused on content, not on its name');
+  });
+
+  it('accepts a real image and serves it back immutably', async () => {
+    // A 1x1 PNG, byte for byte.
+    const png = Buffer.from(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
+      'base64',
+    );
+    const form = new FormData();
+    form.set('avatar', new File([png], 'me.png', { type: 'image/png' }));
+    const response = await app.fetch(
+      new Request(url('/settings/avatar'), { method: 'POST', headers: { cookie }, body: form }),
+    );
+    assert.equal(response.status, 200);
+
+    const row = await db.one<{ avatar_url: string; avatar_kind: string }>(
+      'SELECT avatar_url, avatar_kind FROM users WHERE email_lower = ?',
+      ['ann@example.com'],
+    );
+    assert.equal(row?.avatar_kind, 'upload');
+    // The name is a hash of the bytes plus an extension chosen from the sniffed
+    // type — never from what the browser called the file.
+    assert.match(row?.avatar_url ?? '', /^\/uploads\/[0-9a-f]{32}\.png$/);
+
+    const served = await get(row?.avatar_url ?? '', false);
+    assert.equal(served.status, 200);
+    assert.equal(served.headers.get('content-type'), 'image/png');
+    assert.match(served.headers.get('cache-control') ?? '', /immutable/);
+  });
+
+  it('will not serve a path that is not one of its own generated names', async () => {
+    for (const name of ['../../etc/passwd', 'x.php', 'abc.png', '%2e%2e%2fetc%2fpasswd']) {
+      const response = await get(`/uploads/${name}`, false);
+      assert.ok(response.status === 404, `served ${name}`);
+    }
+  });
+
   it('reports plugin health', async () => {
     const response = await get('/healthz', false);
     const health = (await response.json()) as { ok: boolean; plugins: string[] };

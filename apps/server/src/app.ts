@@ -7,6 +7,8 @@ import type { PluginRequest, Viewer } from '@tsbb/plugin-api';
 import { readTheme, render, resolveViewer, type AppEnv, type Services } from './context.ts';
 import { apiRoutes } from './routes/api.ts';
 import { boardRoutes } from './routes/board.ts';
+import { discoverRoutes } from './routes/discover.ts';
+import { userRoutes } from './routes/user.ts';
 import { authRoutes } from './routes/auth.ts';
 import { writeRoutes } from './routes/write.ts';
 
@@ -110,6 +112,8 @@ export function createApp(registry: Registry, baseUrl: string): Hono<AppEnv> {
 
   app.route('/', apiRoutes(services));
   app.route('/', authRoutes(services));
+  app.route('/', userRoutes(services));
+  app.route('/', discoverRoutes(services));
   app.route('/', writeRoutes(services));
   app.route('/', boardRoutes(services));
 
