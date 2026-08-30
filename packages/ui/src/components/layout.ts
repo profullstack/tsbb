@@ -67,6 +67,25 @@ export function Layout(props: LayoutProps) {
     ${props.canonical ? html`<meta property="og:url" content="${props.canonical}" />` : ''}
     <meta name="twitter:card" content="summary" />
     <link rel="stylesheet" href="${props.stylesheetUrl}" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="icon" href="/icons/icon-32.png" sizes="32x32" type="image/png" />
+    <link rel="icon" href="/icons/icon-16.png" sizes="16x16" type="image/png" />
+    <link rel="apple-touch-icon" href="/icons/icon-180.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="${props.boardName}" />
+    <!--
+      Two theme-colors so the browser chrome follows the reader's theme. A
+      single one paints a light bar above a dark page on every mobile browser.
+    -->
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#09090b" media="(prefers-color-scheme: dark)" />
+    <!--
+      The only script the board serves, and it is pure enhancement: it registers
+      a service worker for offline reading and installability. Every page is
+      complete without it, which is why it can be deferred and why the CSP still
+      forbids inline script entirely.
+    -->
+    <script src="/register-sw.js" defer></script>
     ${trusted(slots.head)}
   </head>
   <body>

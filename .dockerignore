@@ -1,0 +1,14 @@
+node_modules
+**/node_modules
+.git
+.github
+data
+uploads
+*.db
+*.db-shm
+*.db-wal
+.env
+.env.*
+!.env.example
+test
+docs

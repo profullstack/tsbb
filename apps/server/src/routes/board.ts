@@ -167,6 +167,25 @@ export function boardRoutes(services: Services) {
     });
   });
 
+  /**
+   * The page the service worker serves when the network is gone. It is a real
+   * route rather than a static file so it carries the board's own chrome and
+   * theme — an offline page that looks like a different site reads as a crash.
+   */
+  app.get('/offline', async (c) =>
+    render(c, services, {
+      title: 'Offline',
+      body: Card(
+        CardContent(
+          Empty(
+            'You are offline',
+            'Pages you have already read are still here. Anything new needs a connection.',
+          ),
+        ),
+      ),
+    }),
+  );
+
   // --- One topic ----------------------------------------------------------
   // The slug is decorative: the id after the last hyphen is what resolves, so
   // a renamed topic keeps working from every link ever posted to it.

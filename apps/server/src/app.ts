@@ -6,6 +6,7 @@ import type { Registry } from '@tsbb/plugin-host';
 import type { PluginRequest, Viewer } from '@tsbb/plugin-api';
 import { readTheme, render, resolveViewer, type AppEnv, type Services } from './context.ts';
 import { adminRoutes } from './routes/admin.ts';
+import { pwaRoutes } from './routes/pwa.ts';
 import { apiRoutes } from './routes/api.ts';
 import { boardRoutes } from './routes/board.ts';
 import { discoverRoutes } from './routes/discover.ts';
@@ -82,7 +83,12 @@ export function createApp(registry: Registry, baseUrl: string): Hono<AppEnv> {
 
     const base: Record<string, string[]> = {
       'default-src': ["'self'"],
-      'script-src': ["'none'"],
+      // 'self' rather than 'none' only because of /register-sw.js and /sw.js.
+      // Still no 'unsafe-inline' and no third-party origin anywhere: the board
+      // serves exactly two scripts, both of its own, both optional.
+      'script-src': ["'self'"],
+      'worker-src': ["'self'"],
+      'manifest-src': ["'self'"],
       'style-src': ["'self'"],
       'img-src': ["'self'", 'data:', 'https:'],
       'font-src': ["'self'"],
@@ -111,6 +117,7 @@ export function createApp(registry: Registry, baseUrl: string): Hono<AppEnv> {
     c.res.headers.set('x-content-type-options', 'nosniff');
   });
 
+  app.route('/', pwaRoutes(services));
   app.route('/', apiRoutes(services));
   app.route('/', authRoutes(services));
   app.route('/', adminRoutes(services));
