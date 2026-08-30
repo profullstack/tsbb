@@ -16,10 +16,9 @@ COPY . .
 
 RUN pnpm install --frozen-lockfile --ignore-scripts
 
-# Avatars and attachments live on the attached volume; everything else is in
-# Turso, so the container itself holds no state.
-ENV TSBB_UPLOAD_DIR=/data/uploads
-RUN mkdir -p /data/uploads
+# The container holds no state at all: uploads live in the database alongside
+# everything else, so there is no volume to attach and no reason the service
+# cannot run more than one replica.
 
 EXPOSE 3000
 

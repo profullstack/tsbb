@@ -47,6 +47,11 @@ all: a plugin is a directory you drop in, not something you rebuild the board
 around. (`erasableSyntaxOnly` is set in `tsconfig.json` so a construct type
 stripping cannot erase fails typechecking rather than at boot.)
 
+**Uploads live in the database.** An avatar is a row, not a file, so a
+deployment needs no volume, loses nothing on redeploy, and is not pinned to one
+replica. This is the right trade at avatar scale; a board serving large
+attachments should put those behind object storage.
+
 **One SQLite file by default.** `TSBB_DATABASE_URL=file:./data/tsbb.db`. Point it
 at a `libsql://` URL and the same board runs on Turso with no other change.
 
@@ -177,7 +182,6 @@ one with a fresh session secret and whatever you already had set.
 | `TSBB_MAIL_TRANSPORT` | `console` | `console`, `resend` or `smtp` |
 | `TSBB_MAIL_FROM` | — | |
 | `RESEND_API_KEY` / `SMTP_URL` | — | For the matching transport |
-| `TSBB_UPLOAD_DIR` | `./uploads` | Where avatars and attachments go |
 | `TSBB_PLUGIN_DIR` | `./plugins` | Extra plugins, on top of the bundled ones |
 | `TSBB_WORKER` | in-process | Set to `external` to run the worker yourself |
 
