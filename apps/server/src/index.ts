@@ -45,7 +45,13 @@ export async function boot(options: { port?: number; listen?: boolean } = {}) {
     console.log('[tsbb] worker running in-process');
   }
 
-  const port = options.port ?? Number(process.env.TSBB_PORT ?? 3000);
+  /*
+   * PORT is what every platform-as-a-service injects, and binding the wrong one
+   * fails as a healthcheck timeout with a perfectly healthy process — the
+   * platform is knocking on a port nothing is listening to. TSBB_PORT stays
+   * first so a self-hoster can be explicit.
+   */
+  const port = options.port ?? Number(process.env.TSBB_PORT ?? process.env.PORT ?? 3000);
   const server = serve({ fetch: app.fetch, port }, (info) => {
     console.log(`[tsbb] listening on http://localhost:${info.port}  (base URL ${baseUrl})`);
   });
