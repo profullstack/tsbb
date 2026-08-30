@@ -65,6 +65,10 @@ export function visiblePost(alias = 'p'): string {
 export interface TopicListItem extends Topic {
   authorName: string | null;
   authorId: Id | null;
+  /** Everything an avatar needs, so a list never has to fall back to a letter. */
+  authorEmail: string | null;
+  authorAvatarKind: string | null;
+  authorAvatarUrl: string | null;
   lastPosterName: string | null;
   lastPosterId: Id | null;
   unread: boolean;
@@ -116,11 +120,16 @@ export async function listTopics(options: ListTopicsOptions = {}): Promise<Topic
   const viewerId = options.viewerId ?? null;
   const rows = await all<TopicRow & {
     author_name: string | null;
+    author_email: string | null;
+    author_avatar_kind: string | null;
+    author_avatar_url: string | null;
     last_poster_name: string | null;
     last_read_post_id: number | null;
     poll_id: number | null;
   }>(
     `SELECT t.*, ua.username AS author_name, ul.username AS last_poster_name,
+            ua.email AS author_email, ua.avatar_kind AS author_avatar_kind,
+            ua.avatar_url AS author_avatar_url,
             tr.last_post_id AS last_read_post_id, pl.id AS poll_id
        FROM topics t
        LEFT JOIN users ua ON ua.id = t.user_id
@@ -137,6 +146,9 @@ export async function listTopics(options: ListTopicsOptions = {}): Promise<Topic
     ...toTopic(row),
     authorId: row.user_id,
     authorName: row.author_name,
+    authorEmail: row.author_email,
+    authorAvatarKind: row.author_avatar_kind,
+    authorAvatarUrl: row.author_avatar_url,
     lastPosterId: row.last_poster_id,
     lastPosterName: row.last_poster_name,
     // A guest has no read state, so nothing is ever marked unread for them —

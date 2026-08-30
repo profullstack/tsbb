@@ -146,6 +146,7 @@ export function userRoutes(services: Services) {
     return render(c, services, {
       title: profile.displayName ?? profile.username,
       description: profile.bio ?? `${profile.username} on this board`,
+      feedUrl: `/u/${profile.username}/feed.xml`,
       body,
     });
   });

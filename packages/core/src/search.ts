@@ -12,6 +12,9 @@ export interface SearchHit {
   slug: string;
   snippet: string;
   username: string | null;
+  email: string | null;
+  avatarKind: string | null;
+  avatarUrl: string | null;
   createdAt: number;
   score: number;
 }
@@ -56,11 +59,15 @@ export async function searchPosts(input: {
     slug: string;
     body: string;
     username: string | null;
+    email: string | null;
+    avatar_kind: string | null;
+    avatar_url: string | null;
     created_at: number;
     score: number;
   }>(
     `SELECT f.post_id, f.topic_id, f.forum_id, f.user_id,
-            t.title, t.slug, p.body, u.username, p.created_at,
+            t.title, t.slug, p.body, u.username,
+            u.email, u.avatar_kind, u.avatar_url, p.created_at,
             bm25(posts_fts, 8.0, 1.0) AS score
        FROM posts_fts f
        JOIN posts p ON p.id = f.post_id
@@ -88,6 +95,9 @@ export async function searchPosts(input: {
       slug: row.slug,
       snippet: highlight(snippetAround(row.body, terms), terms),
       username: row.username,
+      email: row.email,
+      avatarKind: row.avatar_kind,
+      avatarUrl: row.avatar_url,
       createdAt: row.created_at,
       score: Number(row.score ?? 0),
     })),

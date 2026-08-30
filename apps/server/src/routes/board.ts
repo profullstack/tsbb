@@ -118,7 +118,7 @@ export function boardRoutes(services: Services) {
       )}
       ${Pagination(page, Math.ceil(total / perPage), (p) => `/latest?page=${p}`)}`;
 
-    return render(c, services, { title: 'Latest', feedUrl: '/feed.xml', body });
+    return render(c, services, { title: 'Latest', feedUrl: '/latest/feed.xml', body });
   });
 
   // --- One forum ----------------------------------------------------------
@@ -449,6 +449,7 @@ async function topicPage(c: Context<AppEnv>, services: Services) {
   return render(c, services, {
     title: topic.title,
     canonical: new URL(`/t/${canonicalHandle}`, baseUrl).toString(),
+    feedUrl: `/t/${canonicalHandle}/feed.xml`,
     body,
   });
 }

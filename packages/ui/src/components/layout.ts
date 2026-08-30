@@ -127,6 +127,7 @@ export function Layout(props: LayoutProps) {
           >
           <span class="row">
             <a href="/members">Members</a>
+            <a href="/feeds">Feeds</a>
             <a href="/feed.xml">RSS</a>
             ${props.viewer.isAdmin ? html`<a href="/admin">Admin</a>` : ''}
           </span>

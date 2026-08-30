@@ -67,6 +67,9 @@ export function ForumRow(forum: ForumRowNode, hue = 0) {
 
 export interface TopicRowItem extends Topic {
   authorName: string | null;
+  authorEmail?: string | null;
+  authorAvatarKind?: string | null;
+  authorAvatarUrl?: string | null;
   lastPosterName: string | null;
   unread: boolean;
   hasPoll: boolean;
@@ -74,9 +77,18 @@ export interface TopicRowItem extends Topic {
 
 export function TopicRow(topic: TopicRowItem) {
   return html`<div class="${topic.unread ? 'topic-row unread' : 'topic-row'}">
-    <span class="avatar avatar-sm" aria-hidden="true"
-      ><span class="avatar-fallback">${(topic.authorName ?? '?').slice(0, 1).toUpperCase()}</span></span
-    >
+    ${topic.authorName
+      ? Avatar(
+          {
+            id: topic.userId ?? 0,
+            username: topic.authorName,
+            email: topic.authorEmail ?? '',
+            avatarKind: (topic.authorAvatarKind as never) ?? 'identicon',
+            avatarUrl: topic.authorAvatarUrl ?? null,
+          },
+          'sm',
+        )
+      : html`<span class="avatar avatar-sm" aria-hidden="true"></span>`}
     <div class="grow">
       <span class="topic-tags">
         ${topic.kind === 'announcement' || topic.kind === 'global' ? Badge('Announcement', 'destructive') : ''}
