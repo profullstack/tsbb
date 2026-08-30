@@ -18,11 +18,36 @@ importers:
         specifier: ^5.9.2
         version: 5.9.3
 
+  packages/core:
+    dependencies:
+      '@tsbb/db':
+        specifier: workspace:*
+        version: link:../db
+      '@tsbb/markup':
+        specifier: workspace:*
+        version: link:../markup
+      '@tsbb/plugin-api':
+        specifier: workspace:*
+        version: link:../plugin-api
+
   packages/db:
     dependencies:
       '@libsql/client':
         specifier: ^0.15.4
         version: 0.15.15
+
+  packages/markup: {}
+
+  packages/plugin-api: {}
+
+  packages/plugin-host:
+    dependencies:
+      '@tsbb/db':
+        specifier: workspace:*
+        version: link:../db
+      '@tsbb/plugin-api':
+        specifier: workspace:*
+        version: link:../plugin-api
 
 packages:
 
