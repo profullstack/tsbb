@@ -13,7 +13,7 @@
     "migrate": "node --env-file-if-exists=.env packages/db/src/migrate.ts",
     "seed": "node --env-file-if-exists=.env packages/db/src/seed.ts",
     "tui": "node apps/tui/src/index.ts",
-    "test": "node --test --experimental-test-module-mocks \"test/**/*.test.ts\"",
+    "test": "node --test \"test/*.test.ts\"",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "format": "prettier --write ."
   },
