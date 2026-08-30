@@ -1,5 +1,7 @@
 # tsbb
 
+**Live at [tsbb.dev](https://tsbb.dev)** — that board runs this code.
+
 A TypeScript bulletin board. Forums, topics, replies, moderation, private
 messages, avatars, signatures, search, feeds — and a plugin system that ships
 with the board rather than being bolted on later.
@@ -220,6 +222,35 @@ pnpm dev
 The tests boot the real app and drive it through `app.fetch`, and the TUI tests
 render the real views through hqtui's headless renderer — so what is asserted is
 the bytes that would reach a browser or a terminal.
+
+## Deployment
+
+`tsbb.dev` runs on Railway from this repository's `main` branch: one Docker
+service, a Turso database, and no volume — uploads are rows, so a redeploy
+loses nothing and the service is not pinned to one replica.
+
+| | |
+|---|---|
+| Host | Railway, service `tsbb`, Dockerfile build, healthcheck `/healthz` |
+| Database | Turso (`libsql://tsbb-profullstack.aws-us-west-2.turso.io`) |
+| Sending | Resend, from `board@tsbb.dev` (its MX sits on `send.tsbb.dev`) |
+| Receiving | Forward Email on the apex MX |
+| DNS | Porkbun — apex `ALIAS`, `www` `CNAME`, one SPF record covering both senders |
+
+Two things about that DNS worth copying. The apex needs an `ALIAS` (or
+CNAME-flattening) because an apex cannot be a `CNAME`; and there is exactly
+**one** SPF record on the apex naming both senders, because two SPF `TXT`
+records on one name is a permanent error rather than a merge — every receiver
+fails it.
+
+`www` is a separate Railway domain with its own certificate and its own edge
+target, and the board 308-redirects it to the apex rather than serving both:
+two origins for one board means a cookie set on one is not sent to the other,
+and a passkey registered on the apex cannot be asserted on `www`.
+
+Migrations run at boot, so a deploy can never leave new code on an old schema.
+Seeding is separate (`tsbb init`, or `node packages/db/src/seed.ts`) and is what
+creates the groups and permissions a board needs before anyone can read it.
 
 ## Licence
 
