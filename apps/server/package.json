@@ -13,6 +13,7 @@
     "@tsbb/plugin-api": "workspace:*",
     "@tsbb/plugin-host": "workspace:*",
     "@tsbb/ui": "workspace:*",
-    "hono": "^4.6.14"
+    "hono": "^4.6.14",
+    "@tsbb/worker": "workspace:*"
   }
 }

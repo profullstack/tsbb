@@ -1,0 +1,11 @@
+{
+  "name": "@tsbb/worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@tsbb/core": "workspace:*",
+    "@tsbb/db": "workspace:*",
+    "@tsbb/mail": "workspace:*"
+  }
+}

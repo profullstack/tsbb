@@ -267,6 +267,9 @@ export async function pollDeviceCode(deviceCode: string): Promise<DevicePoll> {
     [deviceCode],
   );
   if (!row) return { status: 'expired' };
+  // A code that has already handed over its token is done, not pending. Saying
+  // 'pending' would leave a client that missed the response polling forever.
+  if (row.status === 'claimed') return { status: 'expired' };
   if (row.status === 'approved' && row.sealed_token) {
     // The token is handed over exactly once, then removed from the row, so a
     // leaked device code cannot be replayed to collect it a second time.

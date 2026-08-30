@@ -226,6 +226,20 @@ describe('a board end to end', () => {
     assert.equal(rows[0]?.kind, 'mention', 'being addressed directly wins over the subscription');
   });
 
+  it('throttles a second post from the same account', async () => {
+    // Flood control counts off audit_events, which every write already touches,
+    // so throttling costs no extra write anywhere.
+    await core.setSettings({ 'posts.floodSeconds': 60 });
+    const response = await post('/f/introductions/new', {
+      title: 'Rapid fire',
+      body: 'Posting again immediately after the last one.',
+    });
+    assert.equal(response.status, 400, 'refused, and with a real status');
+    const body = await response.text();
+    assert.match(body, /Please wait \d+s before posting again/);
+    await core.setSettings({ 'posts.floodSeconds': 0 });
+  });
+
   it('serves the stylesheet immutably under its content hash', async () => {
     const index = await get('/', false);
     const href = /\/assets\/app\.([0-9a-f]+)\.css/.exec(await index.text())?.[0];

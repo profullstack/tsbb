@@ -2,3 +2,5 @@ packages:
   - 'packages/*'
   - 'apps/*'
   - 'plugins/*'
+minimumReleaseAgeExclude:
+  - '@profullstack/hqtui@0.1.9'

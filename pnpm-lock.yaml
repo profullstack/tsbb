@@ -50,9 +50,30 @@ importers:
       '@tsbb/ui':
         specifier: workspace:*
         version: link:../../packages/ui
+      '@tsbb/worker':
+        specifier: workspace:*
+        version: link:../worker
       hono:
         specifier: ^4.6.14
         version: 4.13.5
+
+  apps/tui:
+    dependencies:
+      '@profullstack/hqtui':
+        specifier: ^0.1.9
+        version: 0.1.9
+
+  apps/worker:
+    dependencies:
+      '@tsbb/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@tsbb/db':
+        specifier: workspace:*
+        version: link:../../packages/db
+      '@tsbb/mail':
+        specifier: workspace:*
+        version: link:../../packages/mail
 
   packages/core:
     dependencies:
@@ -198,6 +219,11 @@ packages:
   '@neon-rs/load@0.0.4':
     resolution: {integrity: sha512-kTPhdZyTQxB+2wpiRcFWrDcejc4JI6tkPuS7UZCG4l6Zvc5kU/gGQ/ozvHTh1XR5tS+UlfAfGuPajjzQjCiHCw==}
 
+  '@profullstack/hqtui@0.1.9':
+    resolution: {integrity: sha512-grOrw3KqbFTnjXKgMIa+HFiujVkdkEFScNSAnJ7GE/fGU6CVyowfw1wnKpFHt/Mv1A4n8QUTKJ3ws65tNKIvNg==}
+    engines: {bun: '>=1.1', node: '>=22.6'}
+    hasBin: true
+
   '@types/node@24.13.3':
     resolution: {integrity: sha512-Dh8vAsV36ig5wa9OX4pXvMc9D3Veibfw2wix0CUwYODLD8nkj9UsLjASr49nPg+2eKzxhBV+v7L8pXvT4e639Q==}
 
@@ -342,6 +368,8 @@ snapshots:
     optional: true
 
   '@neon-rs/load@0.0.4': {}
+
+  '@profullstack/hqtui@0.1.9': {}
 
   '@types/node@24.13.3':
     dependencies:

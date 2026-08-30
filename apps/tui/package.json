@@ -1,0 +1,13 @@
+{
+  "name": "@profullstack/tsbb-tui",
+  "version": "0.1.0",
+  "description": "Terminal client for a tsbb bulletin board. Reads and posts against any centralised install.",
+  "type": "module",
+  "license": "MIT",
+  "author": "Profullstack, Inc.",
+  "bin": { "tsbb-tui": "./bin/tsbb-tui.mjs" },
+  "engines": { "node": ">=24" },
+  "dependencies": {
+    "@profullstack/hqtui": "^0.1.9"
+  }
+}

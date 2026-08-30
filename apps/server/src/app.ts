@@ -5,6 +5,7 @@ import { Card, CardContent, Empty, stylesheet } from '@tsbb/ui';
 import type { Registry } from '@tsbb/plugin-host';
 import type { PluginRequest, Viewer } from '@tsbb/plugin-api';
 import { readTheme, render, resolveViewer, type AppEnv, type Services } from './context.ts';
+import { apiRoutes } from './routes/api.ts';
 import { boardRoutes } from './routes/board.ts';
 import { authRoutes } from './routes/auth.ts';
 import { writeRoutes } from './routes/write.ts';
@@ -107,6 +108,7 @@ export function createApp(registry: Registry, baseUrl: string): Hono<AppEnv> {
     c.res.headers.set('x-content-type-options', 'nosniff');
   });
 
+  app.route('/', apiRoutes(services));
   app.route('/', authRoutes(services));
   app.route('/', writeRoutes(services));
   app.route('/', boardRoutes(services));

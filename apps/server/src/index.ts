@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { migrate } from '@tsbb/db/migrate';
 import { loadSettings, pruneExpired } from '@tsbb/core';
 import { loadPlugins } from '@tsbb/plugin-host';
+import { startWorker } from '../../worker/src/index.ts';
 import { createApp } from './app.ts';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -33,6 +34,16 @@ export async function boot(options: { port?: number; listen?: boolean } = {}) {
 
   const app = createApp(registry, baseUrl);
   if (options.listen === false) return { app, registry, baseUrl };
+
+  /*
+   * The worker runs in-process by default, so a self-hoster gets working email
+   * from one command. Set TSBB_WORKER=external once the board is big enough to
+   * want it on its own box, and run `pnpm worker` there instead.
+   */
+  if (process.env.TSBB_WORKER !== 'external') {
+    startWorker({ baseUrl });
+    console.log('[tsbb] worker running in-process');
+  }
 
   const port = options.port ?? Number(process.env.TSBB_PORT ?? 3000);
   const server = serve({ fetch: app.fetch, port }, (info) => {
