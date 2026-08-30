@@ -17,6 +17,7 @@ import type { SettingSpec } from '@tsbb/plugin-api';
 import {
   Alert,
   Badge,
+  trusted,
   Button,
   Card,
   CardContent,
@@ -25,7 +26,7 @@ import {
   LinkButton,
   TimeAgo,
 } from '@tsbb/ui';
-import { render, type AppEnv, type Services } from '../context.ts';
+import { render, slot, type AppEnv, type Services } from '../context.ts';
 
 const NAV = [
   { href: '/admin', label: 'Overview' },
@@ -74,8 +75,10 @@ export function adminRoutes(services: Services) {
     await next();
   });
 
-  const page = (c: Context<AppEnv>, title: string, body: unknown) =>
-    render(c, services, {
+  const page = async (c: Context<AppEnv>, title: string, body: unknown) => {
+    // Plugins can add their own entries to the administration menu.
+    const adminNav = await slot(c, services, 'admin:nav');
+    return render(c, services, {
       title: `${title} · Administration`,
       body: html`<div class="admin-layout">
         <nav class="admin-nav">
@@ -89,12 +92,14 @@ export function adminRoutes(services: Services) {
                 >${item.label}</a
               >`,
           )}
+          ${trusted(adminNav)}
           <div class="admin-nav-heading">Board</div>
           <a class="dropdown-item" href="/">Back to the forums</a>
         </nav>
         <div>${body}</div>
       </div>`,
     });
+  };
 
   // --- Overview -----------------------------------------------------------
 

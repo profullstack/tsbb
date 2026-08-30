@@ -82,7 +82,9 @@ export interface SlotMap {
   'layout:body_start': RenderContext;
   'layout:body_end': RenderContext;
   'layout:footer': RenderContext;
-  'layout:sidebar': RenderContext;
+  // There is no layout:sidebar. The board has no sidebar to render into, and a
+  // slot with nowhere to go is worse than no slot: a plugin registers for it,
+  // nothing appears, and nothing says why.
   'board:above_categories': RenderContext;
   'board:below_categories': RenderContext;
   'forum:above_topics': RenderContext & { forum: Forum };

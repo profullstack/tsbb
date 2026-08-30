@@ -394,6 +394,18 @@ async function topicPage(c: Context<AppEnv>, services: Services) {
     slot(c, services, 'topic:above_posts', { topic, forum }),
     slot(c, services, 'topic:below_posts', { topic, forum }),
   ]);
+
+  /*
+   * One entry per gap between two posts. The board offers every gap and a
+   * plugin picks which to use, rather than the board guessing — but they are
+   * resolved here rather than inside the render map, so the output does not
+   * depend on how quickly each handler happened to return.
+   */
+  const betweenPosts = await Promise.all(
+    views.slice(0, -1).map((_view, index) =>
+      slot(c, services, 'topic:between_posts', { topic, index, total: views.length }),
+    ),
+  );
   const subscribed = viewer.user ? await isSubscribed(viewer.user.id, topic.id) : false;
   const trail = await breadcrumb(topic.forumId);
   const pages = Math.ceil((topic.replyCount + 1) / perPage);
@@ -429,13 +441,13 @@ async function topicPage(c: Context<AppEnv>, services: Services) {
     </div>
     ${trusted(above)}
     ${views.map((view, i) =>
-      PostArticle({
+      html`${PostArticle({
         post: view,
         topicSlug: topic.slug,
         topicId: topic.id,
         viewer,
         number: (page - 1) * perPage + i + 1,
-      }),
+      })}${i < views.length - 1 ? trusted(betweenPosts[i] ?? '') : ''}`,
     )}
     ${Pagination(page, pages, (p) => `/t/${canonicalHandle}?page=${p}`)}
     ${topic.isLocked

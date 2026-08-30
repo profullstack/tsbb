@@ -207,3 +207,34 @@ describe('the hook bus fails safely', () => {
     assert.equal(await bus.renderSlot('layout:footer', {} as never), '');
   });
 });
+
+describe('the slot contract', () => {
+  it('renders every slot it offers a plugin', async () => {
+    /*
+     * A slot declared in the API but never rendered by the server is worse than
+     * no slot at all: a plugin registers for it, nothing appears, and nothing
+     * says why. Three of them were exactly that — layout:sidebar,
+     * topic:between_posts and admin:nav — and the first person to hit it was a
+     * board owner who had turned every other placement off.
+     */
+    const fs = await import('node:fs');
+    const hooks = fs.readFileSync(new URL('../packages/plugin-api/src/hooks.ts', import.meta.url), 'utf8');
+    const block = hooks.slice(hooks.indexOf('export interface SlotMap'));
+    const declared = [...block.slice(0, block.indexOf('\n}')).matchAll(/^\s+'([a-z]+:[a-z_]+)':/gm)].map((m) => m[1]);
+
+    assert.ok(declared.length > 10, 'found the slot list');
+
+    const dir = new URL('../apps/server/src/routes/', import.meta.url);
+    const sources = fs
+      .readdirSync(dir)
+      .filter((f) => f.endsWith('.ts'))
+      .map((f) => fs.readFileSync(new URL(f, dir), 'utf8'))
+      .join('\n');
+    const layout = fs.readFileSync(new URL('../packages/ui/src/components/layout.ts', import.meta.url), 'utf8');
+    const context = fs.readFileSync(new URL('../apps/server/src/context.ts', import.meta.url), 'utf8');
+    const all = `${sources}\n${layout}\n${context}`;
+
+    const missing = declared.filter((slot) => !all.includes(`'${slot}'`));
+    assert.deepEqual(missing, [], `slots offered to plugins but never rendered: ${missing.join(', ')}`);
+  });
+});
