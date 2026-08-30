@@ -109,6 +109,7 @@ export default definePlugin({
         key: 'slotId',
         label: 'Ad slot ID',
         type: 'string',
+        required: true,
         default: '',
         placeholder: 'from crawlproof.com/ads/slots',
         help:
@@ -227,6 +228,17 @@ export default definePlugin({
         placement.slot,
         (props) => {
           if (ctx.settings.get(placement.key) !== true) return null;
+
+          /*
+           * The board offers every gap between two posts; take only the
+           * first. A unit in every gap turns a long thread into an ad break
+           * each screenful, which is the one thing this placement sits a
+           * single bad decision away from.
+           */
+          if (placement.slot === 'topic:between_posts') {
+            const gap = (props as { index?: number }).index ?? 0;
+            if (gap !== 0) return null;
+          }
 
           const viewer = props.viewer;
           if (viewer.isAdmin || viewer.isModerator) {

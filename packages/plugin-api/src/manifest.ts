@@ -1,6 +1,16 @@
 /** A setting a plugin exposes in the admin panel. */
 export type SettingSpec =
-  | { key: string; label: string; type: 'string'; default?: string; help?: string; placeholder?: string; secret?: boolean }
+  | {
+      key: string;
+      label: string;
+      type: 'string';
+      default?: string;
+      help?: string;
+      placeholder?: string;
+      secret?: boolean;
+      /** The plugin does nothing without it; the admin panel says so when it is blank. */
+      required?: boolean;
+    }
   | { key: string; label: string; type: 'number'; default?: number; help?: string; min?: number; max?: number }
   | { key: string; label: string; type: 'boolean'; default?: boolean; help?: string }
   | { key: string; label: string; type: 'select'; default?: string; help?: string; options: { value: string; label: string }[] }

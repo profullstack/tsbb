@@ -132,6 +132,35 @@ describe('the admin panel', () => {
     assert.equal(({} as Record<string, unknown>).polluted, undefined, 'and nothing was polluted');
   });
 
+  it('says so when an enabled plugin is missing a setting it cannot work without', async () => {
+    // A blank slot ID looks exactly like a broken plugin from the outside: the
+    // plugin is enabled, reports no error, and renders nothing. Saying so on the
+    // page is the difference between a two-minute fix and an afternoon — this is
+    // precisely how the live board ended up serving no ads.
+    await db.run("UPDATE plugins SET config = ? WHERE slug = 'crawlproof-ads'", [
+      JSON.stringify({ slotId: '' }),
+    ]);
+    await registry.reload();
+
+    const body = await (await get('/admin/plugins')).text();
+    assert.ok(body.includes('Not configured'), 'the panel flags it');
+    assert.ok(body.includes('renders nothing'));
+
+    await db.run("UPDATE plugins SET config = ? WHERE slug = 'crawlproof-ads'", [
+      JSON.stringify({ slotId: 'slot-abc' }),
+    ]);
+    await registry.reload();
+    assert.ok(!(await (await get('/admin/plugins')).text()).includes('Not configured'));
+  });
+
+  it('shows one ad between posts, not one in every gap', async () => {
+    const fs = await import('node:fs');
+    const source = fs.readFileSync(new URL('../plugins/crawlproof-ads/src/index.ts', import.meta.url), 'utf8');
+    // A unit in every gap turns a long thread into an ad break each screenful.
+    assert.ok(source.includes("placement.slot === 'topic:between_posts'"));
+    assert.ok(source.includes('gap !== 0'));
+  });
+
   it('enables and disables a plugin from the panel', async () => {
     await post('/admin/plugins/hello-world/toggle', { enabled: '1' });
     assert.ok(registry.enabled.has('hello-world'));

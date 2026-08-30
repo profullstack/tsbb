@@ -376,6 +376,14 @@ export function adminRoutes(services: Services) {
                     ${row.last_error
                       ? Alert(row.last_error, { variant: 'destructive', title: 'This plugin reported a problem' })
                       : ''}
+                    ${missingRequired(manifest, registry.config(row.slug))
+                      .map((spec) =>
+                        Alert(
+                          html`<strong>${spec.label}</strong> is empty, so this plugin renders nothing.
+                            ${spec.help ?? ''}`,
+                          { variant: 'warning', title: 'Not configured' },
+                        ),
+                      )}
                     ${on && manifest?.settings?.length
                       ? html`<form method="post" action="/admin/plugins/${row.slug}/settings">
                           ${manifest.settings.map((spec) =>
@@ -592,6 +600,25 @@ export function adminRoutes(services: Services) {
   });
 
   return app;
+}
+
+/**
+ * A plugin can be enabled, error-free and still do nothing because a setting it
+ * cannot work without is blank — which looks identical to a broken plugin from
+ * the outside. Saying so on the page is the difference between a two-minute fix
+ * and an afternoon.
+ */
+function missingRequired(
+  manifest: { settings?: SettingSpec[] } | null | undefined,
+  config: Record<string, unknown>,
+): SettingSpec[] {
+  return (manifest?.settings ?? []).filter(
+    (spec) =>
+      spec.type === 'string' &&
+      'required' in spec &&
+      spec.required === true &&
+      !String(config[spec.key] ?? spec.default ?? '').trim(),
+  );
 }
 
 interface UserRow {
