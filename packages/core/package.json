@@ -3,10 +3,14 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "exports": { ".": "./src/index.ts", "./*": "./src/*" },
+  "exports": {
+    ".": "./src/index.ts",
+    "./*": "./src/*"
+  },
   "dependencies": {
     "@tsbb/db": "workspace:*",
     "@tsbb/markup": "workspace:*",
-    "@tsbb/plugin-api": "workspace:*"
+    "@tsbb/plugin-api": "workspace:*",
+    "sharp": "^0.35.4"
   }
 }

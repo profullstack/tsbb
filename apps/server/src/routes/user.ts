@@ -18,6 +18,9 @@ import {
   updateProfile,
   userByUsername,
   usernameTaken,
+  normaliseAvatar,
+  ImageError,
+  formatBytes,
   validateUsername,
   type Settings,
 } from '@tsbb/core';
@@ -327,30 +330,47 @@ export function userRoutes(services: Services) {
     const maxBytes = Number(settings['avatars.maxBytes'] ?? 512_000);
     if (file.size > maxBytes) {
       return settingsPage(c, services, {
-        error: `That image is ${Math.round(file.size / 1024)}KB; the limit is ${Math.round(maxBytes / 1024)}KB.`,
+        error: `That image is ${formatBytes(file.size)}; uploads are capped at ${formatBytes(maxBytes)}.`,
       });
     }
 
-    const bytes = Buffer.from(await file.arrayBuffer());
-    const sniffed = sniffImage(bytes);
-    if (!sniffed) {
+    const uploaded = Buffer.from(await file.arrayBuffer());
+    if (!sniffImage(uploaded)) {
       // The declared content-type is attacker-controlled, so the magic bytes
-      // decide. A file that is not actually an image never reaches the disk.
+      // decide. A file that is not actually an image is never decoded.
       return settingsPage(c, services, { error: 'That file is not a PNG, JPEG, GIF or WebP image.' });
     }
 
-    const name = `${createHash('sha256').update(bytes).digest('hex').slice(0, 32)}${IMAGE_TYPES[sniffed]}`;
+    /*
+     * Crunch it here, on the way in. An avatar is shown at 80px at the very
+     * largest, so whatever came off a phone is downscaled to a 256px WebP —
+     * typically a few kilobytes — and only that is kept. The original is never
+     * stored, which is what keeps every page fast no matter what people upload.
+     */
+    let image;
+    try {
+      image = await normaliseAvatar(uploaded);
+    } catch (error) {
+      return settingsPage(c, services, {
+        error: error instanceof ImageError ? error.message : 'We could not process that image.',
+      });
+    }
 
-    // Keyed by content hash, so re-uploading the same picture is a no-op rather
-    // than a second copy.
+    const name = `${createHash('sha256').update(image.bytes).digest('hex').slice(0, 32)}.webp`;
+
+    // Keyed by the hash of the CRUNCHED bytes, so two people uploading the same
+    // picture at different resolutions still share one row.
     await run(
       `INSERT INTO uploads (name, mime, bytes, size_bytes, user_id, kind, created_at)
        VALUES (?, ?, ?, ?, ?, 'avatar', ?)
        ON CONFLICT (name) DO NOTHING`,
-      [name, sniffed, bytes, bytes.length, viewer.user.id, now()],
+      [name, image.mime, image.bytes, image.bytes.length, viewer.user.id, now()],
     );
     await updateProfile(viewer.user.id, { avatarKind: 'upload', avatarUrl: `/uploads/${name}` });
-    return settingsPage(c, services, { saved: true });
+    return settingsPage(c, services, {
+      saved: true,
+      note: `Resized to ${image.width}px — ${formatBytes(image.originalBytes)} became ${formatBytes(image.bytes.length)}.`,
+    });
   });
 
   app.post('/settings/notifications', async (c) => {
@@ -464,7 +484,7 @@ function sniffImage(bytes: Buffer): string | null {
 async function settingsPage(
   c: Context<AppEnv>,
   services: Services,
-  state: { saved?: boolean; error?: string; newToken?: string } = {},
+  state: { saved?: boolean; error?: string; newToken?: string; note?: string } = {},
 ) {
   const viewer = c.get('viewer');
   if (!viewer.user) return c.redirect('/login?redirect=%2Fsettings', 302);
@@ -482,7 +502,7 @@ async function settingsPage(
   );
 
   const body = html`<div style="max-width:44rem" class="stack">
-    ${state.saved ? Alert('Saved.', { variant: 'success' }) : ''}
+    ${state.saved ? Alert(state.note ?? 'Saved.', { variant: 'success' }) : ''}
     ${state.error ? Alert(state.error, { variant: 'destructive' }) : ''}
     ${state.newToken
       ? Alert(
@@ -508,7 +528,9 @@ async function settingsPage(
                 <label class="label" for="avatar">Upload an image</label>
                 <input class="input" type="file" id="avatar" name="avatar" accept="image/png,image/jpeg,image/gif,image/webp" />
                 <div class="field-hint">
-                  PNG, JPEG, GIF or WebP, up to ${Math.round(Number(settings['avatars.maxBytes'] ?? 512000) / 1024)}KB.
+                  PNG, JPEG, GIF or WebP, up to ${formatBytes(Number(settings['avatars.maxBytes'] ?? 10_000_000))}.
+                  Large images are fine — they are resized to
+                  ${Number(settings['avatars.size'] ?? 256)}px on upload.
                 </div>
               </div>
               ${Button('Upload', { type: 'submit', size: 'sm' })}

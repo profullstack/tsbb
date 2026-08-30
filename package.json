@@ -18,10 +18,13 @@
     "format": "prettier --write ."
   },
   "devDependencies": {
+    "@profullstack/hqtui": "^0.1.9",
     "@types/node": "^24.3.0",
-    "prettier": "^3.3.3",
-    "typescript": "^5.9.2",
     "hono": "^4.6.14",
-    "@profullstack/hqtui": "^0.1.9"
+    "prettier": "^3.3.3",
+    "typescript": "^5.9.2"
+  },
+  "dependencies": {
+    "sharp": "^0.35.4"
   }
 }

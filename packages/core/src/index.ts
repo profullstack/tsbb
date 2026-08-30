@@ -1,6 +1,7 @@
 export * from './util.ts';
 export * from './settings.ts';
 export * from './avatars.ts';
+export * from './images.ts';
 export * from './users.ts';
 export * from './permissions.ts';
 export * from './forums.ts';

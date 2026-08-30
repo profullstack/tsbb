@@ -356,18 +356,18 @@ describe('a board end to end', () => {
       ['ann@example.com'],
     );
     assert.equal(row?.avatar_kind, 'upload');
-    // The name is a hash of the bytes plus an extension chosen from the sniffed
-    // type — never from what the browser called the file.
-    assert.match(row?.avatar_url ?? '', /^\/uploads\/[0-9a-f]{32}\.png$/);
+    // Whatever was uploaded, what is stored is a WebP named for the hash of the
+    // CRUNCHED bytes — never for what the browser called the file.
+    assert.match(row?.avatar_url ?? '', /^\/uploads\/[0-9a-f]{32}\.webp$/);
 
     const served = await get(row?.avatar_url ?? '', false);
     assert.equal(served.status, 200);
-    assert.equal(served.headers.get('content-type'), 'image/png');
+    assert.equal(served.headers.get('content-type'), 'image/webp');
     assert.match(served.headers.get('cache-control') ?? '', /immutable/);
   });
 
   it('will not serve a path that is not one of its own generated names', async () => {
-    for (const name of ['../../etc/passwd', 'x.php', 'abc.png', '%2e%2e%2fetc%2fpasswd']) {
+    for (const name of ['../../etc/passwd', 'x.php', 'abc.webp', '%2e%2e%2fetc%2fpasswd']) {
       const response = await get(`/uploads/${name}`, false);
       assert.ok(response.status === 404, `served ${name}`);
     }

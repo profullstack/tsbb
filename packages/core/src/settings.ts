@@ -45,8 +45,13 @@ export const DEFAULT_SETTINGS = {
   'avatars.enabled': true,
   'avatars.allowUpload': true,
   'avatars.allowGravatar': true,
-  'avatars.maxBytes': 512_000,
-  'avatars.size': 128,
+  /**
+   * The cap on what may be UPLOADED. What is stored is always a 256px WebP of
+   * a few kilobytes, because every upload is downscaled on the way in — so
+   * this can be generous without anyone paying for it on page load.
+   */
+  'avatars.maxBytes': 10_000_000,
+  'avatars.size': 256,
 
   'attachments.enabled': true,
   'attachments.maxBytes': 5_000_000,
