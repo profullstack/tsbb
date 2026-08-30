@@ -127,8 +127,13 @@ export default definePlugin({
         key: 'hideForStaff',
         label: 'Hide ads from administrators and moderators',
         type: 'boolean',
-        default: true,
-        help: 'Staff read far more pages than anyone else; their impressions are noise.',
+        // Off by default. Staff impressions are noise, but an administrator who
+        // cannot see their own ads cannot tell whether the placement works at
+        // all — and "I set it up and nothing appeared" is a far worse failure
+        // than a handful of counted views.
+        default: false,
+        help:
+          'Staff read far more pages than anyone else, so their impressions are noise. Leave this off until you have checked the placements look right.',
       },
       {
         key: 'hideForMembers',
