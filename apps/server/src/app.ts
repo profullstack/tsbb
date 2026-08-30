@@ -47,6 +47,38 @@ export function createApp(registry: Registry, baseUrl: string): Hono<AppEnv> {
     });
   });
 
+  /*
+   * One canonical host.
+   *
+   * www is redirected, never served. Serving both means two origins for the
+   * same board, and that is not merely untidy: a session cookie set on one is
+   * not sent to the other, so a magic link opened on www signs you in to a host
+   * you then leave — and a passkey registered on the apex cannot be asserted on
+   * www at all. Redirecting first means no credential is ever minted against a
+   * hostname the board does not consider its own.
+   *
+   * 308 rather than 301/302 because a 308 requires the method and body to be
+   * preserved: a form POST to www must arrive at the apex as the same POST, not
+   * silently downgraded to a GET that loses what somebody just wrote.
+   */
+  const canonicalHost = (() => {
+    try {
+      return new URL(baseUrl).host;
+    } catch {
+      return null;
+    }
+  })();
+
+  app.use('*', async (c, next) => {
+    const url = new URL(c.req.url);
+    if (canonicalHost && url.host !== canonicalHost && url.host === `www.${canonicalHost}`) {
+      url.host = canonicalHost;
+      url.protocol = new URL(baseUrl).protocol;
+      return c.redirect(url.toString(), 308);
+    }
+    await next();
+  });
+
   app.use('*', async (c, next) => {
     // A bearer token identifies API clients (the TUI); a cookie identifies
     // browsers. A token never confers admin, whatever it was minted with.

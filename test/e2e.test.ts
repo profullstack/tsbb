@@ -373,6 +373,27 @@ describe('a board end to end', () => {
     }
   });
 
+  it('redirects www to the canonical host with a 308, method intact', async () => {
+    // Serving both hosts would mean two origins for one board: a cookie set on
+    // one is not sent to the other, and a passkey registered on the apex cannot
+    // be asserted on www. Redirecting first means no credential is ever minted
+    // against a hostname the board does not consider its own.
+    //
+    // 308 and not 302, because only 308 requires the method and body to be
+    // preserved — a form POST to www must arrive as the same POST, not as a GET
+    // that silently drops what somebody just wrote.
+    for (const method of ['GET', 'POST'] as const) {
+      const response = await app.fetch(
+        new Request('http://localhost:3999/login'.replace('localhost:3999', 'www.localhost:3999'), {
+          method,
+          redirect: 'manual',
+        }),
+      );
+      assert.equal(response.status, 308, method);
+      assert.equal(response.headers.get('location'), 'http://localhost:3999/login');
+    }
+  });
+
   it('reports plugin health', async () => {
     const response = await get('/healthz', false);
     const health = (await response.json()) as { ok: boolean; plugins: string[] };
