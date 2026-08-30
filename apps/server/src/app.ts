@@ -5,6 +5,7 @@ import { Card, CardContent, Empty, stylesheet } from '@tsbb/ui';
 import type { Registry } from '@tsbb/plugin-host';
 import type { PluginRequest, Viewer } from '@tsbb/plugin-api';
 import { readTheme, render, resolveViewer, type AppEnv, type Services } from './context.ts';
+import { adminRoutes } from './routes/admin.ts';
 import { apiRoutes } from './routes/api.ts';
 import { boardRoutes } from './routes/board.ts';
 import { discoverRoutes } from './routes/discover.ts';
@@ -112,6 +113,7 @@ export function createApp(registry: Registry, baseUrl: string): Hono<AppEnv> {
 
   app.route('/', apiRoutes(services));
   app.route('/', authRoutes(services));
+  app.route('/', adminRoutes(services));
   app.route('/', userRoutes(services));
   app.route('/', discoverRoutes(services));
   app.route('/', writeRoutes(services));
