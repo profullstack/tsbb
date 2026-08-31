@@ -8,9 +8,11 @@
   "bin": { "tsbb": "./bin/tsbb.mjs" },
   "engines": { "node": ">=24" },
   "dependencies": {
+    "@tsbb/client": "workspace:*",
     "@tsbb/core": "workspace:*",
     "@tsbb/db": "workspace:*",
     "@tsbb/mail": "workspace:*",
+    "@tsbb/mcp": "workspace:*",
     "@tsbb/plugin-host": "workspace:*"
   }
 }

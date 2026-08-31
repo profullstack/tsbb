@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
 import { loadSettings } from '@tsbb/core';
 import { stylesheet } from '@tsbb/ui';
+import { packageVersion } from '../version.ts';
 import type { AppEnv, Services } from '../context.ts';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -33,13 +34,10 @@ const ICONS: Record<string, string> = {
  * somebody running an old worker.
  */
 function shellVersion(): string {
-  let appVersion = '0.0.0';
-  try {
-    appVersion = JSON.parse(readFileSync(join(PUBLIC_DIR, '../../../package.json'), 'utf8')).version ?? '0.0.0';
-  } catch {
-    /* the version is a nicety; the stylesheet hash is what does the work */
-  }
-  return createHash('sha256').update(`${stylesheet().hash}:${appVersion}`).digest('hex').slice(0, 10);
+  return createHash('sha256')
+    .update(`${stylesheet().hash}:${packageVersion}`)
+    .digest('hex')
+    .slice(0, 10);
 }
 
 export function pwaRoutes(_services: Services) {

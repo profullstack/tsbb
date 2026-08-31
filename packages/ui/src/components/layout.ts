@@ -127,6 +127,7 @@ export function Layout(props: LayoutProps) {
           </span>
           <span class="row">
             <a href="/members">Members</a>
+            <a href="/docs">Docs</a>
             <a href="/feeds">Feeds</a>
             <a href="/feed.xml">RSS</a>
             <a

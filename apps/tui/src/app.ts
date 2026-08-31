@@ -1,8 +1,7 @@
 import { createApp, type KeyEvent } from '@profullstack/hqtui';
-import { ApiError, BoardClient } from './client.ts';
+import { ApiError, BoardClient, rememberBoard } from '@tsbb/client';
 import { flattenForums, clampSelection, initialState, rowCount, type State } from './state.ts';
 import { renderApp, scrollFor } from './views.ts';
-import { rememberBoard } from './config.ts';
 
 export interface RunOptions {
   server: string;

@@ -5,7 +5,9 @@
   "type": "module",
   "dependencies": {
     "@hono/node-server": "^1.13.7",
+    "@tsbb/client": "workspace:*",
     "@tsbb/core": "workspace:*",
+    "@tsbb/mcp": "workspace:*",
     "@tsbb/db": "workspace:*",
     "@tsbb/design-tokens": "workspace:*",
     "@tsbb/mail": "workspace:*",
