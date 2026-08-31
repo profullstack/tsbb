@@ -8,11 +8,22 @@ operates on the database beside you. These are the commands a self-hoster runs
 on their own box, and they need a `.env` or the matching environment variables.
 
 **Using a board** — everything below — talks to a board over its API. These need
-no database, no checkout and no `.env`: they work from any directory, against
-your board or anybody else's.
+no database and no `.env`: they work from any directory, against your board or
+anybody else's.
+
+The packages are not on npm yet, so both jobs are done from a checkout:
 
 ```
-pnpm add -g @profullstack/tsbb
+git clone https://github.com/profullstack/tsbb
+cd tsbb && pnpm install
+pnpm exec tsbb --help
+```
+
+Put it on your path if you are going to use it from elsewhere, which is what the
+rest of this page assumes:
+
+```
+ln -s "$PWD/apps/cli/bin/tsbb.mjs" ~/.local/bin/tsbb
 ```
 
 ## Signing in
