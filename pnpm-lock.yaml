@@ -30,6 +30,9 @@ importers:
 
   apps/cli:
     dependencies:
+      '@tsbb/client':
+        specifier: workspace:*
+        version: link:../../packages/client
       '@tsbb/core':
         specifier: workspace:*
         version: link:../../packages/core
@@ -39,15 +42,30 @@ importers:
       '@tsbb/mail':
         specifier: workspace:*
         version: link:../../packages/mail
+      '@tsbb/mcp':
+        specifier: workspace:*
+        version: link:../../packages/mcp
       '@tsbb/plugin-host':
         specifier: workspace:*
         version: link:../../packages/plugin-host
+
+  apps/mcp:
+    dependencies:
+      '@tsbb/client':
+        specifier: workspace:*
+        version: link:../../packages/client
+      '@tsbb/mcp':
+        specifier: workspace:*
+        version: link:../../packages/mcp
 
   apps/server:
     dependencies:
       '@hono/node-server':
         specifier: ^1.13.7
         version: 1.19.17(hono@4.13.5)
+      '@tsbb/client':
+        specifier: workspace:*
+        version: link:../../packages/client
       '@tsbb/core':
         specifier: workspace:*
         version: link:../../packages/core
@@ -63,6 +81,9 @@ importers:
       '@tsbb/markup':
         specifier: workspace:*
         version: link:../../packages/markup
+      '@tsbb/mcp':
+        specifier: workspace:*
+        version: link:../../packages/mcp
       '@tsbb/plugin-api':
         specifier: workspace:*
         version: link:../../packages/plugin-api
@@ -84,6 +105,9 @@ importers:
       '@profullstack/hqtui':
         specifier: ^0.1.9
         version: 0.1.9
+      '@tsbb/client':
+        specifier: workspace:*
+        version: link:../../packages/client
 
   apps/worker:
     dependencies:
@@ -96,6 +120,8 @@ importers:
       '@tsbb/mail':
         specifier: workspace:*
         version: link:../../packages/mail
+
+  packages/client: {}
 
   packages/core:
     dependencies:
@@ -133,6 +159,12 @@ importers:
         version: link:../markup
 
   packages/markup: {}
+
+  packages/mcp:
+    dependencies:
+      '@tsbb/client':
+        specifier: workspace:*
+        version: link:../client
 
   packages/plugin-api: {}
 

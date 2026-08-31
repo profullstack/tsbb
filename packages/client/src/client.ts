@@ -59,6 +59,76 @@ export interface PostView {
   reactions: number;
 }
 
+export interface SearchHit {
+  postId: number;
+  topicId: number;
+  title: string;
+  author: string | null;
+  createdAt: number;
+  snippet: string;
+  url: string;
+}
+
+export interface Notification {
+  id: number;
+  kind: string;
+  title: string | null;
+  excerpt: string | null;
+  url: string | null;
+  readAt: number | null;
+  createdAt: number;
+}
+
+/** A forum as the flat list returns it — the tree, with depth instead of nesting. */
+export interface ForumRow {
+  id: number;
+  slug: string;
+  name: string;
+  kind: string;
+  description: string | null;
+  depth: number;
+  topics: number;
+  posts: number;
+  url: string;
+}
+
+export interface Profile {
+  id: number;
+  username: string;
+  displayName: string | null;
+  title: string | null;
+  bio: string | null;
+  postCount: number;
+  createdAt: number;
+  lastSeenAt: number | null;
+  isModerator: boolean;
+  url: string;
+}
+
+export interface BoardStats {
+  board: { name: string; tagline: string; url: string };
+  members: number;
+  topics: number;
+  posts: number;
+  newestMember: string | null;
+  latestPostAt: number | null;
+}
+
+/**
+ * What `GET /api/v1` answers: enough for a client to find everything else,
+ * including whether this board speaks MCP and at which URL.
+ */
+export interface ApiIndex {
+  api: string;
+  version: string;
+  board: { name: string; tagline: string; url: string };
+  authenticated: boolean;
+  auth: { scheme: string; deviceFlow: string };
+  endpoints: Record<string, string>;
+  mcp: { endpoint: string; transport: string; tools: number };
+  openapi: string;
+}
+
 export class ApiError extends Error {
   status: number;
   code: string;
@@ -130,6 +200,11 @@ export class BoardClient {
     return payload as T;
   }
 
+  /** The self-describing index. A client points at a URL and asks what it is. */
+  index() {
+    return this.request<ApiIndex>('/api/v1');
+  }
+
   me() {
     return this.request<Me>('/api/v1/me');
   }
@@ -173,17 +248,38 @@ export class BoardClient {
     );
   }
 
-  search(query: string) {
-    return this.request<{
-      hits: { postId: number; topicId: number; title: string; author: string | null; snippet: string; url: string }[];
-    }>(`/api/v1/search?q=${encodeURIComponent(query)}`);
+  /** Every forum the viewer may see, flattened — what a script wants to iterate. */
+  forums() {
+    return this.request<{ forums: ForumRow[] }>('/api/v1/forums');
   }
 
-  notifications() {
+  /** One post on its own, with the topic it belongs to for context. */
+  post(id: number) {
     return this.request<{
-      unread: number;
-      notifications: { id: number; kind: string; title: string | null; excerpt: string | null; url: string | null; readAt: number | null; createdAt: number }[];
-    }>('/api/v1/notifications?limit=40');
+      post: PostView;
+      topic: { id: number; slug: string; title: string };
+      url: string;
+    }>(`/api/v1/posts/${id}`);
+  }
+
+  user(username: string) {
+    return this.request<{ user: Profile }>(`/api/v1/users/${encodeURIComponent(username)}`);
+  }
+
+  stats() {
+    return this.request<BoardStats>('/api/v1/stats');
+  }
+
+  search(query: string, limit = 30) {
+    return this.request<{ query: string; hits: SearchHit[] }>(
+      `/api/v1/search?q=${encodeURIComponent(query)}&limit=${limit}`,
+    );
+  }
+
+  notifications(limit = 40) {
+    return this.request<{ unread: number; notifications: Notification[] }>(
+      `/api/v1/notifications?limit=${limit}`,
+    );
   }
 
   markNotificationsRead() {

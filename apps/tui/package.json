@@ -8,6 +8,7 @@
   "bin": { "tsbb-tui": "./bin/tsbb-tui.mjs" },
   "engines": { "node": ">=24" },
   "dependencies": {
-    "@profullstack/hqtui": "^0.1.9"
+    "@profullstack/hqtui": "^0.1.9",
+    "@tsbb/client": "workspace:*"
   }
 }

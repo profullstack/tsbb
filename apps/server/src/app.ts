@@ -10,6 +10,7 @@ import { pwaRoutes } from './routes/pwa.ts';
 import { apiRoutes } from './routes/api.ts';
 import { boardRoutes } from './routes/board.ts';
 import { discoverRoutes } from './routes/discover.ts';
+import { mcpRoutes } from './routes/mcp.ts';
 import { userRoutes } from './routes/user.ts';
 import { authRoutes } from './routes/auth.ts';
 import { writeRoutes } from './routes/write.ts';
@@ -151,6 +152,12 @@ export function createApp(registry: Registry, baseUrl: string): Hono<AppEnv> {
 
   app.route('/', pwaRoutes(services));
   app.route('/', apiRoutes(services));
+  /*
+   * The MCP tools reach the board by dispatching back through this same app, so
+   * they are answered by the routes above rather than by a second copy of them.
+   * The closure resolves `app` when a request arrives, not now.
+   */
+  app.route('/', mcpRoutes(services, (request) => app.fetch(request)));
   app.route('/', authRoutes(services));
   app.route('/', adminRoutes(services));
   app.route('/', userRoutes(services));

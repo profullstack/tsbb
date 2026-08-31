@@ -64,6 +64,18 @@ export const ALL_ALLOWED: Permissions = {
   canModerate: true,
 };
 
+export const NOTHING_ALLOWED: Permissions = {
+  canView: false,
+  canRead: false,
+  canPost: false,
+  canReply: false,
+  canEditOwn: false,
+  canDeleteOwn: false,
+  canAttach: false,
+  canPoll: false,
+  canModerate: false,
+};
+
 interface PermissionRow {
   forum_id: number | null;
   group_id: number;
@@ -105,6 +117,26 @@ export async function resolvePermissions(
     return { ...GUEST_DEFAULTS, canPost: false, canReply: false };
   }
   if (viewer.isModerator) base.canModerate = true;
+
+  /*
+   * A hidden forum is hidden.
+   *
+   * The board index and search already skip hidden forums, but skipping them
+   * from a listing is not the same as refusing them: the permission rows for a
+   * hidden forum usually still say "members may read", so anyone who knew a
+   * topic's URL — or simply counted upwards — was served the page. Enforcing it
+   * here covers every caller at once, including the ones that resolve straight
+   * from a topic and never look at the tree.
+   *
+   * Ancestors count too: a visible forum inside a hidden category is exactly
+   * how a staff area is built, and the tree drops those children already.
+   */
+  if (!viewer.isModerator && forum) {
+    const hidden = await hiddenForumIds();
+    if (hidden.has(forum.id) || ancestry.some((id) => hidden.has(id))) {
+      return { ...NOTHING_ALLOWED };
+    }
+  }
 
   if (!viewer.groupIds.length) return base;
 
@@ -162,6 +194,12 @@ export async function resolvePermissions(
 export async function ancestryOf(forumId: Id, parents?: Map<Id, Id | null>): Promise<Id[]> {
   const map = parents ?? (await parentMap());
   return ancestryFrom(forumId, map);
+}
+
+/** The ids of every hidden forum. Small, and read fresh so a change takes effect at once. */
+export async function hiddenForumIds(): Promise<Set<Id>> {
+  const rows = await all<{ id: number }>('SELECT id FROM forums WHERE is_hidden = 1');
+  return new Set(rows.map((row) => row.id));
 }
 
 export async function parentMap(): Promise<Map<Id, Id | null>> {

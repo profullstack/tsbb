@@ -1,4 +1,4 @@
-import type { ForumNode, Me, PostView, TopicSummary } from './client.ts';
+import type { ForumNode, Me, PostView, TopicSummary } from '@tsbb/client';
 
 export type ScreenName =
   | 'forums'

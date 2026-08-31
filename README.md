@@ -34,6 +34,9 @@ Open <http://localhost:3000>, put in your email address, and click the link.
 | **Feeds** | RSS for the board and for every forum, permission-checked exactly as the page is. |
 | **Ads** | The [CrawlProof](https://crawlproof.com/ads) ad network, on by default, in one CSP-safe iframe. |
 | **A terminal client** | `tsbb-tui` — read and post against any board over SSH. |
+| **An API** | A permission-checked REST API with an OpenAPI description at `/api/v1/openapi.json`. |
+| **A CLI** | `tsbb` reads and posts against any board from a shell, with `--json` on every command. |
+| **An MCP server** | Served at `/api/mcp`, and as `tsbb-mcp` over stdio, so an assistant can use the board as a member. |
 
 ## Design decisions worth knowing before you read the code
 
@@ -158,9 +161,27 @@ what the API would show a browser.
   2 posts                  r reply · j/k move · backspace back · ? help · q quit
 ```
 
+## Four ways in
+
+The board is one thing with four front doors, and they are the same board: every
+one of them resolves the same permissions, so a token can never read what a
+browser would hide, and there is no second data path to drift out of step.
+
+| | |
+|---|---|
+| **The pages** | Server-rendered HTML, no client-side JavaScript. |
+| **[The API](docs/API.md)** | `GET /api/v1` describes itself; `/api/v1/openapi.json` describes the rest. Reading is open to whatever the board shows a guest; posting needs a token. |
+| **[The CLI](docs/CLI.md)** | `tsbb` runs a board *and* uses one. `tsbb read 42`, `tsbb post general "Title" < body.md`, `--json` on everything. |
+| **[MCP](docs/MCP.md)** | The board serves MCP at `/api/mcp`; `tsbb-mcp` serves the same tools over stdio for assistants that launch a subprocess. |
+
+Clients get a token through the device flow — the board shows a short code, a
+human approves it in a browser, and the client is handed a token once. A token
+is never an administrator, however it was minted.
+
 ## Commands
 
 ```
+Running a board:
 tsbb init                    Create .env, migrate and seed a new board
 tsbb serve [--port N]        Run the board (it migrates at boot)
 tsbb worker                  Run the mail worker separately
@@ -168,6 +189,14 @@ tsbb status                  What this board is and how big it is
 tsbb admin <email>           Make somebody an administrator
 tsbb invite <email>          Email somebody a sign-in link
 tsbb plugin ls|enable|disable
+
+Using a board — yours or anybody's:
+tsbb login [server]          Approve a code in a browser; the token is stored
+tsbb boards | use | whoami   Several boards at once, one of them current
+tsbb forums | latest | topics <forum> | read <id> | search <words…> | inbox
+tsbb post <forum> "<title>" [body]
+tsbb reply <topic-id> [body]
+tsbb mcp [--read-only]       Serve the current board to an assistant over MCP
 ```
 
 ## Configuration
@@ -201,11 +230,14 @@ packages/
   design-tokens shadcn tokens in oklch
   ui            server-rendered components
   mail          transports and templates
+  client        one REST client, shared by the TUI, the CLI and MCP
+  mcp           the MCP tools and protocol, transport-agnostic
 apps/
-  server        the board
+  server        the board (and /api/mcp)
   worker        notification email and housekeeping
   cli           tsbb
   tui           tsbb-tui
+  mcp           tsbb-mcp
 plugins/
   crawlproof-ads
   hello-world   a worked example — copy it
@@ -214,14 +246,17 @@ plugins/
 ## Development
 
 ```
-pnpm test          # 78 tests, no network, no fixtures
+pnpm test          # 136 tests, no fixtures
 pnpm typecheck
 pnpm dev
 ```
 
 The tests boot the real app and drive it through `app.fetch`, and the TUI tests
 render the real views through hqtui's headless renderer — so what is asserted is
-the bytes that would reach a browser or a terminal.
+the bytes that would reach a browser or a terminal. The CLI and `tsbb-mcp` tests
+go further and bind a real port, because the failures worth catching there — a
+token not found where it was saved, a stray log line on stdout breaking the MCP
+framing — only happen when it is done for real.
 
 ## Deployment
 

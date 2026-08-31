@@ -24,10 +24,10 @@ const { seed } = await import('../packages/db/src/seed.ts');
 const { boot } = await import('../apps/server/src/index.ts');
 const core = await import('../packages/core/src/index.ts');
 const db = await import('../packages/db/src/index.ts');
-const { BoardClient, ApiError } = await import('../apps/tui/src/client.ts');
+const { BoardClient, ApiError } = await import('../packages/client/src/index.ts');
 const { renderApp } = await import('../apps/tui/src/views.ts');
 const { initialState, flattenForums } = await import('../apps/tui/src/state.ts');
-const { normaliseServer, loadConfig, rememberBoard } = await import('../apps/tui/src/config.ts');
+const { normaliseServer, loadConfig, rememberBoard } = await import('../packages/client/src/index.ts');
 
 let client: InstanceType<typeof BoardClient>;
 let app: { fetch: (req: Request) => Response | Promise<Response> };

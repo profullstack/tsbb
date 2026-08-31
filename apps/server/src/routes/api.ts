@@ -12,16 +12,23 @@ import {
   notifyNewPost,
   pollDeviceCode,
   PostError,
+  postById,
+  rankFor,
   reply,
   resolvePermissions,
   searchPosts,
   startDeviceAuth,
   topicById,
   unreadCount,
+  userById,
+  userByUsername,
   visibleForumIds,
 } from '@tsbb/core';
+import { one } from '@tsbb/db';
 import { toPlainText } from '@tsbb/markup';
+import { toolsFor } from '@tsbb/mcp';
 import type { AppEnv, Services } from '../context.ts';
+import { openApiDocument } from './openapi.ts';
 
 /**
  * The REST API.
@@ -41,6 +48,56 @@ export function apiRoutes(services: Services) {
     await next();
     c.res.headers.set('cache-control', 'no-store');
   });
+
+  /*
+   * The index.
+   *
+   * A client is given one URL and has to work out the rest: whether this is a
+   * tsbb board at all, where to sign in, whether it speaks MCP. Answering that
+   * in one unauthenticated request is what lets `tsbb login <host>` and an MCP
+   * client both start from nothing but a hostname.
+   */
+  app.get('/api/v1', async (c) => {
+    const settings = c.get('settings');
+    const viewer = c.get('viewer');
+    const base = services.baseUrl.replace(/\/+$/, '');
+    return c.json({
+      api: 'tsbb',
+      version: '1',
+      board: {
+        name: settings['board.name'],
+        tagline: settings['board.tagline'],
+        url: base,
+      },
+      authenticated: Boolean(viewer.user),
+      auth: {
+        scheme: 'Bearer',
+        deviceFlow: `${base}/api/v1/device/start`,
+      },
+      endpoints: {
+        board: `${base}/api/v1/board`,
+        forums: `${base}/api/v1/forums`,
+        latest: `${base}/api/v1/latest`,
+        topic: `${base}/api/v1/topics/{id}`,
+        post: `${base}/api/v1/posts/{id}`,
+        user: `${base}/api/v1/users/{username}`,
+        search: `${base}/api/v1/search?q=`,
+        stats: `${base}/api/v1/stats`,
+        notifications: `${base}/api/v1/notifications`,
+        me: `${base}/api/v1/me`,
+      },
+      mcp: {
+        endpoint: `${base}/api/mcp`,
+        transport: 'streamable-http',
+        // Writes are listed here because the board can always offer them; what
+        // a given token may actually do is still decided per request.
+        tools: toolsFor(true).length,
+      },
+      openapi: `${base}/api/v1/openapi.json`,
+    });
+  });
+
+  app.get('/api/v1/openapi.json', (c) => c.json(openApiDocument(services.baseUrl, c.get('settings'))));
 
   app.get('/api/v1/me', async (c) => {
     const viewer = c.get('viewer');
@@ -65,6 +122,65 @@ export function apiRoutes(services: Services) {
     return c.json({
       board: { name: settings['board.name'], tagline: settings['board.tagline'] },
       forums: tree.map(flattenForum),
+    });
+  });
+
+  /*
+   * The same tree, flat.
+   *
+   * A script iterating forums should not have to write a recursive walk to find
+   * the slugs, and neither should a model. Depth is kept so the shape survives.
+   */
+  app.get('/api/v1/forums', async (c) => {
+    const tree = await forumTree(c.get('viewer'));
+    const forums: unknown[] = [];
+    const walk = (nodes: Awaited<ReturnType<typeof forumTree>>, depth: number): void => {
+      for (const node of nodes) {
+        forums.push({
+          id: node.id,
+          slug: node.slug,
+          name: node.name,
+          kind: node.kind,
+          description: node.description,
+          depth,
+          topics: node.topicCount,
+          posts: node.postCount,
+          url: `/f/${node.slug}`,
+        });
+        walk(node.children, depth + 1);
+      }
+    };
+    walk(tree, 0);
+    return c.json({ forums });
+  });
+
+  app.get('/api/v1/stats', async (c) => {
+    const settings = c.get('settings');
+    const counts = await one<{
+      users: number;
+      topics: number;
+      posts: number;
+      newest: string | null;
+      latest: number | null;
+    }>(
+      `SELECT
+         (SELECT COUNT(*) FROM users WHERE is_deleted = 0 AND is_banned = 0) AS users,
+         (SELECT COUNT(*) FROM topics WHERE is_deleted = 0 AND is_hidden = 0) AS topics,
+         (SELECT COUNT(*) FROM posts WHERE is_deleted = 0 AND is_hidden = 0) AS posts,
+         (SELECT username FROM users WHERE is_deleted = 0 ORDER BY created_at DESC LIMIT 1) AS newest,
+         (SELECT MAX(created_at) FROM posts WHERE is_deleted = 0 AND is_hidden = 0) AS latest`,
+    );
+    return c.json({
+      board: {
+        name: settings['board.name'],
+        tagline: settings['board.tagline'],
+        url: services.baseUrl.replace(/\/+$/, ''),
+      },
+      members: counts?.users ?? 0,
+      topics: counts?.topics ?? 0,
+      posts: counts?.posts ?? 0,
+      newestMember: counts?.newest ?? null,
+      latestPostAt: counts?.latest ?? null,
     });
   });
 
@@ -135,6 +251,67 @@ export function apiRoutes(services: Services) {
         text: toPlainText(post.body, post.bodyFormat),
         reactions: post.reactionCount,
       })),
+    });
+  });
+
+  /*
+   * One post.
+   *
+   * Search hands back post ids, so a client that wants the thing it found — and
+   * not the three hundred replies around it — needs a way to ask for exactly
+   * that. The forum's read permission is resolved the same way as everywhere
+   * else: a post id is not a capability.
+   */
+  app.get('/api/v1/posts/:id', async (c) => {
+    const viewer = c.get('viewer');
+    const post = await postById(Number(c.req.param('id')));
+    if (!post) return c.json({ error: 'not_found' }, 404);
+
+    const topic = await topicById(post.topicId);
+    if (!topic) return c.json({ error: 'not_found' }, 404);
+    const forum = (await breadcrumb(topic.forumId)).at(-1);
+    if (!forum) return c.json({ error: 'not_found' }, 404);
+    const permissions = await resolvePermissions(viewer, forum, await ancestryOf(forum.id));
+    if (!permissions.canRead) return c.json({ error: 'forbidden' }, 403);
+
+    const author = post.userId === null ? null : await userById(post.userId);
+    return c.json({
+      post: {
+        id: post.id,
+        author: author?.username ?? null,
+        authorTitle: author?.title ?? null,
+        createdAt: post.createdAt,
+        editedAt: post.editedAt,
+        format: post.bodyFormat,
+        body: post.body,
+        text: toPlainText(post.body, post.bodyFormat),
+        reactions: 0,
+      },
+      topic: { id: topic.id, slug: topic.slug, title: topic.title },
+      url: `/t/${topic.slug}-${topic.id}/p/${post.id}`,
+    });
+  });
+
+  /** A member's public profile — what their page shows, minus the markup. */
+  app.get('/api/v1/users/:username', async (c) => {
+    const user = await userByUsername(c.req.param('username'));
+    if (!user || user.isBanned) return c.json({ error: 'not_found' }, 404);
+    const rank = await rankFor(user);
+    return c.json({
+      user: {
+        id: user.id,
+        username: user.username,
+        displayName: user.displayName,
+        // A member's own title wins over the rank they earned, which is the
+        // same order the profile page renders them in.
+        title: user.title ?? rank?.title ?? null,
+        bio: user.bio,
+        postCount: user.postCount,
+        createdAt: user.createdAt,
+        lastSeenAt: user.lastSeenAt,
+        isModerator: user.isModerator,
+        url: `/u/${user.username}`,
+      },
     });
   });
 
