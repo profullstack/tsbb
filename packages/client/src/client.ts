@@ -127,6 +127,7 @@ export interface ApiIndex {
   endpoints: Record<string, string>;
   mcp: { endpoint: string; transport: string; tools: number };
   openapi: string;
+  docs: string;
 }
 
 export class ApiError extends Error {

@@ -6,7 +6,7 @@ and — with a token — post to it.
 There are two ways to reach the same tools, because clients differ in what they
 can launch:
 
-| | |
+| Transport | How to reach it |
 |---|---|
 | **Over HTTP** | `POST https://forum.example.com/api/mcp`, streamable HTTP. Nothing to install. |
 | **Over stdio** | `tsbb-mcp`, a subprocess the client launches. What Claude Desktop and most editors expect. |
@@ -47,7 +47,7 @@ tsbb mcp                      # the board the CLI is signed in to
 ```
 
 Get a token with `tsbb login`, or the device flow in
-**[docs/API.md](API.md)**. Without one the server still runs — it reads whatever
+the [API guide](API.md). Without one the server still runs — it reads whatever
 the board shows a guest, and the posting tools are not offered.
 
 ## Over HTTP
@@ -74,7 +74,7 @@ has to be handed over on purpose, which is the property that makes it safe.
 
 Reading — always available:
 
-| | |
+| Tool | What it does |
 |---|---|
 | `board_overview` | Name, size, and the forum tree. The place to start: everything else needs a slug or an id from here. |
 | `list_forums` | Every readable forum, flat, with slugs |
@@ -89,7 +89,7 @@ Reading — always available:
 Writing — offered only when the server holds a token and was not started
 `--read-only`:
 
-| | |
+| Tool | What it does |
 |---|---|
 | `create_topic` | Start a topic in a forum |
 | `reply_to_topic` | Reply to one |

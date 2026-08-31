@@ -10,6 +10,7 @@ import { pwaRoutes } from './routes/pwa.ts';
 import { apiRoutes } from './routes/api.ts';
 import { boardRoutes } from './routes/board.ts';
 import { discoverRoutes } from './routes/discover.ts';
+import { docsRoutes } from './routes/docs.ts';
 import { mcpRoutes } from './routes/mcp.ts';
 import { userRoutes } from './routes/user.ts';
 import { authRoutes } from './routes/auth.ts';
@@ -161,6 +162,7 @@ export function createApp(registry: Registry, baseUrl: string): Hono<AppEnv> {
   app.route('/', authRoutes(services));
   app.route('/', adminRoutes(services));
   app.route('/', userRoutes(services));
+  app.route('/', docsRoutes(services));
   app.route('/', discoverRoutes(services));
   app.route('/', writeRoutes(services));
   app.route('/', boardRoutes(services));

@@ -178,6 +178,11 @@ Clients get a token through the device flow — the board shows a short code, a
 human approves it in a browser, and the client is handed a token once. A token
 is never an administrator, however it was minted.
 
+Every board serves these four documents at **`/docs`** — they are the files in
+`docs/`, rendered by the board's own markdown renderer, so the site cannot
+quietly disagree with the repository. On tsbb.dev that is
+**[tsbb.dev/docs](https://tsbb.dev/docs)**.
+
 ## Commands
 
 ```
@@ -246,7 +251,7 @@ plugins/
 ## Development
 
 ```
-pnpm test          # 136 tests, no fixtures
+pnpm test          # 145 tests, no fixtures
 pnpm typecheck
 pnpm dev
 ```

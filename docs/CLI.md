@@ -87,11 +87,11 @@ tsbb mcp --read-only    # reading tools only, even though a token is loaded
 ```
 
 This is the same server as `tsbb-mcp`, using the board and token you are already
-signed in to. See **[docs/MCP.md](MCP.md)**.
+signed in to. See the [MCP guide](MCP.md).
 
 ## Flags
 
-| | |
+| Flag | What it does |
 |---|---|
 | `--server <url>` | Talk to that board instead of the current one |
 | `--json` | Print the API's JSON |

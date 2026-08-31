@@ -23,7 +23,8 @@ curl https://forum.example.com/api/v1
   "auth": { "scheme": "Bearer", "deviceFlow": "https://forum.example.com/api/v1/device/start" },
   "endpoints": { "…": "…" },
   "mcp": { "endpoint": "https://forum.example.com/api/mcp", "transport": "streamable-http", "tools": 11 },
-  "openapi": "https://forum.example.com/api/v1/openapi.json"
+  "openapi": "https://forum.example.com/api/v1/openapi.json",
+  "docs": "https://forum.example.com/docs"
 }
 ```
 
@@ -35,7 +36,7 @@ rest as OpenAPI 3.1.
 
 No token needed for anything a guest can see on the site.
 
-| | |
+| Endpoint | What it answers |
 |---|---|
 | `GET /api/v1/board` | The forum tree, filtered to what you may see |
 | `GET /api/v1/forums` | The same forums, flat, each with a `depth` |
@@ -59,7 +60,7 @@ than making every client reimplement the parser.
 
 Needs a token, and the same permissions the member has on the page.
 
-| | |
+| Endpoint | Body |
 |---|---|
 | `POST /api/v1/forums/{slug}/topics` | `{ "title": "…", "body": "…", "format": "markdown" }` |
 | `POST /api/v1/topics/{id}/posts` | `{ "body": "…", "format": "markdown" }` |

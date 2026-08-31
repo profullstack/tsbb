@@ -94,6 +94,9 @@ export function apiRoutes(services: Services) {
         tools: toolsFor(true).length,
       },
       openapi: `${base}/api/v1/openapi.json`,
+      // Where a human is sent when they paste this URL into a browser and find
+      // JSON. The docs are pages on this board, not a separate site.
+      docs: `${base}/docs`,
     });
   });
 
