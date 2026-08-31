@@ -1,4 +1,4 @@
-import { readFileSync, statSync } from 'node:fs';
+import { existsSync, readFileSync, statSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Hono } from 'hono';
@@ -179,6 +179,21 @@ function load(doc: Doc): Rendered | null {
 
 export function docsRoutes(services: Services) {
   const app = new Hono<AppEnv>();
+
+  /*
+   * Say so at boot if the documents are not in the image.
+   *
+   * They ship as files, so a build that excludes them — one line in
+   * .dockerignore did exactly this — leaves every /docs page answering 404
+   * while the index renders its "no documentation" fallback perfectly happily.
+   * That is a failure with no symptom anybody would notice from the outside,
+   * which is precisely the kind worth a line in the log.
+   */
+  if (!existsSync(DOCS_DIR)) {
+    console.warn(
+      `[tsbb] no docs directory at ${DOCS_DIR} — /docs will be empty. Is it excluded from the build?`,
+    );
+  }
 
   app.get('/docs', async (c) => {
     const entries = DOCS.map((doc) => ({ doc, rendered: load(doc) })).filter(

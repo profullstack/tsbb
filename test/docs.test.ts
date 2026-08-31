@@ -113,6 +113,31 @@ describe('the documentation pages', () => {
     assert.equal(missing.status, 404);
   });
 
+  /*
+   * These pages passed every test above and still 404'd in production, because
+   * .dockerignore excluded docs/ and the deployed image had no files to render.
+   * Nothing that boots the app in a checkout can catch that — the guard has to
+   * be on the thing that was wrong, which is the build configuration.
+   */
+  it('ships the documents in the image', async () => {
+    const { readFileSync } = await import('node:fs');
+    const { dirname, join } = await import('node:path');
+    const { fileURLToPath } = await import('node:url');
+    const root = join(dirname(fileURLToPath(import.meta.url)), '..');
+
+    const ignored = readFileSync(join(root, '.dockerignore'), 'utf8')
+      .split('\n')
+      .map((line) => line.trim())
+      .filter((line) => line && !line.startsWith('#'));
+
+    for (const pattern of ['docs', 'docs/', '/docs', './docs']) {
+      assert.ok(
+        !ignored.includes(pattern),
+        `.dockerignore excludes ${pattern}, so the built image would serve no documentation`,
+      );
+    }
+  });
+
   it('points at the docs from the API index, for a human who found the JSON', async () => {
     const response = await app.fetch(new Request('http://localhost:3993/api/v1'));
     const index = (await response.json()) as { docs: string };

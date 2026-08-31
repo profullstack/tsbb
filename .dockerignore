@@ -11,4 +11,8 @@ uploads
 .env.*
 !.env.example
 test
-docs
+
+# docs/ is NOT ignored: the board serves it at /docs, rendering the same
+# markdown files the repository keeps. Excluding it builds an image whose
+# documentation pages all 404 while the index quietly renders its "deployed
+# without its docs directory" fallback — a failure that looks like nothing.
