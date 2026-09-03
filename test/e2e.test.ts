@@ -567,6 +567,20 @@ describe('skins', () => {
     assert.ok(plain.includes('brand-mark'), 'and comes back when the logo is cleared');
   });
 
+  it('points the header brand wherever board.logoHref says', async () => {
+    const board = await (await get('/', false)).text();
+    assert.ok(board.includes('<a class="brand" href="/">'), 'the board itself by default');
+
+    await core.setSettings({ 'board.logoHref': 'https://hqtui.com' });
+    const away = await (await get('/', false)).text();
+    assert.ok(away.includes('<a class="brand" href="https://hqtui.com">'));
+    // Pointing the logo outward must not strand a reader: the first nav item is
+    // still the board's own front page.
+    assert.ok(away.includes('href="/"'), 'the nav still leads home');
+
+    await core.setSettings({ 'board.logoHref': '/' });
+  });
+
   it('applies board.theme to a reader with no cookie, and never over one with', async () => {
     await core.setSettings({ 'board.theme': 'dark' });
     const html = await (await get('/', false)).text();

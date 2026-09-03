@@ -25,6 +25,8 @@ export interface LayoutProps {
   logoUrl?: string;
   /** `board.faviconUrl`. Replaces the bundled icons when set. */
   faviconUrl?: string;
+  /** `board.logoHref`. Where the header brand points. Defaults to the board. */
+  logoHref?: string;
   /** The browser-chrome colour for the active skin, light and dark. */
   themeColor?: { light: string; dark: string };
   canonical?: string;
@@ -104,7 +106,7 @@ export function Layout(props: LayoutProps) {
     <div class="shell">
       <header class="site-header">
         <div class="container site-header-inner">
-          <a class="brand" href="/">
+          <a class="brand" href="${props.logoHref ?? '/'}">
             ${props.logoUrl
               ? html`<img class="brand-logo" src="${props.logoUrl}" alt="${props.boardName}" />`
               : html`<span class="brand-mark" aria-hidden="true">${props.boardName.slice(0, 1).toUpperCase()}</span>
