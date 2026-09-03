@@ -138,7 +138,7 @@ export async function resolvePermissions(
     }
   }
 
-  if (!viewer.groupIds.length) return base;
+  if (!viewer.groupIds.length) return applyMemberPosting(viewer, forum, base);
 
   // Levels, least specific first: board-wide, then each ancestor, then the
   // forum itself. Applying them in order means the last write wins, which is
@@ -187,7 +187,25 @@ export async function resolvePermissions(
 
   // A moderator's flag is a floor, never something a forum row can take away.
   if (viewer.isModerator) result.canModerate = true;
-  return result;
+  return applyMemberPosting(viewer, forum, result);
+}
+
+/**
+ * A forum's member-posting policy sits on top of whatever the group rows
+ * decided. It is applied here, inside the one resolver every route uses,
+ * rather than at each call site — so the page, the API and the terminal
+ * client cannot disagree about who may post. Staff are exempt: a moderator
+ * can always start a topic in a news forum to pin a notice above the feed.
+ */
+function applyMemberPosting(
+  viewer: Viewer,
+  forum: Forum | null,
+  permissions: Permissions,
+): Permissions {
+  const policy = forum?.memberPosting ?? 'topics';
+  if (policy === 'topics' || viewer.isAdmin || permissions.canModerate) return permissions;
+  if (policy === 'replies') return { ...permissions, canPost: false };
+  return { ...permissions, canPost: false, canReply: false };
 }
 
 /** The ids of every ancestor of a forum, outermost first. */

@@ -4,13 +4,26 @@ import { html, raw } from 'hono/html';
 import { all, now, one, run } from '@tsbb/db';
 import {
   allForums,
+  createFeedSource,
   createForum,
   DEFAULT_SETTINGS,
+  deleteFeedSource,
+  feedSourceById,
+  feedSourceCounts,
+  FeedSourceError,
+  fetchFeedSource,
+  forumById,
+  isMemberPosting,
+  listFeedSources,
   loadSettings,
+  MEMBER_POSTING,
   recountForum,
   setSettings,
   toInt,
   toBool,
+  updateFeedSource,
+  updateForum,
+  userByUsername,
 } from '@tsbb/core';
 import { escapeHtml } from '@tsbb/markup';
 import type { SettingSpec } from '@tsbb/plugin-api';
@@ -178,7 +191,10 @@ export function adminRoutes(services: Services) {
     { title: 'Signatures', keys: ['signatures.enabled', 'signatures.minPosts', 'signatures.maxLength'] },
     { title: 'Avatars', keys: ['avatars.enabled', 'avatars.allowUpload', 'avatars.allowGravatar', 'avatars.maxBytes'] },
     { title: 'Notifications', keys: ['notifications.emailEnabled', 'notifications.mentionsEnabled'] },
-    { title: 'Feeds and search', keys: ['feeds.enabled', 'feeds.itemLimit', 'search.enabled', 'search.minLength'] },
+    {
+      title: 'Feeds and search',
+      keys: ['feeds.enabled', 'feeds.itemLimit', 'feeds.importEnabled', 'search.enabled', 'search.minLength'],
+    },
   ];
 
   const HELP: Record<string, string> = {
@@ -197,6 +213,8 @@ export function adminRoutes(services: Services) {
       'How many posts before a signature is shown. A new account with a link-filled signature is the shape of every piece of forum spam, so this is 10 by default.',
     'posts.floodSeconds': 'Seconds between posts by the same account. 0 turns flood control off.',
     'posts.editWindowMinutes': 'How long an author may edit their own post. 0 means forever.',
+    'feeds.importEnabled':
+      'Whether the worker fetches the RSS and Atom feeds that fill forums. Which feeds fill which forum is set on each forum under Forums.',
   };
 
   app.get('/admin/settings', async (c) => {
@@ -239,6 +257,7 @@ export function adminRoutes(services: Services) {
 
   app.get('/admin/forums', async (c) => {
     const forums = await allForums();
+    const feedCounts = await feedSourceCounts();
     const byParent = new Map<number | null, typeof forums>();
     for (const forum of forums) {
       const list = byParent.get(forum.parentId) ?? [];
@@ -253,16 +272,21 @@ export function adminRoutes(services: Services) {
             <span style="padding-left:${depth * 1.25}rem">
               ${forum.kind === 'category' ? Badge('Category', 'secondary') : ''}
               <a href="/f/${forum.slug}">${forum.name}</a>
+              ${feedBadge(feedCounts.get(forum.id) ?? 0)}
+              ${forum.memberPosting !== 'topics' ? Badge(MEMBER_POSTING_LABEL[forum.memberPosting], 'outline') : ''}
             </span>
           </td>
           <td class="tiny muted">${forum.slug}</td>
           <td>${forum.topicCount}</td>
           <td>${forum.postCount}</td>
           <td>
-            <form method="post" action="/admin/forums/${forum.id}/delete"
-              onsubmit="return confirm('Delete ${escapeHtml(forum.name)} and everything in it?')">
-              ${Button('Delete', { type: 'submit', variant: 'ghost', size: 'sm' })}
-            </form>
+            <div class="row">
+              ${LinkButton('Edit', `/admin/forums/${forum.id}`, { variant: 'ghost', size: 'sm' })}
+              <form method="post" action="/admin/forums/${forum.id}/delete"
+                onsubmit="return confirm('Delete ${escapeHtml(forum.name)} and everything in it?')">
+                ${Button('Delete', { type: 'submit', variant: 'ghost', size: 'sm' })}
+              </form>
+            </div>
           </td>
         </tr>`,
         ...rows(forum.id, depth + 1),
@@ -317,6 +341,7 @@ export function adminRoutes(services: Services) {
                   <input class="input" id="position" name="position" type="number" value="0" style="width:6rem" />
                 </div>
               </div>
+              ${memberPostingField('topics')}
               ${Button('Add', { type: 'submit' })}
             </form>`)}`)}
         </div>
@@ -332,8 +357,206 @@ export function adminRoutes(services: Services) {
       kind: form.kind === 'category' ? 'category' : 'forum',
       parentId: form.parentId ? Number(form.parentId) : null,
       position: toInt(form.position, 0),
+      memberPosting: isMemberPosting(form.memberPosting) ? form.memberPosting : 'topics',
     });
     return c.redirect('/admin/forums', 303);
+  });
+
+  // --- One forum: its settings and the feeds that fill it ------------------
+
+  app.get('/admin/forums/:id', async (c) => {
+    const forum = await forumById(Number(c.req.param('id')));
+    if (!forum) return c.notFound();
+    const sources = forum.kind === 'forum' ? await listFeedSources(forum.id) : [];
+    const viewer = c.get('viewer');
+    const notice = c.req.query('notice');
+    const problem = c.req.query('error');
+
+    return page(
+      c,
+      forum.name,
+      html`
+        <div class="page-head">
+          <div>
+            <h1 class="page-title">${forum.name}</h1>
+            <p class="page-subtitle"><a href="/f/${forum.slug}">/f/${forum.slug}</a></p>
+          </div>
+          ${LinkButton('All forums', '/admin/forums', { variant: 'ghost', size: 'sm' })}
+        </div>
+        ${problem ? Alert(problem, { variant: 'destructive', title: 'That did not work' }) : ''}
+        ${notice ? Alert(notice, { variant: 'success' }) : ''}
+        <div class="stack">
+          ${Card(html`${CardHeader('Settings')}
+            ${CardContent(html`<form method="post" action="/admin/forums/${forum.id}" class="stack">
+              <div class="field">
+                <label class="label" for="name">Name</label>
+                <input class="input" id="name" name="name" required value="${forum.name}" />
+              </div>
+              <div class="field">
+                <label class="label" for="description">Description</label>
+                <input class="input" id="description" name="description" value="${forum.description ?? ''}" />
+              </div>
+              <div class="row">
+                <div class="field">
+                  <label class="label" for="position">Order</label>
+                  <input class="input" id="position" name="position" type="number" value="${forum.position}" style="width:6rem" />
+                </div>
+                <div class="checkbox-row">
+                  <input type="checkbox" id="isLocked" name="isLocked" ${forum.isLocked ? 'checked' : ''} />
+                  <div><label for="isLocked">Locked</label><div class="field-hint">Nothing new is posted here, by anyone or any feed.</div></div>
+                </div>
+                <div class="checkbox-row">
+                  <input type="checkbox" id="isHidden" name="isHidden" ${forum.isHidden ? 'checked' : ''} />
+                  <div><label for="isHidden">Hidden</label><div class="field-hint">Only staff see it.</div></div>
+                </div>
+              </div>
+              ${forum.kind === 'forum' ? memberPostingField(forum.memberPosting) : ''}
+              <div>${Button('Save', { type: 'submit' })}</div>
+            </form>`)}`)}
+          ${forum.kind === 'forum'
+            ? html`${Card(html`${CardHeader('Feeds that fill this forum', {
+                  description:
+                    'Each new item in the feed becomes a topic, posted by the account you choose. Members reply according to the posting rule above.',
+                })}
+                ${CardContent(
+                  sources.length
+                    ? html`<div class="table-wrap"><table class="table">
+                        <thead><tr><th>Feed</th><th>Posts as</th><th>Every</th><th>Last fetch</th><th>Topics</th><th></th></tr></thead>
+                        <tbody>${sources.map(
+                          (source) => html`<tr>
+                            <td>
+                              <div>${source.title ?? source.url}</div>
+                              <div class="tiny muted">${source.url}</div>
+                              ${source.isEnabled ? '' : html`<div>${Badge('Paused', 'secondary')}</div>`}
+                            </td>
+                            <td>${source.postAs ? html`<a href="/u/${source.postAs}">${source.postAs}</a>` : Badge('Account gone', 'destructive')}</td>
+                            <td class="small">${source.intervalMinutes} min, up to ${source.maxItems}</td>
+                            <td class="small">
+                              ${source.lastStatus === 'error'
+                                ? html`${Badge('Error', 'destructive')} <span class="tiny muted">${source.lastError ?? ''}</span>`
+                                : source.lastStatus
+                                  ? html`${Badge(source.lastStatus === 'ok' ? 'OK' : 'Unchanged', 'outline')} ${TimeAgo(source.fetchedAt)}`
+                                  : html`<span class="muted">Not yet</span>`}
+                            </td>
+                            <td>${source.itemCount}</td>
+                            <td>
+                              <div class="row">
+                                <form method="post" action="/admin/forums/${forum.id}/feeds/${source.id}/fetch">
+                                  ${Button('Fetch now', { type: 'submit', variant: 'ghost', size: 'sm' })}
+                                </form>
+                                <form method="post" action="/admin/forums/${forum.id}/feeds/${source.id}/toggle">
+                                  ${Button(source.isEnabled ? 'Pause' : 'Resume', { type: 'submit', variant: 'ghost', size: 'sm' })}
+                                </form>
+                                <form method="post" action="/admin/forums/${forum.id}/feeds/${source.id}/delete"
+                                  onsubmit="return confirm('Remove this feed? The topics it posted stay.')">
+                                  ${Button('Remove', { type: 'submit', variant: 'ghost', size: 'sm' })}
+                                </form>
+                              </div>
+                            </td>
+                          </tr>`,
+                        )}</tbody>
+                      </table></div>`
+                    : Empty('No feeds yet', 'Add an RSS or Atom feed below and its items become topics here.'),
+                  { flush: true },
+                )}`)}
+              ${Card(html`${CardHeader('Add a feed')}
+                ${CardContent(html`<form method="post" action="/admin/forums/${forum.id}/feeds">
+                  <div class="field">
+                    <label class="label" for="url">Feed URL</label>
+                    <input class="input" id="url" name="url" type="url" required placeholder="https://example.com/feed.xml" />
+                  </div>
+                  <div class="row">
+                    <div class="field grow">
+                      <label class="label" for="postAs">Post as</label>
+                      <input class="input" id="postAs" name="postAs" value="${viewer.user?.username ?? ''}" required />
+                      <div class="field-hint">A member's username. Topics appear under this account.</div>
+                    </div>
+                    <div class="field">
+                      <label class="label" for="intervalMinutes">Every (minutes)</label>
+                      <input class="input" id="intervalMinutes" name="intervalMinutes" type="number" value="30" min="5" style="width:8rem" />
+                    </div>
+                    <div class="field">
+                      <label class="label" for="maxItems">Items per fetch</label>
+                      <input class="input" id="maxItems" name="maxItems" type="number" value="10" min="1" max="100" style="width:8rem" />
+                      <div class="field-hint">The first fetch posts only this many; older items are skipped, not queued.</div>
+                    </div>
+                  </div>
+                  ${Button('Add feed', { type: 'submit' })}
+                </form>`)}`)}`
+            : ''}
+        </div>
+      `,
+    );
+  });
+
+  app.post('/admin/forums/:id', async (c) => {
+    const id = Number(c.req.param('id'));
+    const form = await c.req.parseBody();
+    const forum = await updateForum(id, {
+      name: String(form.name ?? '').trim().slice(0, 80) || undefined,
+      description: String(form.description ?? '').trim() || null,
+      position: toInt(form.position, 0),
+      isLocked: toBool(form.isLocked),
+      isHidden: toBool(form.isHidden),
+      memberPosting: isMemberPosting(form.memberPosting) ? form.memberPosting : undefined,
+    });
+    if (!forum) return c.notFound();
+    return c.redirect(`/admin/forums/${id}?notice=${encodeURIComponent('Saved.')}`, 303);
+  });
+
+  app.post('/admin/forums/:id/feeds', async (c) => {
+    const id = Number(c.req.param('id'));
+    const viewer = c.get('viewer');
+    const form = await c.req.parseBody();
+    const back = (query: string) => c.redirect(`/admin/forums/${id}?${query}`, 303);
+    try {
+      const postAs = await userByUsername(String(form.postAs ?? '').trim());
+      if (!postAs || postAs.isBanned) throw new FeedSourceError('Choose a member in good standing to post as.');
+      await createFeedSource({
+        forumId: id,
+        url: String(form.url ?? ''),
+        userId: postAs.id,
+        intervalMinutes: toInt(form.intervalMinutes, 30),
+        maxItems: toInt(form.maxItems, 10),
+        createdBy: viewer.user?.id ?? null,
+      });
+    } catch (error) {
+      if (error instanceof FeedSourceError) return back(`error=${encodeURIComponent(error.message)}`);
+      throw error;
+    }
+    return back(`notice=${encodeURIComponent('Feed added. It is fetched on the worker\'s next tick, or fetch it now.')}`);
+  });
+
+  app.post('/admin/forums/:id/feeds/:sourceId/fetch', async (c) => {
+    const id = Number(c.req.param('id'));
+    const source = await feedSourceById(Number(c.req.param('sourceId')));
+    if (!source || source.forumId !== id) return c.notFound();
+    const result = await fetchFeedSource(source, { baseUrl: services.baseUrl, bus: services.registry.bus });
+    const message =
+      result.status === 'error'
+        ? `error=${encodeURIComponent(result.error ?? 'The fetch failed.')}`
+        : `notice=${encodeURIComponent(
+            result.status === 'unchanged'
+              ? 'The feed has not changed since last time.'
+              : `Fetched. ${result.added} new topic${result.added === 1 ? '' : 's'}.`,
+          )}`;
+    return c.redirect(`/admin/forums/${id}?${message}`, 303);
+  });
+
+  app.post('/admin/forums/:id/feeds/:sourceId/toggle', async (c) => {
+    const id = Number(c.req.param('id'));
+    const source = await feedSourceById(Number(c.req.param('sourceId')));
+    if (!source || source.forumId !== id) return c.notFound();
+    await updateFeedSource(source.id, { isEnabled: !source.isEnabled });
+    return c.redirect(`/admin/forums/${id}`, 303);
+  });
+
+  app.post('/admin/forums/:id/feeds/:sourceId/delete', async (c) => {
+    const id = Number(c.req.param('id'));
+    const source = await feedSourceById(Number(c.req.param('sourceId')));
+    if (!source || source.forumId !== id) return c.notFound();
+    await deleteFeedSource(source.id);
+    return c.redirect(`/admin/forums/${id}`, 303);
   });
 
   app.post('/admin/forums/:id/delete', async (c) => {
@@ -653,6 +876,37 @@ interface UserRow {
   is_moderator: number;
   is_banned: number;
   created_at: number;
+}
+
+const MEMBER_POSTING_LABEL: Record<(typeof MEMBER_POSTING)[number], string> = {
+  topics: 'Members start topics and reply',
+  replies: 'Members reply only',
+  none: 'Members read only',
+};
+
+function feedBadge(count: number) {
+  return count ? Badge(`${count} feed${count === 1 ? '' : 's'}`, 'outline') : '';
+}
+
+/**
+ * Who may write in a forum. It is a policy on the forum rather than a
+ * permission row per group, so it reads the same whichever groups the board
+ * has — and staff are always exempt, so a moderator can pin a notice above
+ * whatever a feed is posting.
+ */
+function memberPostingField(current: string) {
+  return html`<div class="field">
+    <label class="label" for="memberPosting">Member posting</label>
+    <select class="select" id="memberPosting" name="memberPosting">
+      ${MEMBER_POSTING.map(
+        (value) => html`<option value="${value}" ${value === current ? 'selected' : ''}>${MEMBER_POSTING_LABEL[value]}</option>`,
+      )}
+    </select>
+    <div class="field-hint">
+      Reply only suits a forum that a feed fills: the stories arrive on their own and members discuss them.
+      Staff can always post.
+    </div>
+  </div>`;
 }
 
 /** A board setting rendered from the type of its default value. */

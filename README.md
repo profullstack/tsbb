@@ -31,7 +31,7 @@ Open <http://localhost:3000>, put in your email address, and click the link.
 | **Notifications** | Replies to topics you follow, mentions, quotes, private messages — in an inbox and by email, batched so six replies are one message. |
 | **Moderation** | Reports, a moderation log, warnings, bans by pattern, hidden vs deleted as separate states with separate owners. |
 | **Search** | SQLite FTS5 with titles weighted above bodies, so searching a topic's name finds the topic. |
-| **Feeds** | RSS for the board and for every forum, permission-checked exactly as the page is. |
+| **Feeds** | RSS for the board and for every forum, permission-checked exactly as the page is. And the other way round: a forum can be filled from RSS or Atom feeds, with members allowed to start topics, only reply, or only read. |
 | **Ads** | The [CrawlProof](https://crawlproof.com/ads) ad network, on by default, in one CSP-safe iframe. |
 | **A terminal client** | `tsbb-tui` — read and post against any board over SSH. |
 | **An API** | A permission-checked REST API with an OpenAPI description at `/api/v1/openapi.json`. |

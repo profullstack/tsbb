@@ -10,3 +10,5 @@ export * from './posts.ts';
 export * from './notifications.ts';
 export * from './auth.ts';
 export * from './search.ts';
+export * from './feed-parser.ts';
+export * from './feed-sources.ts';

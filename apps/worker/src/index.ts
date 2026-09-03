@@ -5,11 +5,13 @@ import {
   markEmailFailed,
   markEmailSent,
   markNotificationsEmailed,
+  pollFeedSources,
   pruneExpired,
   queueEmail,
   unemailedNotifications,
 } from '@tsbb/core';
 import { notificationEmail, transport, type NotificationLine } from '@tsbb/mail';
+import type { HookBus } from '@tsbb/plugin-host';
 
 /**
  * The background worker: turns unread notifications into email, drains the mail
@@ -25,6 +27,8 @@ const TICK_MS = 15_000;
 export interface WorkerOptions {
   baseUrl: string;
   intervalMs?: number;
+  /** The plugin bus, so a topic a feed posts runs the same hooks as one a member posts. */
+  bus?: HookBus;
 }
 
 /**
@@ -130,7 +134,7 @@ export async function drainMailQueue(): Promise<{ sent: number; failed: number }
   return { sent, failed };
 }
 
-export async function tick(baseUrl: string): Promise<void> {
+export async function tick(baseUrl: string, bus?: HookBus): Promise<void> {
   try {
     await fanOutNotificationEmails(baseUrl);
     const result = await drainMailQueue();
@@ -140,6 +144,19 @@ export async function tick(baseUrl: string): Promise<void> {
   } catch (error) {
     // A worker that dies on one bad row stops delivering everything.
     console.error('[worker] tick failed:', error);
+  }
+
+  // Feeds are polled after the mail, and separately guarded: a slow feed host
+  // must never be the reason a magic-link email was late.
+  try {
+    const feeds = await pollFeedSources({ baseUrl, bus });
+    if (feeds.fetched) {
+      console.log(
+        `[worker] feeds fetched=${feeds.fetched} topics=${feeds.added} errors=${feeds.errors}`,
+      );
+    }
+  } catch (error) {
+    console.error('[worker] feed poll failed:', error);
   }
 }
 
@@ -151,7 +168,7 @@ export function startWorker(options: WorkerOptions): { stop: () => void } {
 
   const loop = async () => {
     if (stopped) return;
-    await tick(options.baseUrl);
+    await tick(options.baseUrl, options.bus);
 
     // Pruning is hourly, not every tick: it scans, and nothing depends on it
     // being prompt.
