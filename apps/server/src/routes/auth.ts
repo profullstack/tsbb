@@ -138,7 +138,13 @@ export function authRoutes(services: Services) {
   app.post('/prefs/theme', async (c) => {
     const form = await c.req.parseBody();
     const choice = String(form.theme ?? 'system');
-    if (choice === 'light' || choice === 'dark') {
+    /*
+     * All three choices are STORED, 'system' included. Deleting the cookie
+     * instead would be the same thing only on a board whose own default is
+     * 'system': on a board that defaults to dark, "follow the system" would
+     * fall straight back to dark and the toggle would look broken.
+     */
+    if (choice === 'light' || choice === 'dark' || choice === 'system') {
       setCookie(c, THEME_COOKIE, choice, { path: '/', maxAge: 31_536_000, sameSite: 'Lax' });
     } else {
       deleteCookie(c, THEME_COOKIE, { path: '/' });

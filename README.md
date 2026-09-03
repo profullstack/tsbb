@@ -75,6 +75,48 @@ the only tags that can appear are ones the renderer writes literally. Raw HTML i
 a post is content, not markup. There is no sanitiser to bypass because there is
 no path from input to a tag.
 
+## Skins and branding
+
+A board picks a skin in **Admin -> Board settings -> Appearance**. Every skin
+renders the same markup, so switching one is a stylesheet change and nothing
+else.
+
+| Skin | |
+|---|---|
+| `modern` | Cards, generous spacing, soft shadows. The default. |
+| `classic` | A 2000s bulletin board: boxy, dense, gradient title bars, Verdana. |
+| `terminal` | Neutral surfaces, hairline rules, monospace chrome, window furniture on section headers. |
+
+`classic` and `terminal` are **layers on top of** the modern sheet rather than
+replacements, so a component's structure is defined in exactly one place and a
+skin only argues about how it looks. Two full stylesheets drift apart within a
+week.
+
+Four settings sit beside the skin:
+
+| Setting | |
+|---|---|
+| `board.accent` | One hex colour. Links, buttons, focus rings and highlights follow it. |
+| `board.theme` | What a reader who has never touched the theme toggle sees: `system`, `light` or `dark`. |
+| `board.logoUrl` | Your own artwork in the header, replacing the generated letter mark. |
+| `board.faviconUrl` | Your own browser-tab icon. |
+
+Two things about the accent are worth knowing, because both are the difference
+between a setting that works and one that looks broken on half the boards that
+use it.
+
+It is **derived, not stored twice**. An accent legible on a dark board is
+usually illegible on a light one — a neon green reads beautifully on near-black
+and vanishes on white — so the hue you choose is emitted darkened for the light
+theme and brightened for the dark one. One setting, readable in both.
+
+And it is **baked into the stylesheet**, not written as an inline `<style>`.
+The board's Content-Security-Policy has no `unsafe-inline` in `style-src`, and
+widening a policy for a handful of custom properties is a poor trade. Because
+the sheet is served under a content hash, changing the accent changes the URL,
+so the new colour reaches a returning reader immediately instead of waiting out
+a year-long `max-age`.
+
 ## Plugins
 
 Plugins are first-class, not an afterthought. A plugin is a directory in

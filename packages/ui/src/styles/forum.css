@@ -73,6 +73,19 @@
   box-shadow: var(--glow-primary);
 }
 
+/*
+ * A board that has set board.logoUrl renders its own artwork here instead of
+ * the generated letter mark. Capped in height rather than width so a wordmark
+ * and a square mark both land on the same 3.5rem header without the board
+ * having to supply a particular aspect ratio.
+ */
+.brand-logo {
+  height: 1.75rem;
+  width: auto;
+  max-width: 12rem;
+  object-fit: contain;
+}
+
 .site-nav {
   display: flex;
   align-items: center;
@@ -571,6 +584,9 @@
   color: var(--muted-foreground);
 }
 .site-footer a { color: var(--muted-foreground); }
+/* An icon beside its label. This cannot be a style attribute: style-src has no
+   'unsafe-inline', and that governs attributes too. */
+.footer-link { display: inline-flex; align-items: center; gap: 0.3rem; }
 .site-footer a:hover { color: var(--foreground); }
 
 /* --- Admin --------------------------------------------------------------- */

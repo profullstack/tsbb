@@ -24,6 +24,7 @@ import {
   CardHeader,
   Empty,
   LinkButton,
+  SKINS,
   TimeAgo,
 } from '@tsbb/ui';
 import { render, slot, type AppEnv, type Services } from '../context.ts';
@@ -160,7 +161,11 @@ export function adminRoutes(services: Services) {
   // --- Board settings -----------------------------------------------------
 
   const SETTING_GROUPS: { title: string; keys: string[] }[] = [
-    { title: 'Identity', keys: ['board.name', 'board.tagline', 'board.description', 'board.skin'] },
+    { title: 'Identity', keys: ['board.name', 'board.tagline', 'board.description'] },
+    {
+      title: 'Appearance',
+      keys: ['board.skin', 'board.theme', 'board.accent', 'board.logoUrl', 'board.faviconUrl'],
+    },
     { title: 'Registration', keys: ['registration.mode', 'registration.minUsernameLength', 'registration.maxUsernameLength'] },
     { title: 'Posting', keys: ['posts.defaultFormat', 'posts.perPage', 'posts.minLength', 'posts.maxLength', 'posts.editWindowMinutes', 'posts.floodSeconds', 'topics.perPage', 'topics.titleMaxLength'] },
     { title: 'Signatures', keys: ['signatures.enabled', 'signatures.minPosts', 'signatures.maxLength'] },
@@ -171,7 +176,14 @@ export function adminRoutes(services: Services) {
 
   const HELP: Record<string, string> = {
     'board.skin':
-      'modern is cards and generous spacing. classic is a 2000s bulletin board: boxy, dense, gradient title bars. Same board either way — only the stylesheet changes.',
+      'modern is cards and generous spacing. classic is a 2000s bulletin board: boxy, dense, gradient title bars. terminal is neutral surfaces, hairline rules and monospace chrome. Same board either way — only the stylesheet changes.',
+    'board.theme':
+      'What a reader who has never touched the theme toggle sees. system follows their operating system. Anyone who does use the toggle keeps their own choice either way.',
+    'board.accent':
+      'One hex colour, like #5fff87. Links, buttons and highlights follow it, and it is darkened for the light theme and brightened for the dark one so it stays legible in both. Empty means the built-in palette.',
+    'board.logoUrl':
+      'A URL to your own artwork. It replaces the generated letter mark and the board name in the header, so use a wordmark rather than a bare icon.',
+    'board.faviconUrl': 'A URL to a browser-tab icon. Replaces the bundled tsbb icons.',
     'signatures.minPosts':
       'How many posts before a signature is shown. A new account with a link-filled signature is the shape of every piece of forum spam, so this is 10 by default.',
     'posts.floodSeconds': 'Seconds between posts by the same account. 0 turns flood control off.',
@@ -645,13 +657,20 @@ function settingField(key: string, value: unknown, help?: string) {
       <div><label for="${key}">${label}</label>${help ? html`<div class="field-hint">${help}</div>` : ''}</div>
     </div>`;
   }
-  if (key === 'posts.defaultFormat' || key === 'registration.mode' || key === 'board.skin') {
+  if (
+    key === 'posts.defaultFormat' ||
+    key === 'registration.mode' ||
+    key === 'board.skin' ||
+    key === 'board.theme'
+  ) {
     const options =
       key === 'posts.defaultFormat'
         ? ['markdown', 'bbcode']
         : key === 'board.skin'
-          ? ['modern', 'classic']
-          : ['open', 'invite', 'closed'];
+          ? [...SKINS]
+          : key === 'board.theme'
+            ? ['system', 'light', 'dark']
+            : ['open', 'invite', 'closed'];
     return html`<div class="field">
       <label class="label" for="${key}">${label}</label>
       <select class="select" id="${key}" name="${key}">
