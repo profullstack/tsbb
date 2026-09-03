@@ -7,6 +7,7 @@ export * from './permissions.ts';
 export * from './forums.ts';
 export * from './topics.ts';
 export * from './reads.ts';
+export * from './updates.ts';
 export * from './posts.ts';
 export * from './notifications.ts';
 export * from './auth.ts';

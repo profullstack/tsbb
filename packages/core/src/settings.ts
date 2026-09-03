@@ -95,6 +95,14 @@ export const DEFAULT_SETTINGS = {
 
   'privacy.showEmailToStaff': true,
   'privacy.storeIpHashes': true,
+
+  /**
+   * Whether the board installs a new release itself. On by default: the
+   * alternative is every self-hosted board drifting a version further behind
+   * with each release until something breaks. An administrator turns it off
+   * here; a container ignores it, since an image cannot move itself.
+   */
+  'updates.auto': true,
 } as const;
 
 export type SettingKey = keyof typeof DEFAULT_SETTINGS;

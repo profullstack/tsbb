@@ -234,6 +234,7 @@ tsbb init                    Create .env, migrate and seed a new board
 tsbb serve [--port N]        Run the board (it migrates at boot)
 tsbb worker                  Run the mail worker separately
 tsbb status                  What this board is and how big it is
+tsbb update [--check]        Install the newest release, or just report it
 tsbb admin <email>           Make somebody an administrator
 tsbb invite <email>          Email somebody a sign-in link
 tsbb plugin ls|enable|disable
@@ -263,8 +264,36 @@ one with a fresh session secret and whatever you already had set.
 | `RESEND_API_KEY` / `SMTP_URL` | — | For the matching transport |
 | `TSBB_PLUGIN_DIR` | `./plugins` | Extra plugins, on top of the bundled ones |
 | `TSBB_WORKER` | in-process | Set to `external` to run the worker yourself |
+| `TSBB_UPDATES` | on | Set to `off` and the board never checks for a release |
+| `TSBB_RESTART` | `respawn` | `exit` under a supervisor that restarts the process itself |
+| `TSBB_UPDATE_REPO` | `profullstack/tsbb` | A fork that publishes its own releases |
 
 The worker runs inside the server by default, so email works from one command.
+
+## Updates
+
+A board keeps itself current. A minute after it starts, and every five minutes
+after that, it asks GitHub for the newest release; when there is one it fetches
+the tag, runs `pnpm install`, and restarts itself. The whole thing is the three
+commands you would otherwise type, and a self-hosted board that nobody types
+them for is how every forum ends up three years behind.
+
+It is on by default and an administrator can turn it off under **Board
+settings → Updates**. The overview page always shows what is running, what is
+out, and a **Check now** button; with automatic updates off it also offers
+**Update now**, and `tsbb update` does the same from a shell.
+
+Two things it will not do. It never touches a checkout with local changes —
+that is somebody's work, and it stops and says so. And it never updates a
+container: the Docker image has no `.git` to move, so a board on Railway, Fly
+or a plain `docker run` sees the notice and is updated by redeploying the image,
+which is how those platforms expect it anyway.
+
+On restart the board spawns a fresh copy of itself with the same command line
+and exits, so `pnpm start` in a terminal or under nohup carries on with the new
+code. Under systemd, pm2 or anything else that restarts a process when it
+exits, set `TSBB_RESTART=exit` and `Restart=always`, so the supervisor's copy
+is the only one.
 
 ## Layout
 
