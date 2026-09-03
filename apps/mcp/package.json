@@ -1,6 +1,6 @@
 {
   "name": "@profullstack/tsbb-mcp",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "MCP server for a tsbb bulletin board. Lets an AI assistant read and post on any board, as the member whose token it holds.",
   "type": "module",
   "license": "MIT",
