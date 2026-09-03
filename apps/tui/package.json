@@ -1,6 +1,6 @@
 {
   "name": "@profullstack/tsbb-tui",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Terminal client for a tsbb bulletin board. Reads and posts against any centralised install.",
   "type": "module",
   "license": "MIT",
