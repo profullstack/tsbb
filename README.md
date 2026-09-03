@@ -267,6 +267,7 @@ one with a fresh session secret and whatever you already had set.
 | `TSBB_UPDATES` | on | Set to `off` and the board never checks for a release |
 | `TSBB_RESTART` | `respawn` | `exit` under a supervisor that restarts the process itself |
 | `TSBB_UPDATE_REPO` | `profullstack/tsbb` | A fork that publishes its own releases |
+| `TSBB_CHECKOUT_DIR` | — | A directory on a volume; the container runs, and updates, a checkout there |
 
 The worker runs inside the server by default, so email works from one command.
 
@@ -284,10 +285,19 @@ out, and a **Check now** button; with automatic updates off it also offers
 **Update now**, and `tsbb update` does the same from a shell.
 
 Two things it will not do. It never touches a checkout with local changes —
-that is somebody's work, and it stops and says so. And it never updates a
-container: the Docker image has no `.git` to move, so a board on Railway, Fly
-or a plain `docker run` sees the notice and is updated by redeploying the image,
-which is how those platforms expect it anyway.
+that is somebody's work, and it stops and says so. And it never updates an
+image: the Docker image has no `.git` to move, so a board running the image's
+own code sees the notice and is updated by redeploying, which is how those
+platforms expect it anyway.
+
+A container *can* keep itself current if it has a volume. Set
+`TSBB_CHECKOUT_DIR` to a directory on it (`/app/data/app`, say) and the
+container clones the repository there on first boot — at the image's own
+commit, with dependencies linked from the image's package store, so the first
+start is as fast as any other — and runs from that checkout instead. Each release is then
+fetched into the volume and the server restarted from it, and a container
+restart comes back on the release it had, not the image it was built from.
+`bbs.hqtui.com` runs this way.
 
 On restart the board spawns a fresh copy of itself with the same command line
 and exits, so `pnpm start` in a terminal or under nohup carries on with the new
