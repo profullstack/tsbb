@@ -99,6 +99,7 @@ Four settings sit beside the skin:
 | `board.accent` | One hex colour. Links, buttons, focus rings and highlights follow it. |
 | `board.theme` | What a reader who has never touched the theme toggle sees: `system`, `light` or `dark`. |
 | `board.logoUrl` | Your own artwork in the header, replacing the generated letter mark. |
+| `board.logoHref` | Where that logo points. `/` is the board; an absolute URL is for a board that is one room in a larger site. |
 | `board.faviconUrl` | Your own browser-tab icon. |
 
 Two things about the accent are worth knowing, because both are the difference

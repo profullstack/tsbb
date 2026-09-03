@@ -164,7 +164,14 @@ export function adminRoutes(services: Services) {
     { title: 'Identity', keys: ['board.name', 'board.tagline', 'board.description'] },
     {
       title: 'Appearance',
-      keys: ['board.skin', 'board.theme', 'board.accent', 'board.logoUrl', 'board.faviconUrl'],
+      keys: [
+        'board.skin',
+        'board.theme',
+        'board.accent',
+        'board.logoUrl',
+        'board.logoHref',
+        'board.faviconUrl',
+      ],
     },
     { title: 'Registration', keys: ['registration.mode', 'registration.minUsernameLength', 'registration.maxUsernameLength'] },
     { title: 'Posting', keys: ['posts.defaultFormat', 'posts.perPage', 'posts.minLength', 'posts.maxLength', 'posts.editWindowMinutes', 'posts.floodSeconds', 'topics.perPage', 'topics.titleMaxLength'] },
@@ -183,6 +190,8 @@ export function adminRoutes(services: Services) {
       'One hex colour, like #5fff87. Links, buttons and highlights follow it, and it is darkened for the light theme and brightened for the dark one so it stays legible in both. Empty means the built-in palette.',
     'board.logoUrl':
       'A URL to your own artwork. It replaces the generated letter mark and the board name in the header, so use a wordmark rather than a bare icon.',
+    'board.logoHref':
+      'Where the header logo points. / is this board. An absolute URL is for a board that is one room in a larger site — the nav still leads back to the front page, so nobody is stranded.',
     'board.faviconUrl': 'A URL to a browser-tab icon. Replaces the bundled tsbb icons.',
     'signatures.minPosts':
       'How many posts before a signature is shown. A new account with a link-filled signature is the shape of every piece of forum spam, so this is 10 by default.',

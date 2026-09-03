@@ -150,6 +150,7 @@ export async function render(
     unread,
     stylesheetUrl: stylesheetUrl(skin, brandOf(settings as Record<string, unknown>)),
     logoUrl: urlSetting(settings as Record<string, unknown>, 'board.logoUrl'),
+    logoHref: urlSetting(settings as Record<string, unknown>, 'board.logoHref'),
     faviconUrl: urlSetting(settings as Record<string, unknown>, 'board.faviconUrl'),
     themeColor: SKIN_THEME_COLOR[skin],
     canonical: options.canonical ?? new URL(url.pathname, services.baseUrl).toString(),

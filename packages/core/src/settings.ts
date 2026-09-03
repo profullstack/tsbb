@@ -25,6 +25,14 @@ export const DEFAULT_SETTINGS = {
   'board.accent': '',
   /** Artwork for the header, replacing the generated letter mark. */
   'board.logoUrl': '',
+  /**
+   * Where the header brand points. '/' is the board, which is what almost
+   * every board wants; an absolute URL is for a board that is one room in a
+   * larger site and whose logo should lead back to it. The nav's first item is
+   * the board's own front page either way, so pointing the logo outward never
+   * leaves a reader with no way back.
+   */
+  'board.logoHref': '/',
   /** A browser-tab icon, replacing the bundled ones. */
   'board.faviconUrl': '',
 
