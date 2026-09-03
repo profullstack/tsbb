@@ -86,6 +86,12 @@ export const DEFAULT_SETTINGS = {
 
   'feeds.enabled': true,
   'feeds.itemLimit': 50,
+  /**
+   * The board-wide switch for forums that are filled from RSS or Atom feeds.
+   * Which feeds fill which forum is configured per forum; this only stops the
+   * worker fetching any of them.
+   */
+  'feeds.importEnabled': true,
 
   'privacy.showEmailToStaff': true,
   'privacy.storeIpHashes': true,

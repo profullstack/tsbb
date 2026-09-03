@@ -1,5 +1,5 @@
 import { all, now, one, run } from '@tsbb/db';
-import type { Forum, Id, Viewer } from '@tsbb/plugin-api';
+import type { Forum, Id, MemberPosting, Viewer } from '@tsbb/plugin-api';
 import { ancestryOf, parentMap, resolvePermissions } from './permissions.ts';
 import { slugify } from './util.ts';
 
@@ -16,11 +16,18 @@ export interface ForumRow {
   position: number;
   is_locked: number;
   is_hidden: number;
+  member_posting: string;
   topic_count: number;
   post_count: number;
   last_post_id: number | null;
   last_post_at: number | null;
   created_at: number;
+}
+
+export const MEMBER_POSTING: MemberPosting[] = ['topics', 'replies', 'none'];
+
+export function isMemberPosting(value: unknown): value is MemberPosting {
+  return typeof value === 'string' && (MEMBER_POSTING as string[]).includes(value);
 }
 
 export function toForum(row: ForumRow): Forum {
@@ -37,6 +44,7 @@ export function toForum(row: ForumRow): Forum {
     position: row.position,
     isLocked: row.is_locked === 1,
     isHidden: row.is_hidden === 1,
+    memberPosting: isMemberPosting(row.member_posting) ? row.member_posting : 'topics',
     topicCount: row.topic_count,
     postCount: row.post_count,
     lastPostAt: row.last_post_at,
@@ -159,11 +167,12 @@ export async function createForum(input: {
   description?: string;
   position?: number;
   slug?: string;
+  memberPosting?: MemberPosting;
 }): Promise<Forum> {
   const slug = await uniqueForumSlug(input.slug ?? slugify(input.name, 'forum'));
   const result = await run(
-    `INSERT INTO forums (parent_id, kind, slug, name, description, position, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING *`,
+    `INSERT INTO forums (parent_id, kind, slug, name, description, position, member_posting, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?) RETURNING *`,
     [
       input.parentId ?? null,
       input.kind ?? 'forum',
@@ -171,10 +180,56 @@ export async function createForum(input: {
       input.name,
       input.description ?? null,
       input.position ?? 0,
+      isMemberPosting(input.memberPosting) ? input.memberPosting : 'topics',
       now(),
     ],
   );
   return toForum(result.rows[0] as unknown as ForumRow);
+}
+
+/** Change what an administrator may change about a forum after it exists. */
+export async function updateForum(
+  id: Id,
+  patch: Partial<{
+    name: string;
+    description: string | null;
+    position: number;
+    isLocked: boolean;
+    isHidden: boolean;
+    memberPosting: MemberPosting;
+  }>,
+): Promise<Forum | null> {
+  const sets: string[] = [];
+  const values: unknown[] = [];
+  if (patch.name !== undefined) {
+    sets.push('name = ?');
+    values.push(patch.name);
+  }
+  if (patch.description !== undefined) {
+    sets.push('description = ?');
+    values.push(patch.description);
+  }
+  if (patch.position !== undefined) {
+    sets.push('position = ?');
+    values.push(patch.position);
+  }
+  if (patch.isLocked !== undefined) {
+    sets.push('is_locked = ?');
+    values.push(patch.isLocked ? 1 : 0);
+  }
+  if (patch.isHidden !== undefined) {
+    sets.push('is_hidden = ?');
+    values.push(patch.isHidden ? 1 : 0);
+  }
+  if (patch.memberPosting !== undefined && isMemberPosting(patch.memberPosting)) {
+    sets.push('member_posting = ?');
+    values.push(patch.memberPosting);
+  }
+  if (sets.length) {
+    values.push(id);
+    await run(`UPDATE forums SET ${sets.join(', ')} WHERE id = ?`, values as never);
+  }
+  return forumById(id);
 }
 
 async function uniqueForumSlug(base: string): Promise<string> {

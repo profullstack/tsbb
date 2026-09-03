@@ -130,15 +130,22 @@ export interface CreateTopicInput {
   format?: BodyFormat;
   ip?: string | null;
   bus?: HookBus;
+  /**
+   * 'feed' when a feed source is posting on an account's behalf. Flood control
+   * is skipped — ten stories arriving in one fetch is the normal case, not a
+   * flood — and the account is not subscribed to every topic it relays.
+   */
+  origin?: 'member' | 'feed';
 }
 
 export async function createTopic(input: CreateTopicInput): Promise<{ topic: Topic; post: Post }> {
   const settings = await loadSettings();
   const viewer = input.viewer;
+  const fromFeed = input.origin === 'feed';
   if (!viewer.user) throw new PostError('Sign in to post.', 'forbidden');
   if (input.forum.isLocked) throw new PostError('This forum is locked.', 'locked');
 
-  await checkFlood(viewer.user.id, Number(settings['posts.floodSeconds'] ?? 15));
+  if (!fromFeed) await checkFlood(viewer.user.id, Number(settings['posts.floodSeconds'] ?? 15));
 
   const maxTitle = Number(settings['topics.titleMaxLength'] ?? 160);
   let title = input.title.trim().replace(/\s+/g, ' ').slice(0, maxTitle);
@@ -185,10 +192,17 @@ export async function createTopic(input: CreateTopicInput): Promise<{ topic: Top
   await recountTopic(topicId);
   await recountForum(input.forum.id);
   await recountUser(viewer.user.id);
-  await audit({ userId: viewer.user.id, action: 'topic.create', targetType: 'topic', targetId: topicId, ip: input.ip });
+  await audit({
+    userId: viewer.user.id,
+    action: 'topic.create',
+    targetType: 'topic',
+    targetId: topicId,
+    ip: input.ip,
+    detail: fromFeed ? { origin: 'feed' } : undefined,
+  });
 
   // The author of a topic is subscribed to it unless they have said otherwise.
-  if (settings['notifications.emailEnabled'] !== false) {
+  if (!fromFeed && settings['notifications.emailEnabled'] !== false) {
     await run(
       `INSERT INTO subscriptions (user_id, target_type, target_id, created_at)
        SELECT ?, 'topic', ?, ?

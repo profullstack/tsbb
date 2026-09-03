@@ -41,7 +41,7 @@ export async function boot(options: { port?: number; listen?: boolean } = {}) {
    * want it on its own box, and run `pnpm worker` there instead.
    */
   if (process.env.TSBB_WORKER !== 'external') {
-    startWorker({ baseUrl });
+    startWorker({ baseUrl, bus: registry.bus });
     console.log('[tsbb] worker running in-process');
   }
 

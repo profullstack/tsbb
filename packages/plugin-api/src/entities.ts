@@ -9,6 +9,12 @@ export type Timestamp = number;
 
 export type BodyFormat = 'markdown' | 'bbcode';
 export type ForumKind = 'category' | 'forum' | 'link';
+/**
+ * Who may write in a forum, on top of group permissions:
+ * 'topics' — members start topics and reply; 'replies' — members may only
+ * reply, so topics come from feeds and staff; 'none' — members only read.
+ */
+export type MemberPosting = 'topics' | 'replies' | 'none';
 export type TopicKind = 'normal' | 'sticky' | 'announcement' | 'global';
 export type AvatarKind = 'none' | 'upload' | 'gravatar' | 'identicon';
 
@@ -49,6 +55,7 @@ export interface Forum {
   position: number;
   isLocked: boolean;
   isHidden: boolean;
+  memberPosting: MemberPosting;
   topicCount: number;
   postCount: number;
   lastPostAt: Timestamp | null;

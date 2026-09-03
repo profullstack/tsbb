@@ -158,8 +158,15 @@ export function PostArticle(options: {
   topicId: number;
   viewer: Viewer;
   number: number;
+  /**
+   * Whether this viewer may reply in this topic. The per-post Reply and Quote
+   * links follow it, so a read-only forum or a locked topic shows no link
+   * that only leads to a refusal.
+   */
+  canReply?: boolean;
 }) {
   const { post, topicSlug, topicId, viewer } = options;
+  const canReply = options.canReply ?? true;
   const permalink = `/t/${topicSlug}-${topicId}/p/${post.id}`;
   const classNames = ['post', post.isHidden ? 'is-hidden' : '', post.isSolution ? 'is-solution' : '']
     .filter(Boolean)
@@ -211,8 +218,10 @@ export function PostArticle(options: {
                     ♥ ${post.reactionCount > 0 ? post.reactionCount : ''}
                   </button>
                 </form>
-                <a class="btn btn-ghost btn-sm" href="/t/${topicSlug}-${topicId}/reply?to=${post.id}">${IconReply()} Reply</a>
-                <a class="btn btn-ghost btn-sm" href="/t/${topicSlug}-${topicId}/reply?quote=${post.id}">${IconQuote()} Quote</a>`
+                ${canReply
+                  ? html`<a class="btn btn-ghost btn-sm" href="/t/${topicSlug}-${topicId}/reply?to=${post.id}">${IconReply()} Reply</a>
+                      <a class="btn btn-ghost btn-sm" href="/t/${topicSlug}-${topicId}/reply?quote=${post.id}">${IconQuote()} Quote</a>`
+                  : ''}`
             : post.reactionCount > 0
               ? html`<span class="btn btn-ghost btn-sm" aria-disabled="true">♥ ${post.reactionCount}</span>`
               : ''}

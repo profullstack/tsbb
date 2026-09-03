@@ -167,7 +167,14 @@ export function boardRoutes(services: Services) {
         CardContent(
           topics.length
             ? topics.map((t) => TopicRow(t))
-            : Empty('No topics here yet', permissions.canPost ? 'Be the first to post.' : undefined),
+            : Empty(
+                'No topics here yet',
+                permissions.canPost
+                  ? 'Be the first to post.'
+                  : forum.memberPosting !== 'topics'
+                    ? 'Topics here are posted by the board, not by members.'
+                    : undefined,
+              ),
           { flush: true },
         ),
       )}
@@ -447,6 +454,7 @@ async function topicPage(c: Context<AppEnv>, services: Services) {
         topicId: topic.id,
         viewer,
         number: (page - 1) * perPage + i + 1,
+        canReply: permissions.canReply && !topic.isLocked,
       })}${i < views.length - 1 ? trusted(betweenPosts[i] ?? '') : ''}`,
     )}
     ${Pagination(page, pages, (p) => `/t/${canonicalHandle}?page=${p}`)}
