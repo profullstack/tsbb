@@ -24,14 +24,14 @@ import { render, type AppEnv, type Services } from '../context.ts';
 const HERE = dirname(fileURLToPath(import.meta.url));
 const DOCS_DIR = resolve(HERE, '../../../../docs');
 
-interface Doc {
+export interface Doc {
   slug: string;
   file: string;
   /** Shown on the index. The <h1> comes from the file itself. */
   blurb: string;
 }
 
-const DOCS: Doc[] = [
+export const DOCS: Doc[] = [
   {
     slug: 'api',
     file: 'API.md',
@@ -175,6 +175,19 @@ function load(doc: Doc): Rendered | null {
   };
   cache.set(doc.slug, rendered);
   return rendered;
+}
+
+/**
+ * A document as written, links rewritten to site paths, for /llms-full.txt.
+ * Markdown is what a language model wants; the rendered HTML would only have
+ * to be turned back into it.
+ */
+export function docMarkdown(doc: Doc): string | null {
+  try {
+    return rewriteLinks(readFileSync(join(DOCS_DIR, doc.file), 'utf8'));
+  } catch {
+    return null;
+  }
 }
 
 export function docsRoutes(services: Services) {

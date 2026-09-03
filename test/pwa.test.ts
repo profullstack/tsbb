@@ -83,7 +83,13 @@ describe('the PWA', () => {
     const page = await get('/');
     const html = await page.text();
     assert.ok(html.includes('src="/register-sw.js"'));
-    assert.ok(!/<script(?![^>]*src=)/.test(html), 'no inline script anywhere in the document');
+    // A JSON-LD data block is a <script> element that is not a script: the
+    // browser never runs it and script-src does not govern it. Every other
+    // <script> must load from a file.
+    assert.ok(
+      !/<script(?![^>]*src=)(?![^>]*type="application\/ld\+json")/.test(html),
+      'no inline script anywhere in the document',
+    );
 
     const csp = page.headers.get('content-security-policy') ?? '';
     assert.match(csp, /script-src 'self'/);

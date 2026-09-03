@@ -10,6 +10,7 @@ import { pwaRoutes } from './routes/pwa.ts';
 import { apiRoutes } from './routes/api.ts';
 import { boardRoutes } from './routes/board.ts';
 import { discoverRoutes } from './routes/discover.ts';
+import { discoveryRoutes } from './routes/discovery.ts';
 import { docsRoutes } from './routes/docs.ts';
 import { mcpRoutes } from './routes/mcp.ts';
 import { userRoutes } from './routes/user.ts';
@@ -81,6 +82,29 @@ export function createApp(registry: Registry, baseUrl: string): Hono<AppEnv> {
     await next();
   });
 
+  /*
+   * One canonical path, too.
+   *
+   * Every route here is written without a trailing slash, and a request for
+   * `/docs/` used to fall through to the 404 page. Crawlers try both forms
+   * constantly, and a link checker reports each one as a broken link on the
+   * page it came from. A permanent redirect keeps the slash-less form the only
+   * one that ever gets indexed. GET and HEAD only: a form posted to the wrong
+   * path should fail loudly rather than be silently re-addressed.
+   */
+  app.use('*', async (c, next) => {
+    const url = new URL(c.req.url);
+    if (
+      url.pathname.length > 1 &&
+      url.pathname.endsWith('/') &&
+      (c.req.method === 'GET' || c.req.method === 'HEAD')
+    ) {
+      url.pathname = url.pathname.replace(/\/+$/, '');
+      return c.redirect(url.pathname + url.search, 301);
+    }
+    await next();
+  });
+
   app.use('*', async (c, next) => {
     // A bearer token identifies API clients (the TUI); a cookie identifies
     // browsers. A token never confers admin, whatever it was minted with.
@@ -112,8 +136,19 @@ export function createApp(registry: Registry, baseUrl: string): Hono<AppEnv> {
    * ad.js renders its creative into a srcdoc iframe, and a srcdoc document
    * inherits this policy.
    */
+  const secure = baseUrl.startsWith('https://');
   app.use('*', async (c, next) => {
     await next();
+
+    // On every response, not only pages: a browser learns the rule from
+    // whichever response it sees first, and that is as likely to be the
+    // stylesheet as the document. Only when the board is actually served over
+    // https — the header is ignored on http, but sending it there would
+    // still be a lie about the deployment.
+    if (secure && !c.res.headers.has('strict-transport-security')) {
+      c.res.headers.set('strict-transport-security', 'max-age=31536000; includeSubDomains');
+    }
+
     if (!c.res.headers.get('content-type')?.includes('text/html')) return;
 
     const base: Record<string, string[]> = {
@@ -150,6 +185,29 @@ export function createApp(registry: Registry, baseUrl: string): Hono<AppEnv> {
     );
     c.res.headers.set('referrer-policy', 'strict-origin-when-cross-origin');
     c.res.headers.set('x-content-type-options', 'nosniff');
+    // frame-ancestors above is the real control; this is the same rule for
+    // the clients that predate it.
+    c.res.headers.set('x-frame-options', 'DENY');
+    // The board asks for none of these, so say so.
+    c.res.headers.set(
+      'permissions-policy',
+      'camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()',
+    );
+
+    /*
+     * A page is personal the moment somebody is signed in — it carries their
+     * name, their unread count, their draft — so it must never sit in a shared
+     * cache. A guest's page is the same for every guest and can be held for a
+     * minute, which is what lets a crawler or a CDN revalidate cheaply. Vary
+     * on the cookie so the two never share an entry.
+     */
+    if (!c.res.headers.has('cache-control')) {
+      c.res.headers.set(
+        'cache-control',
+        c.get('viewer')?.user ? 'private, no-cache' : 'public, max-age=60, must-revalidate',
+      );
+      c.res.headers.append('vary', 'Cookie');
+    }
   });
 
   app.route('/', pwaRoutes(services));
@@ -164,6 +222,7 @@ export function createApp(registry: Registry, baseUrl: string): Hono<AppEnv> {
   app.route('/', adminRoutes(services));
   app.route('/', userRoutes(services));
   app.route('/', docsRoutes(services));
+  app.route('/', discoveryRoutes(services));
   app.route('/', discoverRoutes(services));
   app.route('/', writeRoutes(services));
   app.route('/', boardRoutes(services));

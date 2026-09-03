@@ -202,7 +202,10 @@ export function adminRoutes(services: Services) {
   // --- Board settings -----------------------------------------------------
 
   const SETTING_GROUPS: { title: string; keys: string[] }[] = [
-    { title: 'Identity', keys: ['board.name', 'board.tagline', 'board.description'] },
+    {
+      title: 'Identity',
+      keys: ['board.name', 'board.tagline', 'board.description', 'board.operator', 'board.contactEmail'],
+    },
     {
       title: 'Appearance',
       keys: [
@@ -227,6 +230,8 @@ export function adminRoutes(services: Services) {
   ];
 
   const HELP: Record<string, string> = {
+    'board.contactEmail':
+      'Shown on the About page and published in /.well-known/security.txt. Leave empty to use the address the board sends from.',
     'board.skin':
       'modern is cards and generous spacing. classic is a 2000s bulletin board: boxy, dense, gradient title bars. terminal is neutral surfaces, hairline rules and monospace chrome. Same board either way — only the stylesheet changes.',
     'board.theme':

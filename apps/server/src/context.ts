@@ -100,6 +100,8 @@ export interface RenderOptions {
    * which is how an error page ends up being served as a successful one.
    */
   status?: 200 | 400 | 403 | 404 | 410 | 500;
+  /** JSON-LD graphs specific to this page, after the site-wide ones. */
+  jsonLd?: unknown[];
   body: unknown;
 }
 
@@ -141,10 +143,52 @@ export async function render(
   const nav = await bus.applyFilter('nav:items', navFor(viewer, url.pathname), renderContext);
 
   const skin = skinOf(settings as Record<string, unknown>);
+  const boardName = String(settings['board.name'] ?? 'tsbb');
+  const tagline = String(settings['board.tagline'] ?? '').trim();
+  const operator = String(settings['board.operator'] ?? '').trim() || undefined;
+
+  /*
+   * Structured data on every page: the site and who publishes it. Search
+   * engines and answer engines resolve the board as an entity from this rather
+   * than guessing it from the footer, and the SearchAction is what lets one
+   * offer a search box for the board. A page adds its own graphs after these.
+   */
+  const jsonLd: unknown[] = [
+    {
+      '@context': 'https://schema.org',
+      '@type': 'WebSite',
+      name: boardName,
+      url: services.baseUrl,
+      ...(tagline ? { description: tagline } : {}),
+      inLanguage: String(settings['board.language'] ?? 'en'),
+      potentialAction: {
+        '@type': 'SearchAction',
+        target: {
+          '@type': 'EntryPoint',
+          urlTemplate: `${new URL('/search', services.baseUrl).toString()}?q={search_term_string}`,
+        },
+        'query-input': 'required name=search_term_string',
+      },
+      ...(operator
+        ? {
+            publisher: {
+              '@type': 'Organization',
+              name: operator,
+              url: services.baseUrl,
+            },
+          }
+        : {}),
+    },
+    ...(options.jsonLd ?? []),
+  ];
+
   const markup = await Layout({
     title: options.title,
     description: options.description,
-    boardName: String(settings['board.name'] ?? 'tsbb'),
+    boardName,
+    tagline,
+    operator,
+    jsonLd,
     viewer,
     nav,
     unread,
