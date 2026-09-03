@@ -1,6 +1,6 @@
 {
   "name": "@profullstack/tsbb",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "A TypeScript bulletin board. Forums, plugins, avatars, signatures and a terminal client.",
   "type": "module",
   "license": "MIT",
