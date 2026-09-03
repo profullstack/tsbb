@@ -6,6 +6,7 @@ import { loadSettings, pruneExpired } from '@tsbb/core';
 import { loadPlugins } from '@tsbb/plugin-host';
 import { startWorker } from '../../worker/src/index.ts';
 import { createApp } from './app.ts';
+import { registerServer, startUpdater } from './updates.ts';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(HERE, '../../..');
@@ -55,6 +56,12 @@ export async function boot(options: { port?: number; listen?: boolean } = {}) {
   const server = serve({ fetch: app.fetch, port }, (info) => {
     console.log(`[tsbb] listening on http://localhost:${info.port}  (base URL ${baseUrl})`);
   });
+
+  // The board checks for a new release once it is up, and installs it unless
+  // an administrator has said not to. See updates.ts for what "installs" means
+  // for a checkout versus a container.
+  registerServer(server as unknown as Parameters<typeof registerServer>[0]);
+  startUpdater();
   return { app, registry, baseUrl, server };
 }
 

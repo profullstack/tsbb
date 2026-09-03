@@ -13,6 +13,7 @@ Running a board (these read the database beside you):
   tsbb worker                  Run the mail worker on its own
   tsbb migrate                 Apply pending migrations and stop
   tsbb status                  What this board is and how big it is
+  tsbb update [--check]        Install the newest release (or just say if there is one)
 
   tsbb admin <email>           Make somebody an administrator
   tsbb unadmin <email>         Take it away (never from the last one)
@@ -139,6 +140,12 @@ try {
       const { status } = await import('../src/commands.ts');
       await status();
       process.exit(0);
+    }
+    case 'update':
+    case 'upgrade': {
+      const { update } = await import('../src/commands.ts');
+      await update({ checkOnly: argv.includes('--check') });
+      process.exit(process.exitCode ?? 0);
     }
     case 'admin': {
       const { promote } = await import('../src/commands.ts');

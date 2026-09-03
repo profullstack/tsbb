@@ -23,6 +23,7 @@ import {
   toBool,
   updateFeedSource,
   updateForum,
+  updateState,
   userByUsername,
 } from '@tsbb/core';
 import { escapeHtml } from '@tsbb/markup';
@@ -41,6 +42,7 @@ import {
   TimeAgo,
 } from '@tsbb/ui';
 import { render, slot, type AppEnv, type Services } from '../context.ts';
+import { runUpdateCycle, updatesEnabled } from '../updates.ts';
 
 const NAV = [
   { href: '/admin', label: 'Overview' },
@@ -129,12 +131,20 @@ export function adminRoutes(services: Services) {
       'SELECT status, COUNT(*) AS n FROM email_queue GROUP BY status',
     );
     const registry = services.registry;
+    const updates = await updateState();
+    const updateNotice = c.req.query('updates');
 
     return page(
       c,
       'Overview',
       html`
         <div class="page-head"><h1 class="page-title">Overview</h1></div>
+        ${updateNotice === 'restarting'
+          ? Alert('The new version is installed and the board is restarting. Give it a few seconds, then reload.', {
+              variant: 'warning',
+              title: 'Updating',
+            })
+          : ''}
         ${Number(stats?.reports ?? 0) > 0
           ? Alert(html`<a href="/admin/moderation">${stats?.reports} reports are waiting.</a>`, {
               variant: 'warning',
@@ -148,6 +158,7 @@ export function adminRoutes(services: Services) {
               <div class="profile-stat"><strong>${stats?.topics ?? 0}</strong><span>topics</span></div>
               <div class="profile-stat"><strong>${stats?.posts ?? 0}</strong><span>posts</span></div>
             </div>`)}`)}
+          ${updatesCard(updates)}
           ${Card(html`${CardHeader('Mail queue', { description: 'The worker drains this every 15 seconds.' })}
             ${CardContent(
               mail.length
@@ -169,6 +180,23 @@ export function adminRoutes(services: Services) {
         </div>
       `,
     );
+  });
+
+  // --- Updates ------------------------------------------------------------
+  // "Check now" only asks; "Update now" installs and restarts. Both come back
+  // to the overview, which reads what the cycle recorded in settings, so a
+  // failure is shown where the button was rather than lost in a log.
+
+  app.post('/admin/updates/check', async (c) => {
+    if (!updatesEnabled()) return c.redirect('/admin', 303);
+    await runUpdateCycle({ apply: false }).catch(() => {});
+    return c.redirect('/admin', 303);
+  });
+
+  app.post('/admin/updates/apply', async (c) => {
+    if (!updatesEnabled()) return c.redirect('/admin', 303);
+    const outcome = await runUpdateCycle({ apply: true }).catch(() => 'failed');
+    return c.redirect(outcome.startsWith('updated') ? '/admin?updates=restarting' : '/admin', 303);
   });
 
   // --- Board settings -----------------------------------------------------
@@ -195,6 +223,7 @@ export function adminRoutes(services: Services) {
       title: 'Feeds and search',
       keys: ['feeds.enabled', 'feeds.itemLimit', 'feeds.importEnabled', 'search.enabled', 'search.minLength'],
     },
+    { title: 'Updates', keys: ['updates.auto'] },
   ];
 
   const HELP: Record<string, string> = {
@@ -215,6 +244,8 @@ export function adminRoutes(services: Services) {
     'posts.editWindowMinutes': 'How long an author may edit their own post. 0 means forever.',
     'feeds.importEnabled':
       'Whether the worker fetches the RSS and Atom feeds that fill forums. Which feeds fill which forum is set on each forum under Forums.',
+    'updates.auto':
+      'When a new release is published the board fetches it, installs it and restarts itself, within five minutes. Off means the overview still says a new version exists, and you install it. A board running from a container is never updated this way: redeploy the image.',
   };
 
   app.get('/admin/settings', async (c) => {
@@ -907,6 +938,60 @@ function memberPostingField(current: string) {
       Staff can always post.
     </div>
   </div>`;
+}
+
+/**
+ * The overview's Updates card: what is running, what is out, and the buttons.
+ *
+ * It reads only what the last cycle recorded, never the network, so the
+ * overview stays fast and the same whichever process rendered it.
+ */
+function updatesCard(state: Awaited<ReturnType<typeof updateState>>) {
+  const enabled = updatesEnabled();
+  const actions = enabled
+    ? html`<div class="row">
+        <form method="post" action="/admin/updates/check">
+          ${Button('Check now', { type: 'submit', variant: 'outline', size: 'sm' })}
+        </form>
+        ${state.available && state.kind === 'git'
+          ? html`<form method="post" action="/admin/updates/apply">
+              ${Button(`Update to ${state.latestVersion}`, { type: 'submit', size: 'sm' })}
+            </form>`
+          : ''}
+      </div>`
+    : '';
+
+  return Card(html`${CardHeader('Updates', {
+      description: html`Running <strong>${state.current}</strong>. Automatic updates are
+        <a href="/admin/settings">${state.auto ? 'on' : 'off'}</a>.`,
+      actions,
+    })}
+    ${CardContent(html`
+      ${!enabled
+        ? html`<p class="small muted">Update checks are switched off in the environment (TSBB_UPDATES).</p>`
+        : state.checkedAt === null
+          ? html`<p class="small muted">Not checked yet. The board checks a minute after it starts, then every five minutes.</p>`
+          : state.available
+            ? Alert(
+                html`<a href="${state.latestUrl ?? '#'}">Version ${state.latestVersion}</a> is available.
+                  ${state.kind === 'git'
+                    ? state.auto
+                      ? 'It will be installed on the next check, or now with the button above.'
+                      : 'Install it with the button above, or run tsbb update on the server.'
+                    : 'This board runs from an image, so redeploy it to get the new version.'}`,
+                { variant: 'warning', title: 'A new version is out' },
+              )
+            : html`<p class="small muted">Up to date. Last checked ${TimeAgo(state.checkedAt)}.</p>`}
+      ${state.checkError
+        ? html`<div style="margin-top:.75rem">${Alert(state.checkError, { variant: 'destructive', title: 'The last check failed' })}</div>`
+        : ''}
+      ${state.applyError
+        ? html`<div style="margin-top:.75rem">${Alert(state.applyError, { variant: 'destructive', title: 'The last update failed' })}</div>`
+        : ''}
+      ${state.appliedVersion && state.appliedAt
+        ? html`<p class="small muted" style="margin-top:.75rem">Last updated to ${state.appliedVersion} ${TimeAgo(state.appliedAt)}.</p>`
+        : ''}
+    `)}`);
 }
 
 /** A board setting rendered from the type of its default value. */

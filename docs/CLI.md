@@ -3,8 +3,8 @@
 `tsbb` does two unrelated jobs, and it is worth knowing which one you are asking
 for.
 
-**Running a board** — `init`, `serve`, `migrate`, `admin`, `invite`, `plugin` —
-operates on the database beside you. These are the commands a self-hoster runs
+**Running a board** — `init`, `serve`, `migrate`, `update`, `admin`, `invite`,
+`plugin` — operates on the database beside you. These are the commands a self-hoster runs
 on their own box, and they need a `.env` or the matching environment variables.
 
 **Using a board** — everything below — talks to a board over its API. These need
@@ -111,3 +111,17 @@ signed in to. See the [MCP guide](MCP.md).
 
 They may appear anywhere: `tsbb read 42 --json` and `tsbb --json read 42` both
 work, because both are what people type.
+
+## Updating
+
+```
+tsbb update --check     # what is running, what is out
+tsbb update             # fetch the newest release tag, install, and stop
+```
+
+A running board does this on its own unless an administrator has turned
+automatic updates off, so `update` is for a board that is stopped, or an
+operator who wants to watch. It moves the checkout to the release tag, runs
+`pnpm install`, and leaves the restart to you. A checkout with local changes is
+refused rather than overwritten, and an install that fails puts the previous
+version back.

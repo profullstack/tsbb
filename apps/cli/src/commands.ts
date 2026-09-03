@@ -176,6 +176,33 @@ export async function setPluginEnabled(slug: string, enabled: boolean): Promise<
   console.log(`${slug} is now ${enabled ? 'enabled' : 'disabled'}. Restart the board to apply it.`);
 }
 
+/**
+ * The same update the running board performs on its own, done by hand.
+ *
+ * Useful when automatic updates are off, when the board is not running, or
+ * when an operator wants to watch it happen. This changes what is on disk and
+ * says so; the board picks the new code up when it is next started.
+ */
+export async function update(options: { checkOnly?: boolean } = {}): Promise<void> {
+  const { applyUpdate, checkForUpdate } = await import('@tsbb/core');
+  const check = await checkForUpdate();
+  console.log(`  running   ${check.current}`);
+  console.log(`  latest    ${check.latest?.version ?? 'no release found'}`);
+  if (!check.available || !check.latest) {
+    console.log('  up to date');
+    return;
+  }
+  console.log(`  release   ${check.latest.url}`);
+  if (options.checkOnly) return;
+  if (check.kind !== 'git') {
+    console.error('  this board was not installed from a git checkout; update it by redeploying');
+    process.exitCode = 1;
+    return;
+  }
+  await applyUpdate(check.latest.version, { log: (line) => console.log(`  ${line}`) });
+  console.log(`  restart the board to run ${check.latest.version}`);
+}
+
 export async function status(): Promise<void> {
   const settings = await loadSettings();
   const counts = await one<{ users: number; topics: number; posts: number; pending: number }>(
