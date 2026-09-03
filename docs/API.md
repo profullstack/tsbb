@@ -66,6 +66,8 @@ Needs a token, and the same permissions the member has on the page.
 | `POST /api/v1/topics/{id}/posts` | `{ "body": "…", "format": "markdown" }` |
 | `GET /api/v1/notifications` | `?unread=1` for only the unread ones |
 | `POST /api/v1/notifications/read` | Mark everything read |
+| `POST /api/v1/read` | Mark every topic on the board read |
+| `POST /api/v1/forums/{slug}/read` | Mark every topic in one forum, and its subforums, read |
 
 A refused post answers 400 with the board's own reason — `too_short`,
 `flooding`, and so on — rather than a generic failure, so a client can say what

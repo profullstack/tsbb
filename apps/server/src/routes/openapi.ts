@@ -226,6 +226,23 @@ export function openApiDocument(baseUrl: string, settings: Settings): Record<str
           responses: { '200': json('The unread count and the notifications.'), ...errors },
         },
       },
+      '/api/v1/read': {
+        post: {
+          operationId: 'markBoardRead',
+          summary: 'Mark every topic in every readable forum read, as of now.',
+          security: [{ bearerAuth: [] }],
+          responses: { '200': json('ok'), ...errors },
+        },
+      },
+      '/api/v1/forums/{slug}/read': {
+        post: {
+          operationId: 'markForumRead',
+          summary: 'Mark every topic in one forum and its subforums read, as of now.',
+          security: [{ bearerAuth: [] }],
+          parameters: [{ name: 'slug', in: 'path', required: true, schema: { type: 'string' } }],
+          responses: { '200': json('ok'), ...errors },
+        },
+      },
       '/api/v1/notifications/read': {
         post: {
           operationId: 'markNotificationsRead',

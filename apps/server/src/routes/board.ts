@@ -8,6 +8,7 @@ import {
   canEditPost,
   forumBySlug,
   forumTree,
+  forumWithDescendants,
   listPosts,
   listTopics,
   countTopics,
@@ -20,6 +21,8 @@ import {
   resolvePermissions,
   signatureGate,
   topicById,
+  unreadInTree,
+  unreadTopicCounts,
   visibleForumIds,
   isSubscribed,
   type Settings,
@@ -34,6 +37,7 @@ import {
   LinkButton,
   Pagination,
   PostArticle,
+  ReadBar,
   TopicRow,
   trusted,
   type PostView,
@@ -56,6 +60,9 @@ export function boardRoutes(services: Services) {
     const stats = await boardStats();
 
     const body = html`${trusted(above)}
+      ${viewer.user && tree.length
+        ? ReadBar({ unread: unreadInTree(tree), action: '/read', label: 'Mark all read', scope: 'on the board' })
+        : ''}
       ${tree.length === 0
         ? Card(CardContent(Empty('No forums yet', viewer.isAdmin
             ? html`Create the first one in <a href="/admin/forums">administration</a>.`
@@ -101,15 +108,19 @@ export function boardRoutes(services: Services) {
     const page = Math.max(1, Number(c.req.query('page') ?? 1));
     const forumIds = await visibleForumIds(viewer);
 
-    const [topics, total] = await Promise.all([
+    const [topics, total, unread] = await Promise.all([
       listTopics({ forumIds, limit: perPage, offset: (page - 1) * perPage, viewerId: viewer.user?.id ?? null }),
       countTopics({ forumIds }),
+      unreadTopicCounts(viewer.user?.id ?? null, forumIds),
     ]);
 
     const body = html`
       <div class="page-head">
         <div><h1 class="page-title">Latest</h1><p class="page-subtitle">Recent activity across the board</p></div>
       </div>
+      ${viewer.user
+        ? ReadBar({ unread: sumCounts(unread), action: '/read', label: 'Mark all read', scope: 'on the board' })
+        : ''}
       ${Card(
         CardContent(
           topics.length ? topics.map((t) => TopicRow(t)) : Empty('Nothing posted yet'),
@@ -136,16 +147,19 @@ export function boardRoutes(services: Services) {
 
     const perPage = Number(settings['topics.perPage'] ?? 30);
     const page = Math.max(1, Number(c.req.query('page') ?? 1));
-    const [topics, total, trail] = await Promise.all([
+    const viewerId = viewer.user?.id ?? null;
+    const [topics, total, trail, unread] = await Promise.all([
       listTopics({
         forumId: forum.id,
         limit: perPage,
         offset: (page - 1) * perPage,
-        viewerId: viewer.user?.id ?? null,
+        viewerId,
         includeHidden: permissions.canModerate,
       }),
       countTopics({ forumId: forum.id, includeHidden: permissions.canModerate }),
       breadcrumb(forum.id),
+      // Subforums count too, because "mark this forum read" covers them.
+      forumWithDescendants(forum.id).then((ids) => unreadTopicCounts(viewerId, ids)),
     ]);
 
     const above = await slot(c, services, 'forum:above_topics', { forum });
@@ -163,6 +177,14 @@ export function boardRoutes(services: Services) {
           : ''}
       </div>
       ${trusted(above)}
+      ${viewer.user
+        ? ReadBar({
+            unread: sumCounts(unread),
+            action: `/f/${forum.slug}/read`,
+            label: 'Mark forum read',
+            scope: 'in this forum',
+          })
+        : ''}
       ${Card(
         CardContent(
           topics.length
@@ -216,6 +238,12 @@ export function boardRoutes(services: Services) {
   app.get('/t/:handle/p/:postId', async (c) => topicPage(c, services));
 
   return app;
+}
+
+function sumCounts(counts: Map<number, number>): number {
+  let total = 0;
+  for (const n of counts.values()) total += n;
+  return total;
 }
 
 interface BoardStats {

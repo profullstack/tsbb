@@ -287,6 +287,18 @@ export class BoardClient {
     return this.request<{ ok: true }>('/api/v1/notifications/read', { method: 'POST' });
   }
 
+  /** Mark every topic in every readable forum read, as of now. */
+  markBoardRead() {
+    return this.request<{ ok: true }>('/api/v1/read', { method: 'POST' });
+  }
+
+  /** Mark every topic in one forum and its subforums read, as of now. */
+  markForumRead(slug: string) {
+    return this.request<{ ok: true }>(`/api/v1/forums/${encodeURIComponent(slug)}/read`, {
+      method: 'POST',
+    });
+  }
+
   startDeviceAuth(label: string) {
     return this.request<{
       deviceCode: string;

@@ -1,5 +1,6 @@
 import { all, now, one, run } from '@tsbb/db';
 import type { Id, Topic, Viewer } from '@tsbb/plugin-api';
+import { UNREAD_PREDICATE } from './reads.ts';
 import { slugify } from './util.ts';
 
 export interface TopicRow {
@@ -124,22 +125,23 @@ export async function listTopics(options: ListTopicsOptions = {}): Promise<Topic
     author_avatar_kind: string | null;
     author_avatar_url: string | null;
     last_poster_name: string | null;
-    last_read_post_id: number | null;
+    is_unread: number;
     poll_id: number | null;
   }>(
     `SELECT t.*, ua.username AS author_name, ul.username AS last_poster_name,
             ua.email AS author_email, ua.avatar_kind AS author_avatar_kind,
             ua.avatar_url AS author_avatar_url,
-            tr.last_post_id AS last_read_post_id, pl.id AS poll_id
+            (${UNREAD_PREDICATE}) AS is_unread, pl.id AS poll_id
        FROM topics t
        LEFT JOIN users ua ON ua.id = t.user_id
        LEFT JOIN users ul ON ul.id = t.last_poster_id
        LEFT JOIN topic_reads tr ON tr.topic_id = t.id AND tr.user_id = ?
+       LEFT JOIN forum_reads fr ON fr.forum_id = t.forum_id AND fr.user_id = ?
        LEFT JOIN polls pl ON pl.topic_id = t.id
       WHERE ${where.join(' AND ')}
       ORDER BY ${kindRank}, ${order}
       LIMIT ? OFFSET ?`,
-    [viewerId, ...args, options.limit ?? 30, options.offset ?? 0] as never,
+    [viewerId, viewerId, ...args, options.limit ?? 30, options.offset ?? 0] as never,
   );
 
   return rows.map((row) => ({
@@ -152,11 +154,10 @@ export async function listTopics(options: ListTopicsOptions = {}): Promise<Topic
     lastPosterId: row.last_poster_id,
     lastPosterName: row.last_poster_name,
     // A guest has no read state, so nothing is ever marked unread for them —
-    // an unread badge on every row is noise, not information.
-    unread:
-      viewerId !== null &&
-      row.last_post_id !== null &&
-      (row.last_read_post_id === null || row.last_read_post_id < row.last_post_id),
+    // an unread badge on every row is noise, not information. The predicate
+    // itself lives in reads.ts so the forum counts and this list cannot
+    // disagree about what unread means.
+    unread: viewerId !== null && Number(row.is_unread) === 1,
     hasPoll: row.poll_id !== null,
   }));
 }
