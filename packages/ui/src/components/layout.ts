@@ -21,6 +21,12 @@ export interface LayoutProps {
   nav: NavItem[];
   unread?: number;
   stylesheetUrl: string;
+  /** `board.logoUrl`. Replaces the letter mark in the header when set. */
+  logoUrl?: string;
+  /** `board.faviconUrl`. Replaces the bundled icons when set. */
+  faviconUrl?: string;
+  /** The browser-chrome colour for the active skin, light and dark. */
+  themeColor?: { light: string; dark: string };
   canonical?: string;
   feedUrl?: string;
   slots?: LayoutSlots;
@@ -46,6 +52,7 @@ export interface LayoutProps {
 export function Layout(props: LayoutProps) {
   const slots = props.slots ?? {};
   const theme = props.theme ?? 'system';
+  const themeColor = props.themeColor ?? { light: '#fffcf9', dark: '#1a120c' };
   const title =
     props.title === props.boardName ? props.boardName : `${props.title} · ${props.boardName}`;
 
@@ -68,17 +75,20 @@ export function Layout(props: LayoutProps) {
     <meta name="twitter:card" content="summary" />
     <link rel="stylesheet" href="${props.stylesheetUrl}" />
     <link rel="manifest" href="/manifest.webmanifest" />
-    <link rel="icon" href="/icons/icon-32.png" sizes="32x32" type="image/png" />
+    ${props.faviconUrl
+      ? html`<link rel="icon" href="${props.faviconUrl}" />
+    <link rel="apple-touch-icon" href="${props.faviconUrl}" />`
+      : html`<link rel="icon" href="/icons/icon-32.png" sizes="32x32" type="image/png" />
     <link rel="icon" href="/icons/icon-16.png" sizes="16x16" type="image/png" />
-    <link rel="apple-touch-icon" href="/icons/icon-180.png" />
+    <link rel="apple-touch-icon" href="/icons/icon-180.png" />`}
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="${props.boardName}" />
     <!--
       Two theme-colors so the browser chrome follows the reader's theme. A
       single one paints a light bar above a dark page on every mobile browser.
     -->
-    <meta name="theme-color" content="#fffcf9" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#1a120c" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="${themeColor.light}" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="${themeColor.dark}" media="(prefers-color-scheme: dark)" />
     <!--
       The only script the board serves, and it is pure enhancement: it registers
       a service worker for offline reading and installability. Every page is
@@ -95,8 +105,10 @@ export function Layout(props: LayoutProps) {
       <header class="site-header">
         <div class="container site-header-inner">
           <a class="brand" href="/">
-            <span class="brand-mark" aria-hidden="true">${props.boardName.slice(0, 1).toUpperCase()}</span>
-            <span>${props.boardName}</span>
+            ${props.logoUrl
+              ? html`<img class="brand-logo" src="${props.logoUrl}" alt="${props.boardName}" />`
+              : html`<span class="brand-mark" aria-hidden="true">${props.boardName.slice(0, 1).toUpperCase()}</span>
+            <span>${props.boardName}</span>`}
           </a>
           <nav class="site-nav" aria-label="Main">
             ${props.nav.map(
@@ -130,11 +142,13 @@ export function Layout(props: LayoutProps) {
             <a href="/docs">Docs</a>
             <a href="/feeds">Feeds</a>
             <a href="/feed.xml">RSS</a>
-            <a
-              href="https://github.com/profullstack/tsbb"
-              rel="noopener"
-              title="tsbb on GitHub"
-              style="display:inline-flex;align-items:center;gap:.3rem"
+            <!--
+              A class, not a style attribute. style-src has no 'unsafe-inline',
+              which covers inline STYLE ATTRIBUTES as well as <style> blocks —
+              so this link's layout was refused by the board's own policy and
+              the icon sat above the word instead of beside it.
+            -->
+            <a class="footer-link" href="https://github.com/profullstack/tsbb" rel="noopener" title="tsbb on GitHub"
               >${IconGithub()} GitHub</a
             >
             ${props.viewer.isAdmin ? html`<a href="/admin">Admin</a>` : ''}

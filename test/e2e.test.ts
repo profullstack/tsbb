@@ -505,4 +505,88 @@ describe('skins', () => {
     assert.ok(html.includes(stylesheet('modern').hash), 'an unknown skin falls back to modern');
     await core.setSettings({ 'board.skin': 'modern' });
   });
+
+  it('layers the terminal skin over modern without the light-mode trap', async () => {
+    const { stylesheet } = await import('../packages/ui/src/index.ts');
+    const modern = stylesheet('modern');
+    const terminal = stylesheet('terminal');
+
+    assert.notEqual(terminal.hash, modern.hash);
+    assert.ok(terminal.css.length > modern.css.length, 'terminal is a layer ON TOP of modern');
+    assert.ok(terminal.css.includes(modern.css.slice(0, 400)), 'and it starts from the same base');
+
+    const layer = terminal.css.slice(terminal.css.indexOf('/*\n * The "terminal" skin'));
+    assert.equal(
+      /\n:root:not\(\[data-theme='light'\]\)/.test(layer),
+      false,
+      'terminal dark values must sit inside a prefers-color-scheme query',
+    );
+
+    assert.equal((await get(`/assets/app.${terminal.hash}.css`, false)).status, 200);
+  });
+
+  it('bakes the board accent into the stylesheet, at two lightnesses', async () => {
+    const { stylesheet } = await import('../packages/ui/src/index.ts');
+    const plain = stylesheet('modern');
+
+    await core.setSettings({ 'board.accent': '#5fff87' });
+    const html = await (await get('/', false)).text();
+    assert.ok(!html.includes(plain.hash), 'an accent must change the stylesheet URL');
+
+    const match = /\/assets\/app\.([0-9a-f]+)\.css/.exec(html);
+    assert.ok(match?.[1], 'the page links a hashed stylesheet');
+    const response = await get(`/assets/app.${match[1]}.css`, false);
+    assert.equal(response.status, 200);
+    const css = await response.text();
+
+    assert.ok(css.includes('Board accent: #5fff87'), 'the accent is applied in the sheet itself');
+    // #5fff87 is far too light to read as link text on white, so the light
+    // theme gets it darkened while the dark theme keeps it bright.
+    const lightPrimary = /:root \{\n  --primary: oklch\(([0-9.]+)/.exec(
+      css.slice(css.indexOf('Board accent')),
+    );
+    assert.ok(lightPrimary?.[1]);
+    assert.ok(Number(lightPrimary[1]) <= 0.62, 'the light accent is darkened for contrast');
+    assert.ok(css.includes("[data-theme='dark']"), 'and an explicit dark choice is covered too');
+
+    await core.setSettings({ 'board.accent': '' });
+  });
+
+  it('shows the board logo and favicon when they are set', async () => {
+    await core.setSettings({
+      'board.logoUrl': 'https://hqtui.com/logo.png',
+      'board.faviconUrl': 'https://hqtui.com/favicon.png',
+    });
+    const html = await (await get('/', false)).text();
+    assert.ok(html.includes('class="brand-logo" src="https://hqtui.com/logo.png"'));
+    assert.ok(html.includes('<link rel="icon" href="https://hqtui.com/favicon.png"'));
+    assert.ok(!html.includes('brand-mark'), 'the letter mark gives way to real artwork');
+
+    await core.setSettings({ 'board.logoUrl': '', 'board.faviconUrl': '' });
+    const plain = await (await get('/', false)).text();
+    assert.ok(plain.includes('brand-mark'), 'and comes back when the logo is cleared');
+  });
+
+  it('applies board.theme to a reader with no cookie, and never over one with', async () => {
+    await core.setSettings({ 'board.theme': 'dark' });
+    const html = await (await get('/', false)).text();
+    assert.ok(
+      html.includes('<html lang="en" data-theme="dark">'),
+      'a fresh reader gets the board default',
+    );
+
+    const chosen = await app.fetch(
+      new Request(url('/'), { headers: { cookie: 'tsbb_theme=light' } }),
+    );
+    assert.ok((await chosen.text()).includes('data-theme="light"'), 'a cookie always wins');
+
+    // 'system' is a real choice, not the absence of one: it has to survive on a
+    // board whose own default is dark, or the toggle cycles dark -> dark.
+    const system = await app.fetch(
+      new Request(url('/'), { headers: { cookie: 'tsbb_theme=system' } }),
+    );
+    assert.ok(!(await system.text()).includes('data-theme='), 'system follows the reader');
+
+    await core.setSettings({ 'board.theme': 'system' });
+  });
 });

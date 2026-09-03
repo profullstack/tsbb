@@ -12,11 +12,20 @@ export const DEFAULT_SETTINGS = {
   'board.description': '',
   'board.language': 'en',
   'board.timezone': 'UTC',
+  /** 'system' | 'light' | 'dark' — what a reader with no cookie is shown. */
   'board.theme': 'system',
-  /** 'modern' or 'classic' — the 2000s bulletin-board skin. */
+  /** 'modern', 'classic' (the 2000s bulletin board) or 'terminal'. */
   'board.skin': 'modern',
-  'board.accent': '#4f46e5',
+  /**
+   * One hex colour that links, buttons and highlights follow. EMPTY means the
+   * board's built-in palette, which is the default deliberately: a default
+   * accent would repaint every existing board the first time this setting was
+   * read, and nobody asked it to change.
+   */
+  'board.accent': '',
+  /** Artwork for the header, replacing the generated letter mark. */
   'board.logoUrl': '',
+  /** A browser-tab icon, replacing the bundled ones. */
   'board.faviconUrl': '',
 
   /** Registration: 'open' | 'invite' | 'closed' */

@@ -1,0 +1,322 @@
+/*
+ * The "terminal" skin: a board that looks like the tooling it is discussed on.
+ *
+ * Like `classic`, this is a LAYER over the modern sheet rather than a
+ * replacement, so every component's structure stays defined in one place and
+ * this file only argues about how it looks.
+ *
+ * What makes it read as a terminal is not a green-on-black gimmick — it is
+ * four things done consistently:
+ *   - neutral surfaces. Chroma goes to zero, so the accent is the only colour
+ *     on the page and it lands wherever it is put.
+ *   - hairline borders instead of shadows. Depth comes from a 1px rule at low
+ *     opacity, the way a tiling terminal separates panes.
+ *   - monospace for chrome, proportional for prose. Nav, meta, counts, labels
+ *     and buttons are mono; a post body is not, because reading a paragraph in
+ *     a monospace face is the part of the aesthetic that is actually painful.
+ *   - window furniture. Section headers wear the three dots of a title bar.
+ *
+ * The accent is whatever `board.accent` is set to — nothing here hard-codes a
+ * hue, so the same skin is a green board, an amber one, or a blue one.
+ */
+
+:root {
+  --radius: 0.5rem;
+
+  /* Neutral surfaces: the warm tint of the default palette is what makes a
+     board look like paper, and a terminal is not paper. */
+  --background: oklch(0.995 0 0);
+  --foreground: oklch(0.16 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.16 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.16 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.24 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.53 0 0);
+  --accent: oklch(0.955 0 0);
+  --accent-foreground: oklch(0.24 0 0);
+  --border: oklch(0.9 0 0);
+  --input: oklch(0.88 0 0);
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.16 0 0);
+  --sidebar-accent: oklch(0.955 0 0);
+  --sidebar-accent-foreground: oklch(0.24 0 0);
+  --sidebar-border: oklch(0.9 0 0);
+
+  /* Chrome furniture. The three dots are the standard macOS traffic lights,
+     which every developer reads as "this is a terminal window" instantly. */
+  --term-dot-1: #ff5f57;
+  --term-dot-2: #febc2e;
+  --term-dot-3: #28c840;
+  --term-rule: var(--border);
+}
+
+/*
+ * Dark values are written twice, exactly as the base tokens are: once inside
+ * prefers-color-scheme for the default "system" setting, and once under
+ * [data-theme='dark'] so an explicit choice wins. A single bare
+ * :root:not([data-theme='light']) rule matches in LIGHT mode too — the
+ * selector excludes only an explicit light choice, not the default.
+ */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --background: oklch(0.145 0 0);
+    --foreground: oklch(0.985 0 0);
+    --card: oklch(0.205 0 0);
+    --card-foreground: oklch(0.985 0 0);
+    --popover: oklch(0.205 0 0);
+    --popover-foreground: oklch(0.985 0 0);
+    --secondary: oklch(0.245 0 0);
+    --secondary-foreground: oklch(0.985 0 0);
+    --muted: oklch(0.245 0 0);
+    --muted-foreground: oklch(0.705 0 0);
+    --accent: oklch(0.265 0 0);
+    --accent-foreground: oklch(0.985 0 0);
+    --border: oklch(1 0 0 / 11%);
+    --input: oklch(1 0 0 / 15%);
+    --sidebar: oklch(0.205 0 0);
+    --sidebar-foreground: oklch(0.985 0 0);
+    --sidebar-accent: oklch(0.265 0 0);
+    --sidebar-accent-foreground: oklch(0.985 0 0);
+    --sidebar-border: oklch(1 0 0 / 11%);
+    --term-rule: oklch(1 0 0 / 11%);
+  }
+}
+
+:root[data-theme='dark'] {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.245 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.245 0 0);
+  --muted-foreground: oklch(0.705 0 0);
+  --accent: oklch(0.265 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --border: oklch(1 0 0 / 11%);
+  --input: oklch(1 0 0 / 15%);
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.265 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 11%);
+  --term-rule: oklch(1 0 0 / 11%);
+}
+
+/* --- Type ---------------------------------------------------------------- */
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-mono);
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+
+/*
+ * Headings get a prompt rather than a bullet or a rule. It is one character,
+ * it is generated content so it never reaches the accessibility tree, and it
+ * does the work a decorative underline would need twenty pixels for.
+ */
+.page-title::before,
+.topic-heading::before {
+  content: '> ';
+  color: var(--primary);
+  font-weight: 700;
+}
+
+.nav-link,
+.btn,
+.badge,
+.label,
+.small,
+.tiny,
+.muted,
+.breadcrumb,
+.pagination,
+.forum-meta,
+.topic-meta,
+.board-stats,
+.post-author-stats,
+.site-footer,
+.table th {
+  font-family: var(--font-mono);
+}
+
+.nav-link,
+.btn,
+.badge {
+  letter-spacing: -0.01em;
+}
+
+/* --- Header -------------------------------------------------------------- */
+
+.site-header {
+  background: color-mix(in oklab, var(--background) 86%, transparent);
+  border-bottom: 1px solid var(--term-rule);
+}
+
+.brand {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+/*
+ * The letter mark becomes a prompt block: square, mono, accent-on-dark. A
+ * board that has uploaded a logo renders .brand-logo instead and never sees
+ * this rule.
+ */
+.brand-mark {
+  border-radius: 0.3rem;
+  background: transparent;
+  border: 1px solid color-mix(in oklab, var(--primary) 55%, transparent);
+  color: var(--primary);
+  font-family: var(--font-mono);
+  font-weight: 700;
+  box-shadow: none;
+}
+
+.brand-logo {
+  height: 1.75rem;
+  width: auto;
+  max-width: 11rem;
+  object-fit: contain;
+}
+
+.nav-link {
+  border-radius: 0.3rem;
+  font-size: 0.8125rem;
+}
+.nav-link.active {
+  color: var(--primary);
+  background: color-mix(in oklab, var(--primary) 10%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--primary) 30%, transparent);
+}
+
+/* --- Surfaces ------------------------------------------------------------ */
+
+/*
+ * Flat cards with a real border. The default skin leans on shadow for
+ * separation, which reads as glass; a terminal separates panes with a line.
+ */
+.card,
+.post,
+.forum-row,
+.topic-row,
+.composer {
+  box-shadow: none;
+  border: 1px solid var(--term-rule);
+}
+
+.card-title,
+.category-title {
+  font-family: var(--font-mono);
+}
+
+/*
+ * Category headers wear window furniture: three dots, drawn as one element's
+ * box-shadow so no markup changes and nothing is announced to a screen reader.
+ */
+.category-header {
+  position: relative;
+  padding-left: 3.75rem;
+}
+.category-header::before {
+  content: '';
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  width: 0.5rem;
+  height: 0.5rem;
+  margin-top: -0.25rem;
+  border-radius: 50%;
+  background: var(--term-dot-1);
+  box-shadow:
+    0.875rem 0 0 var(--term-dot-2),
+    1.75rem 0 0 var(--term-dot-3);
+}
+
+.forum-icon {
+  border-radius: 0.3rem;
+  font-family: var(--font-mono);
+}
+
+/* --- Controls ------------------------------------------------------------ */
+
+.btn {
+  border-radius: 0.3rem;
+  font-weight: 600;
+}
+.btn-secondary,
+.btn-outline,
+.btn-ghost {
+  border: 1px solid var(--term-rule);
+}
+.btn-ghost {
+  border-color: transparent;
+}
+.btn-ghost:hover {
+  border-color: var(--term-rule);
+}
+
+.input,
+.select,
+.textarea {
+  border-radius: 0.3rem;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+}
+.textarea {
+  /* The composer is where a monospace face earns its keep: code blocks and
+     tables line up while they are being written, not only once posted. */
+  line-height: 1.6;
+}
+
+.badge {
+  border-radius: 0.25rem;
+  font-size: 0.6875rem;
+  text-transform: lowercase;
+  letter-spacing: 0.02em;
+}
+
+.table th {
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* --- Rows ---------------------------------------------------------------- */
+
+.forum-row:hover,
+.topic-row:hover {
+  border-color: color-mix(in oklab, var(--primary) 30%, var(--term-rule));
+}
+
+.topic-title,
+.forum-name {
+  font-weight: 600;
+}
+
+.post-body pre,
+.post-body code {
+  border-radius: 0.3rem;
+}
+.post-body pre {
+  border: 1px solid var(--term-rule);
+}
+
+/* --- Footer -------------------------------------------------------------- */
+
+.site-footer {
+  font-size: 0.75rem;
+  border-top: 1px solid var(--term-rule);
+}

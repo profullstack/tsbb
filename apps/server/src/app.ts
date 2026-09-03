@@ -89,9 +89,10 @@ export function createApp(registry: Registry, baseUrl: string): Hono<AppEnv> {
       ? await viewerFromToken(authorization.slice(7).trim())
       : await resolveViewer(c);
 
+    const settings = await loadSettings();
     c.set('viewer', viewer);
-    c.set('settings', await loadSettings());
-    c.set('theme', readTheme(c));
+    c.set('settings', settings);
+    c.set('theme', readTheme(c, settings as Record<string, unknown>));
 
     if (viewer.user) {
       // Fire and forget: a presence write must never delay a page.

@@ -3,12 +3,33 @@ import { getCookie } from 'hono/cookie';
 import type { NavItem, Viewer } from '@tsbb/plugin-api';
 import type { Registry } from '@tsbb/plugin-host';
 import { guestViewer, loadSettings, unreadCount, viewerFromSession, type Settings } from '@tsbb/core';
-import { Layout, isSkin, stylesheetUrl, type LayoutSlots, type Skin, type ThemeChoice } from '@tsbb/ui';
+import {
+  Layout,
+  isSkin,
+  stylesheetUrl,
+  SKIN_THEME_COLOR,
+  type Brand,
+  type LayoutSlots,
+  type Skin,
+  type ThemeChoice,
+} from '@tsbb/ui';
 
 /** The board's chosen skin, defaulting to modern for an unset or bad value. */
 export function skinOf(settings: Record<string, unknown>): Skin {
   const value = settings['board.skin'];
   return isSkin(value) ? value : 'modern';
+}
+
+/** The board's accent, if one is configured. */
+export function brandOf(settings: Record<string, unknown>): Brand {
+  const accent = settings['board.accent'];
+  return { accent: typeof accent === 'string' && accent.trim() ? accent.trim() : null };
+}
+
+/** A configured URL, or undefined for the empty string every setting defaults to. */
+function urlSetting(settings: Record<string, unknown>, key: string): string | undefined {
+  const value = settings[key];
+  return typeof value === 'string' && value.trim() ? value.trim() : undefined;
 }
 
 export const SESSION_COOKIE = 'tsbb_session';
@@ -34,9 +55,20 @@ export async function resolveViewer(c: Context): Promise<Viewer> {
   return guestViewer();
 }
 
-export function readTheme(c: Context): ThemeChoice {
+/**
+ * The reader's theme.
+ *
+ * A cookie is the reader's own choice and always wins. With no cookie the
+ * board's `board.theme` setting decides, and only if that is 'system' (the
+ * default) does the page ship without a data-theme attribute and follow the
+ * operating system. That ordering is what lets a board be dark by default
+ * without taking the choice away from anyone who has made one.
+ */
+export function readTheme(c: Context, settings?: Record<string, unknown>): ThemeChoice {
   const value = getCookie(c, THEME_COOKIE);
-  return value === 'light' || value === 'dark' ? value : 'system';
+  if (value === 'light' || value === 'dark' || value === 'system') return value;
+  const preferred = settings?.['board.theme'];
+  return preferred === 'light' || preferred === 'dark' ? preferred : 'system';
 }
 
 function navFor(viewer: Viewer, path: string): NavItem[] {
@@ -108,6 +140,7 @@ export async function render(
   const slots: LayoutSlots = { head, header, bodyStart, bodyEnd, footer };
   const nav = await bus.applyFilter('nav:items', navFor(viewer, url.pathname), renderContext);
 
+  const skin = skinOf(settings as Record<string, unknown>);
   const markup = await Layout({
     title: options.title,
     description: options.description,
@@ -115,11 +148,14 @@ export async function render(
     viewer,
     nav,
     unread,
-    stylesheetUrl: stylesheetUrl(skinOf(settings)),
+    stylesheetUrl: stylesheetUrl(skin, brandOf(settings as Record<string, unknown>)),
+    logoUrl: urlSetting(settings as Record<string, unknown>, 'board.logoUrl'),
+    faviconUrl: urlSetting(settings as Record<string, unknown>, 'board.faviconUrl'),
+    themeColor: SKIN_THEME_COLOR[skin],
     canonical: options.canonical ?? new URL(url.pathname, services.baseUrl).toString(),
     feedUrl: options.feedUrl,
     slots,
-    theme: c.get('theme') ?? readTheme(c),
+    theme: c.get('theme') ?? readTheme(c, settings as Record<string, unknown>),
     body: options.body as never,
   });
 
