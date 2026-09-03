@@ -195,6 +195,96 @@ describe('a board end to end', () => {
     assert.equal(await core.unreadCount(bob.id), 0, 'the replier is never notified of their own reply');
   });
 
+  it('lights the forum for the author after a reply, but not for the replier', async () => {
+    const topic = await db.one<{ id: number; forum_id: number }>(
+      'SELECT id, forum_id FROM topics ORDER BY id DESC LIMIT 1',
+    );
+    const bob = await core.userByEmail('bob@example.com');
+    assert.ok(topic && bob);
+
+    // Bob wrote the last post, so the topic is read for him without a visit.
+    const bobsView = await core.listTopics({ forumId: topic.forum_id, viewerId: bob.id });
+    assert.equal(bobsView.find((t) => t.id === topic.id)?.unread, false, 'your own reply is not unread to you');
+
+    // Ann started the topic and has not seen the reply.
+    const index = await (await get('/')).text();
+    assert.ok(index.includes('forum-row unread'), 'the forum row is lit on the index');
+    assert.ok(index.includes('class="forum-unread"'), 'the row carries an unread count');
+    assert.ok(index.includes('Mark all read'), 'the index offers a way to catch up');
+    assert.ok(/unread topic[s]? on the board/.test(index), 'the count is stated');
+
+    const guest = await app.fetch(new Request(url('/read'), { method: 'POST', redirect: 'manual' }));
+    assert.equal(guest.status, 302, 'a guest has no read state and is sent to sign in');
+    assert.ok(guest.headers.get('location')?.startsWith('/login'));
+
+    const marked = await post('/read', {});
+    assert.equal(marked.status, 303);
+    assert.equal(marked.headers.get('location'), '/');
+
+    const after = await (await get('/')).text();
+    assert.ok(!after.includes('forum-row unread'), 'nothing is lit once the board is marked read');
+    assert.ok(after.includes('Nothing unread on the board'));
+    const forumPage = await (await get(`/f/general`)).text();
+    assert.ok(!forumPage.includes('topic-row unread'), 'the topic itself is read too');
+  });
+
+  it('marks one forum read from the top of the forum, subforums included', async () => {
+    const topic = await db.one<{ id: number; slug: string }>(
+      'SELECT id, slug FROM topics ORDER BY id DESC LIMIT 1',
+    );
+    assert.ok(topic);
+
+    // A third member replies, so there is something new for Ann again.
+    const cass = await core.createUser({ username: 'cass', email: 'cass@example.com' });
+    const session = await core.createSession(cass.id);
+    const response = await app.fetch(
+      new Request(url(`/t/${topic.slug}-${topic.id}/reply`), {
+        method: 'POST',
+        headers: { 'content-type': 'application/x-www-form-urlencoded', cookie: `tsbb_session=${session.id}` },
+        body: new URLSearchParams({ body: 'Another reply, from carol.', format: 'markdown' }).toString(),
+        redirect: 'manual',
+      }),
+    );
+    assert.equal(response.status, 303);
+
+    const before = await (await get('/f/general')).text();
+    assert.ok(before.includes('topic-row unread'), 'the replied-to topic is unread again');
+    assert.ok(before.includes('1</strong> unread topic in this forum'), 'the forum head counts it');
+    assert.ok(before.includes('Mark forum read'));
+
+    const marked = await post('/f/general/read', {});
+    assert.equal(marked.status, 303);
+    assert.equal(marked.headers.get('location'), '/f/general');
+
+    const after = await (await get('/f/general')).text();
+    assert.ok(!after.includes('topic-row unread'));
+    assert.ok(after.includes('Nothing unread in this forum'));
+    const index = await (await get('/')).text();
+    assert.ok(!index.includes('forum-row unread'), 'the index agrees with the forum page');
+
+    // A marker only covers what was posted before it: a later reply is new again.
+    const dave = await core.createUser({ username: 'dave', email: 'dave@example.com' });
+    const daveSession = await core.createSession(dave.id);
+    await app.fetch(
+      new Request(url(`/t/${topic.slug}-${topic.id}/reply`), {
+        method: 'POST',
+        headers: { 'content-type': 'application/x-www-form-urlencoded', cookie: `tsbb_session=${daveSession.id}` },
+        body: new URLSearchParams({ body: 'And one more, from dave.', format: 'markdown' }).toString(),
+        redirect: 'manual',
+      }),
+    );
+    const again = await (await get('/f/general')).text();
+    assert.ok(again.includes('topic-row unread'), 'a post after the marker is unread');
+
+    // Reading the topic clears it without touching the forum marker.
+    await get(`/t/${topic.slug}-${topic.id}`);
+    const read = await (await get('/f/general')).text();
+    assert.ok(!read.includes('topic-row unread'), 'opening the topic reads it');
+
+    const missing = await post('/f/no-such-forum/read', {});
+    assert.equal(missing.status, 404);
+  });
+
   it('notifies a mention instead of a reply, not both', async () => {
     const topic = await db.one<{ id: number; slug: string }>(
       'SELECT id, slug FROM topics ORDER BY id DESC LIMIT 1',

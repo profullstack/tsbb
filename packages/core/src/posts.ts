@@ -4,7 +4,7 @@ import type { BodyFormat, Forum, Id, Post, PostDraft, Topic, Viewer } from '@tsb
 import { extractMentions, render } from '@tsbb/markup';
 import { loadSettings, type Settings } from './settings.ts';
 import { recountForum } from './forums.ts';
-import { recountTopic, uniqueTopicSlug, visiblePost } from './topics.ts';
+import { markRead, recountTopic, uniqueTopicSlug, visiblePost } from './topics.ts';
 import { recountUser } from './users.ts';
 import { hashIp } from './util.ts';
 
@@ -192,6 +192,9 @@ export async function createTopic(input: CreateTopicInput): Promise<{ topic: Top
   await recountTopic(topicId);
   await recountForum(input.forum.id);
   await recountUser(viewer.user.id);
+  // The author has read their own post. Without this the topic they just
+  // started is lit as unread for them until they open it again.
+  await markRead(topicId, viewer.user.id, post.id);
   await audit({
     userId: viewer.user.id,
     action: 'topic.create',
@@ -284,6 +287,7 @@ export async function reply(input: ReplyInput): Promise<Post> {
   await recountTopic(input.topic.id);
   await recountForum(input.topic.forumId);
   await recountUser(viewer.user.id);
+  await markRead(input.topic.id, viewer.user.id, post.id);
   await audit({ userId: viewer.user.id, action: 'post.create', targetType: 'post', targetId: post.id, ip: input.ip });
 
   if (settings['notifications.emailEnabled'] !== false) {

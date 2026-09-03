@@ -11,6 +11,8 @@ import {
   deletePost,
   editPost,
   forumBySlug,
+  forumWithDescendants,
+  markForumsRead,
   notifyNewPost,
   postById,
   PostError,
@@ -20,6 +22,7 @@ import {
   setSubscribed,
   topicById,
   userById,
+  visibleForumIds,
   type Settings,
 } from '@tsbb/core';
 import { quoteBody } from '@tsbb/markup';
@@ -306,6 +309,34 @@ export function writeRoutes(services: Services) {
 
     const topic = await topicById(post.topicId, true);
     return c.redirect(topic ? `/t/${topic.slug}-${topic.id}/p/${post.id}#p${post.id}` : '/', 303);
+  });
+
+  // --- Mark read ----------------------------------------------------------
+  // A marker per forum, not a row per topic, so both are a handful of writes
+  // however big the board is. Guests have no read state, so they are sent to
+  // sign in rather than shown a success that changed nothing.
+
+  app.post('/read', async (c) => {
+    const viewer = c.get('viewer');
+    if (!viewer.user) return c.redirect('/login?redirect=%2F', 302);
+    await markForumsRead(viewer.user.id, await visibleForumIds(viewer));
+    // The button lives on the index and on /latest; go back to whichever.
+    const from = c.req.header('referer') ?? '';
+    return c.redirect(/\/latest(\?|$)/.test(from) ? '/latest' : '/', 303);
+  });
+
+  app.post('/f/:slug/read', async (c) => {
+    const viewer = c.get('viewer');
+    const forum = await forumBySlug(c.req.param('slug'));
+    if (!forum) return c.notFound();
+    if (!viewer.user) return c.redirect(`/login?redirect=${encodeURIComponent(`/f/${forum.slug}`)}`, 302);
+
+    const permissions = await resolvePermissions(viewer, forum, await ancestryOf(forum.id));
+    if (!permissions.canView || !permissions.canRead) {
+      return forbidden(c, services, 'You do not have access to this forum.');
+    }
+    await markForumsRead(viewer.user.id, await forumWithDescendants(forum.id));
+    return c.redirect(`/f/${forum.slug}`, 303);
   });
 
   app.post('/t/:handle/subscribe', async (c) => {

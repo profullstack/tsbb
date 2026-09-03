@@ -17,6 +17,8 @@ export interface ForumRowNode extends Forum {
   children: ForumRowNode[];
   lastPost: LastPostSummary | null;
   unread?: boolean;
+  /** Unread topics here and in every subforum; the number on the row's badge. */
+  unreadCount?: number;
 }
 
 /**
@@ -31,6 +33,11 @@ export function ForumRow(forum: ForumRowNode, hue = 0) {
     <span class="forum-icon" aria-hidden="true">${IconFolder()}</span>
     <div class="grow">
       <a class="forum-name" href="${href}">${forum.name}</a>
+      ${forum.unreadCount
+        ? html` <span class="forum-unread" title="${forum.unreadCount} unread ${forum.unreadCount === 1 ? 'topic' : 'topics'}"
+              >${formatCount(forum.unreadCount)} new</span
+            >`
+        : ''}
       ${forum.isLocked ? html` <span class="muted tiny">${IconLock()} locked</span>` : ''}
       ${forum.description ? html`<div class="forum-desc">${forum.description}</div>` : ''}
       ${forum.children.length
@@ -241,4 +248,30 @@ export function PostArticle(options: {
       </div>
     </div>
   </article>`;
+}
+
+/**
+ * The line above a listing that says how far behind the member is, and the
+ * button that catches them up. Rendered only for a signed-in member: a guest
+ * has no read state, so there is nothing to mark.
+ *
+ * The button is always offered rather than hidden at zero, so it is in the
+ * same place every visit and a member never wonders whether the board lost it.
+ */
+export function ReadBar(options: {
+  unread: number;
+  action: string;
+  label: string;
+  /** What the count describes: "on the board", "in this forum". */
+  scope: string;
+}) {
+  const { unread } = options;
+  return html`<form class="read-bar" action="${options.action}" method="post">
+    <span class="read-bar-status${unread ? ' has-unread' : ''}">
+      ${unread
+        ? html`<strong>${formatCount(unread)}</strong> unread ${unread === 1 ? 'topic' : 'topics'} ${options.scope}`
+        : html`Nothing unread ${options.scope}`}
+    </span>
+    <button class="btn btn-outline btn-sm" type="submit">${options.label}</button>
+  </form>`;
 }

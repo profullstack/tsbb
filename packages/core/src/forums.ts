@@ -1,6 +1,7 @@
 import { all, now, one, run } from '@tsbb/db';
 import type { Forum, Id, MemberPosting, Viewer } from '@tsbb/plugin-api';
 import { ancestryOf, parentMap, resolvePermissions } from './permissions.ts';
+import { unreadTopicCounts } from './reads.ts';
 import { slugify } from './util.ts';
 
 export interface ForumRow {
@@ -54,7 +55,13 @@ export function toForum(row: ForumRow): Forum {
 export interface ForumNode extends Forum {
   children: ForumNode[];
   lastPost: LastPost | null;
-  unread?: boolean;
+  /**
+   * Unread topics in this forum and everything nested under it, for the
+   * viewer the tree was built for. Always 0 for a guest, who has no read
+   * state to be behind on.
+   */
+  unreadCount: number;
+  unread: boolean;
 }
 
 export interface LastPost {
@@ -94,7 +101,10 @@ export async function forumById(id: Id): Promise<Forum | null> {
 export async function forumTree(viewer: Viewer): Promise<ForumNode[]> {
   const rows = await all<ForumRow>('SELECT * FROM forums ORDER BY position, id');
   const parents = await parentMap();
-  const lastPosts = await lastPostsByForum();
+  const [lastPosts, unread] = await Promise.all([
+    lastPostsByForum(),
+    unreadTopicCounts(viewer.user?.id ?? null),
+  ]);
 
   const visible: ForumNode[] = [];
   for (const row of rows) {
@@ -104,7 +114,14 @@ export async function forumTree(viewer: Viewer): Promise<ForumNode[]> {
       const perms = await resolvePermissions(viewer, forum, await ancestryOf(forum.id, parents));
       if (!perms.canView) continue;
     }
-    visible.push({ ...forum, children: [], lastPost: lastPosts.get(forum.id) ?? null });
+    const unreadCount = unread.get(forum.id) ?? 0;
+    visible.push({
+      ...forum,
+      children: [],
+      lastPost: lastPosts.get(forum.id) ?? null,
+      unreadCount,
+      unread: unreadCount > 0,
+    });
   }
 
   const byId = new Map(visible.map((node) => [node.id, node]));
@@ -117,12 +134,25 @@ export async function forumTree(viewer: Viewer): Promise<ForumNode[]> {
     // being promoted to the top level where it would escape its restriction.
   }
 
+  // Unread rolls up: a category is lit when any forum under it is, so the
+  // index answers "is there anything new down there?" without a click. Only
+  // forums that survived the permission filter contribute, so a member is
+  // never told about activity in a forum they cannot open.
   const prune = (nodes: ForumNode[]): ForumNode[] =>
     nodes
-      .map((node) => ({ ...node, children: prune(node.children) }))
+      .map((node) => {
+        const children = prune(node.children);
+        const unreadCount = children.reduce((sum, child) => sum + child.unreadCount, node.unreadCount);
+        return { ...node, children, unreadCount, unread: unreadCount > 0 };
+      })
       .filter((node) => node.kind !== 'category' || node.children.length > 0);
 
   return prune(roots);
+}
+
+/** Unread topics across every forum in the tree — the number on the board's "mark all read". */
+export function unreadInTree(nodes: ForumNode[]): number {
+  return nodes.reduce((sum, node) => sum + node.unreadCount, 0);
 }
 
 async function lastPostsByForum(): Promise<Map<Id, LastPost>> {

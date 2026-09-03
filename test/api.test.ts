@@ -137,6 +137,46 @@ describe('the API and MCP surfaces', () => {
     }
   });
 
+  it('reports unread counts per forum and marks them read', async () => {
+    // A second member who has read nothing yet.
+    const reader = await core.createUser({ email: 'reader@example.com', username: 'reader' });
+    const readerToken = await core.mintToken({ userId: reader.id, label: 'test' });
+    const authed = (path: string, init: RequestInit = {}) =>
+      app.fetch(new Request(url(path), { ...init, headers: { authorization: `Bearer ${readerToken}` } }));
+
+    const before = (await (await authed('/api/v1/forums')).json()) as {
+      forums: { slug: string; unread: number }[];
+    };
+    const general = before.forums.find((f) => f.slug === 'general');
+    assert.ok(general && general.unread >= 1, 'the topic created in before() is unread to a new member');
+    for (const forum of before.forums) assert.equal(typeof forum.unread, 'number');
+
+    const nested = (await (await authed('/api/v1/board')).json()) as {
+      forums: { slug: string; unread: number; children: { slug: string; unread: number }[] }[];
+    };
+    const category = nested.forums.find((f) => f.children.some((c) => c.slug === 'general'));
+    assert.ok(category && category.unread >= general.unread, 'a category carries the sum of its forums');
+
+    const guest = await app.fetch(new Request(url('/api/v1/read'), { method: 'POST' }));
+    assert.equal(guest.status, 401);
+
+    const forumRead = await authed('/api/v1/forums/general/read', { method: 'POST' });
+    assert.equal(forumRead.status, 200);
+    const afterForum = (await (await authed('/api/v1/forums')).json()) as { forums: { slug: string; unread: number }[] };
+    assert.equal(afterForum.forums.find((f) => f.slug === 'general')?.unread, 0);
+
+    const topics = (await (await authed('/api/v1/forums/general/topics')).json()) as { topics: { unread: boolean }[] };
+    assert.ok(topics.topics.length > 0);
+    assert.ok(topics.topics.every((t) => t.unread === false), 'the topic list agrees with the forum count');
+
+    assert.equal((await authed('/api/v1/forums/no-such-forum/read', { method: 'POST' })).status, 404);
+
+    const boardRead = await authed('/api/v1/read', { method: 'POST' });
+    assert.equal(boardRead.status, 200);
+    const afterBoard = (await (await authed('/api/v1/forums')).json()) as { forums: { unread: number }[] };
+    assert.ok(afterBoard.forums.every((f) => f.unread === 0), 'nothing is unread after a board-wide mark');
+  });
+
   it('flattens the forum tree with a usable depth', async () => {
     const { forums } = await api<{ forums: { slug: string; depth: number; kind: string }[] }>(
       '/api/v1/forums',

@@ -4,6 +4,8 @@ import {
   breadcrumb,
   createTopic,
   forumBySlug,
+  forumWithDescendants,
+  markForumsRead,
   forumTree,
   listNotifications,
   listPosts,
@@ -148,6 +150,7 @@ export function apiRoutes(services: Services) {
           depth,
           topics: node.topicCount,
           posts: node.postCount,
+          unread: node.unreadCount,
           url: `/f/${node.slug}`,
         });
         walk(node.children, depth + 1);
@@ -206,6 +209,26 @@ export function apiRoutes(services: Services) {
       forum: { id: forum.id, slug: forum.slug, name: forum.name, description: forum.description },
       topics: topics.map(flattenTopic),
     });
+  });
+
+  // --- Mark read ----------------------------------------------------------
+
+  app.post('/api/v1/read', async (c) => {
+    const viewer = c.get('viewer');
+    if (!viewer.user) return c.json({ error: 'unauthorized' }, 401);
+    await markForumsRead(viewer.user.id, await visibleForumIds(viewer));
+    return c.json({ ok: true });
+  });
+
+  app.post('/api/v1/forums/:slug/read', async (c) => {
+    const viewer = c.get('viewer');
+    if (!viewer.user) return c.json({ error: 'unauthorized' }, 401);
+    const forum = await forumBySlug(c.req.param('slug'));
+    if (!forum) return c.json({ error: 'not_found' }, 404);
+    const permissions = await resolvePermissions(viewer, forum, await ancestryOf(forum.id));
+    if (!permissions.canView || !permissions.canRead) return c.json({ error: 'forbidden' }, 403);
+    await markForumsRead(viewer.user.id, await forumWithDescendants(forum.id));
+    return c.json({ ok: true });
   });
 
   app.get('/api/v1/latest', async (c) => {
@@ -457,6 +480,7 @@ function flattenForum(node: {
   description: string | null;
   topicCount: number;
   postCount: number;
+  unreadCount: number;
   children: unknown[];
 }): unknown {
   return {
@@ -467,6 +491,7 @@ function flattenForum(node: {
     description: node.description,
     topics: node.topicCount,
     posts: node.postCount,
+    unread: node.unreadCount,
     children: (node.children as Parameters<typeof flattenForum>[0][]).map(flattenForum),
   };
 }
