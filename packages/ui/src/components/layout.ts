@@ -31,9 +31,49 @@ export interface LayoutProps {
   themeColor?: { light: string; dark: string };
   canonical?: string;
   feedUrl?: string;
+  /** `board.tagline`. Joins the board name in the front page's <title>. */
+  tagline?: string;
+  /** `board.operator`. The name on the copyright line. */
+  operator?: string;
+  /**
+   * JSON-LD graphs for the page, serialised into a data block. A data block
+   * is not a script: the CSP that forbids inline script does not apply to it,
+   * and nothing in it ever runs.
+   */
+  jsonLd?: unknown[];
   slots?: LayoutSlots;
   theme?: ThemeChoice;
   body: Renderable;
+}
+
+/**
+ * JSON for a <script type="application/ld+json"> block.
+ *
+ * JSON.stringify alone is not safe there: a value containing `</script>`
+ * closes the block and the rest is markup. Escaping `<` as \u003c keeps the
+ * JSON identical to a parser and inert to the HTML tokenizer; U+2028/2029 are
+ * escaped because they are line terminators in JavaScript but not in JSON.
+ */
+export function jsonForHtml(value: unknown): string {
+  return JSON.stringify(value)
+    .replace(/</g, '\\u003c')
+    .replace(/\u2028/g, '\\u2028')
+    .replace(/\u2029/g, '\\u2029');
+}
+
+/**
+ * The front page's title: the board name, then the tagline. A tagline written
+ * as "one clause — the rest" contributes only the first clause when the whole
+ * would run long, because a title an engine truncates at sixty characters is
+ * one it truncates in the middle of a sentence.
+ */
+function frontPageTitle(boardName: string, tagline?: string): string {
+  const line = tagline?.trim();
+  if (!line) return boardName;
+  const full = `${boardName} · ${line}`;
+  if (full.length <= 70) return full;
+  const clause = line.split(/\s+[—–-]\s+|:\s+|\.\s+/)[0]?.trim();
+  return clause && clause.length < line.length ? `${boardName} · ${clause}` : full;
 }
 
 /**
@@ -56,7 +96,14 @@ export function Layout(props: LayoutProps) {
   const theme = props.theme ?? 'system';
   const themeColor = props.themeColor ?? { light: '#fffcf9', dark: '#1a120c' };
   const title =
-    props.title === props.boardName ? props.boardName : `${props.title} · ${props.boardName}`;
+    props.title === props.boardName
+      ? frontPageTitle(props.boardName, props.tagline)
+      : `${props.title} · ${props.boardName}`;
+  // The share image is the board's own mark. Absolute, because a relative
+  // og:image is ignored by every scraper that matters.
+  const origin = props.canonical ? new URL(props.canonical).origin : null;
+  const icon = props.faviconUrl ?? '/icons/icon-512.png';
+  const shareImage = /^https?:/.test(icon) ? icon : origin ? `${origin}${icon}` : null;
 
   return html`<!doctype html>
 <html lang="en"${theme === 'system' ? '' : raw(` data-theme="${theme}"`)}>
@@ -70,11 +117,18 @@ export function Layout(props: LayoutProps) {
       ? html`<link rel="alternate" type="application/rss+xml" title="${props.boardName}" href="${props.feedUrl}" />`
       : ''}
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="${props.title}" />
+    <meta property="og:title" content="${title}" />
     <meta property="og:site_name" content="${props.boardName}" />
     ${props.description ? html`<meta property="og:description" content="${props.description}" />` : ''}
     ${props.canonical ? html`<meta property="og:url" content="${props.canonical}" />` : ''}
+    ${shareImage ? html`<meta property="og:image" content="${shareImage}" />` : ''}
     <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="${title}" />
+    ${props.description ? html`<meta name="twitter:description" content="${props.description}" />` : ''}
+    ${shareImage ? html`<meta name="twitter:image" content="${shareImage}" />` : ''}
+    ${props.jsonLd?.length
+      ? html`<script type="application/ld+json">${raw(jsonForHtml(props.jsonLd.length === 1 ? props.jsonLd[0] : props.jsonLd))}</script>`
+      : ''}
     <link rel="stylesheet" href="${props.stylesheetUrl}" />
     <link rel="manifest" href="/manifest.webmanifest" />
     ${props.faviconUrl
@@ -136,10 +190,11 @@ export function Layout(props: LayoutProps) {
       <footer class="site-footer">
         <div class="container row-between">
           <span>
-            &copy; ${new Date().getFullYear()} Profullstack, Inc. &middot; running on
+            &copy; ${new Date().getFullYear()} ${props.operator ?? 'Profullstack, Inc.'} &middot; running on
             <a href="https://github.com/profullstack/tsbb" rel="noopener">tsbb</a>
           </span>
           <span class="row">
+            <a href="/about">About</a>
             <a href="/members">Members</a>
             <a href="/docs">Docs</a>
             <a href="/feeds">Feeds</a>

@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { all, one } from '@tsbb/db';
 import type { Context } from 'hono';
 import { html } from 'hono/html';
+import { excerpt } from '@tsbb/markup';
 import {
   ancestryOf,
   breadcrumb,
@@ -59,7 +60,8 @@ export function boardRoutes(services: Services) {
     const below = await slot(c, services, 'board:below_categories');
     const stats = await boardStats();
 
-    const body = html`${trusted(above)}
+    const body = html`${boardHero(settings, viewer)}
+      ${trusted(above)}
       ${viewer.user && tree.length
         ? ReadBar({ unread: unreadInTree(tree), action: '/read', label: 'Mark all read', scope: 'on the board' })
         : ''}
@@ -93,7 +95,8 @@ export function boardRoutes(services: Services) {
 
     return render(c, services, {
       title: String(settings['board.name'] ?? 'Forums'),
-      description: String(settings['board.description'] ?? settings['board.tagline'] ?? ''),
+      description:
+        String(settings['board.description'] ?? '').trim() || String(settings['board.tagline'] ?? ''),
       feedUrl: '/feed.xml',
       body,
     });
@@ -278,6 +281,36 @@ async function boardStats(): Promise<BoardStats> {
     online: Number(row?.online ?? 0),
     newest: newest?.username ?? null,
   };
+}
+
+/**
+ * The front page's heading.
+ *
+ * A board index used to open straight into its first category, which left the
+ * page without an <h1> and left a crawler to guess what the site was from the
+ * footer. The name and tagline are the answer, stated once. A guest also gets
+ * the way in; a member already knows it and gets the compact form.
+ */
+function boardHero(settings: Settings, viewer: Viewer) {
+  const name = String(settings['board.name'] ?? 'tsbb');
+  const tagline = String(settings['board.tagline'] ?? '').trim();
+  const description = String(settings['board.description'] ?? '').trim();
+  const mode = String(settings['registration.mode'] ?? 'open');
+
+  return html`<section class="hero${viewer.user ? ' hero-compact' : ''}">
+    <div class="hero-text">
+      <h1 class="hero-title">${name}</h1>
+      ${tagline ? html`<p class="hero-tagline">${tagline}</p>` : ''}
+      ${description && !viewer.user ? html`<p class="hero-description">${description}</p>` : ''}
+    </div>
+    ${viewer.user
+      ? ''
+      : html`<div class="row hero-actions">
+          ${mode !== 'closed' ? LinkButton('Join the board', '/signup', { size: 'sm' }) : ''}
+          ${LinkButton('About', '/about', { size: 'sm', variant: 'outline' })}
+          ${LinkButton('Docs', '/docs', { size: 'sm', variant: 'ghost' })}
+        </div>`}
+  </section>`;
 }
 
 function boardStatsPanel(stats: BoardStats) {
@@ -494,10 +527,47 @@ async function topicPage(c: Context<AppEnv>, services: Services) {
         : ''}
     ${trusted(below)}`;
 
+  /*
+   * The thread as structured data. DiscussionForumPosting is the type search
+   * engines actually use for forum threads: the opening post is the posting
+   * and the replies on this page are its comments. Author URLs point at the
+   * profile, so the same person on two threads resolves to one entity.
+   */
+  const opening = posts[0];
+  const person = (name: string | null) =>
+    name ? { '@type': 'Person', name, url: new URL(`/u/${name}`, baseUrl).toString() } : undefined;
+  const topicUrl = new URL(`/t/${canonicalHandle}`, baseUrl).toString();
+  const discussion = {
+    '@context': 'https://schema.org',
+    '@type': 'DiscussionForumPosting',
+    '@id': topicUrl,
+    url: topicUrl,
+    headline: topic.title,
+    ...(opening ? { text: excerpt(opening.body, opening.bodyFormat, 500) } : {}),
+    datePublished: new Date(topic.createdAt).toISOString(),
+    ...(topic.lastPostAt ? { dateModified: new Date(topic.lastPostAt).toISOString() } : {}),
+    ...(opening?.authorName ? { author: person(opening.authorName) } : {}),
+    isPartOf: { '@type': 'WebPage', name: forum.name, url: new URL(`/f/${forum.slug}`, baseUrl).toString() },
+    commentCount: topic.replyCount,
+    interactionStatistic: [
+      { '@type': 'InteractionCounter', interactionType: 'https://schema.org/CommentAction', userInteractionCount: topic.replyCount },
+      { '@type': 'InteractionCounter', interactionType: 'https://schema.org/ViewAction', userInteractionCount: topic.viewCount },
+    ],
+    comment: posts.slice(page === 1 ? 1 : 0).map((post) => ({
+      '@type': 'Comment',
+      url: new URL(`/t/${canonicalHandle}/p/${post.id}`, baseUrl).toString(),
+      text: excerpt(post.body, post.bodyFormat, 300),
+      datePublished: new Date(post.createdAt).toISOString(),
+      ...(post.authorName ? { author: person(post.authorName) } : {}),
+    })),
+  };
+
   return render(c, services, {
     title: topic.title,
-    canonical: new URL(`/t/${canonicalHandle}`, baseUrl).toString(),
+    description: opening ? excerpt(opening.body, opening.bodyFormat, 160) : undefined,
+    canonical: topicUrl,
     feedUrl: `/t/${canonicalHandle}/feed.xml`,
+    jsonLd: [discussion],
     body,
   });
 }

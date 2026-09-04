@@ -35,6 +35,19 @@ export const DEFAULT_SETTINGS = {
   'board.logoHref': '/',
   /** A browser-tab icon, replacing the bundled ones. */
   'board.faviconUrl': '',
+  /**
+   * Where a person, or a security researcher, reaches whoever runs the board.
+   * Shown on /about and published in /.well-known/security.txt. Empty falls
+   * back to the address the board sends mail from, which is usually right and
+   * occasionally a no-reply — set this when it is.
+   */
+  'board.contactEmail': '',
+  /**
+   * Who the board belongs to: the name in the footer's copyright line, on
+   * /about, and in the structured data search engines read. The default is
+   * what every board said before this was a setting.
+   */
+  'board.operator': 'Profullstack, Inc.',
 
   /** Registration: 'open' | 'invite' | 'closed' */
   'registration.mode': 'open',
