@@ -35,6 +35,6 @@
       "@tsbb/plugin-host": ["packages/plugin-host/src/index.ts"]
     }
   },
-  "include": ["packages/**/*.ts", "apps/**/*.ts", "plugins/**/*.ts", "test/**/*.ts"],
+  "include": ["packages/**/*.ts", "apps/**/*.ts", "plugins/**/*.ts", "test/**/*.ts", "scripts/**/*.ts"],
   "exclude": ["node_modules", "**/node_modules", "**/dist"]
 }
