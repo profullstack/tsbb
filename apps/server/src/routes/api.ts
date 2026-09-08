@@ -151,6 +151,12 @@ export function apiRoutes(services: Services) {
           topics: node.topicCount,
           posts: node.postCount,
           unread: node.unreadCount,
+          // What this token may do here. Without these a client can only learn
+          // that a forum is feed-only, locked, or above its rank by being
+          // refused, which for a posting client means finding out in public.
+          canPost: node.canPost,
+          canReply: node.canReply,
+          locked: node.isLocked,
           url: `/f/${node.slug}`,
         });
         walk(node.children, depth + 1);
@@ -481,6 +487,9 @@ function flattenForum(node: {
   topicCount: number;
   postCount: number;
   unreadCount: number;
+  canPost: boolean;
+  canReply: boolean;
+  isLocked: boolean;
   children: unknown[];
 }): unknown {
   return {
@@ -492,6 +501,11 @@ function flattenForum(node: {
     topics: node.topicCount,
     posts: node.postCount,
     unread: node.unreadCount,
+    // The nested tree answers the same question the flat list does: a client
+    // reading either one should not have to post to find out where it may post.
+    canPost: node.canPost,
+    canReply: node.canReply,
+    locked: node.isLocked,
     children: (node.children as Parameters<typeof flattenForum>[0][]).map(flattenForum),
   };
 }

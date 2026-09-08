@@ -177,6 +177,73 @@ describe('the API and MCP surfaces', () => {
     assert.ok(afterBoard.forums.every((f) => f.unread === 0), 'nothing is unread after a board-wide mark');
   });
 
+  it('says what a token may do in each forum, so a client need not find out by being refused', async () => {
+    // A reply-only forum is how a feed is published to a board: the crawler
+    // opens the topics and members discuss them. Posting into one answers 403,
+    // and the forum list used to look identical to an ordinary forum, so a
+    // posting client could only discover the difference in public.
+    const feedOnly = await core.createForum({
+      name: 'Industry news',
+      kind: 'forum',
+      memberPosting: 'replies',
+    });
+    const locked = await core.createForum({ name: 'The archive', kind: 'forum' });
+    await core.updateForum(locked.id, { isLocked: true });
+
+    const listed = (await api<{
+      forums: { slug: string; kind: string; canPost: boolean; canReply: boolean; locked: boolean }[];
+    }>('/api/v1/forums', true)).forums;
+
+    const ordinary = listed.find((f) => f.slug === 'general');
+    assert.ok(ordinary);
+    assert.equal(ordinary.canPost, true);
+    assert.equal(ordinary.canReply, true);
+    assert.equal(ordinary.locked, false);
+
+    const feed = listed.find((f) => f.slug === feedOnly.slug);
+    assert.ok(feed);
+    assert.equal(feed.canPost, false, 'a reply-only forum says so before a topic is attempted');
+    assert.equal(feed.canReply, true, 'and replying is the whole point of it');
+
+    const shut = listed.find((f) => f.slug === locked.slug);
+    assert.ok(shut);
+    assert.equal(shut.locked, true);
+    assert.equal(shut.canPost, false, 'a locked forum takes neither');
+    assert.equal(shut.canReply, false);
+
+    // A category holds forums, not topics.
+    const category = listed.find((f) => f.kind === 'category');
+    assert.ok(category);
+    assert.equal(category.canPost, false);
+
+    // The claim has to match what the write route actually does, or it is worse
+    // than no claim at all.
+    const refused = await app.fetch(
+      new Request(url(`/api/v1/forums/${feedOnly.slug}/topics`), {
+        method: 'POST',
+        headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },
+        body: JSON.stringify({ title: 'Should not land', body: 'Nor this.' }),
+      }),
+    );
+    assert.equal(refused.status, 403);
+
+    const accepted = await app.fetch(
+      new Request(url('/api/v1/forums/general/topics'), {
+        method: 'POST',
+        headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },
+        body: JSON.stringify({ title: 'This one lands', body: 'As advertised.' }),
+      }),
+    );
+    assert.equal(accepted.status, 201);
+
+    // The nested tree answers the same question.
+    const nested = (await api<{
+      forums: { slug: string; canPost: boolean; children: { slug: string; canPost: boolean }[] }[];
+    }>('/api/v1/board', true)).forums;
+    const flat = [...nested, ...nested.flatMap((f) => f.children)];
+    assert.equal(flat.find((f) => f.slug === feedOnly.slug)?.canPost, false);
+  });
+
   it('flattens the forum tree with a usable depth', async () => {
     const { forums } = await api<{ forums: { slug: string; depth: number; kind: string }[] }>(
       '/api/v1/forums',

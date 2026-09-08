@@ -62,6 +62,16 @@ export interface ForumNode extends Forum {
    */
   unreadCount: number;
   unread: boolean;
+  /**
+   * Whether the viewer the tree was built for may start a topic here, and may
+   * reply to one. Resolved the same way the write routes resolve it, locked
+   * forums and the member-posting policy included, so a client can tell a
+   * feed-only forum from an ordinary one before it tries to post into it.
+   *
+   * A category is never postable: it holds forums, not topics.
+   */
+  canPost: boolean;
+  canReply: boolean;
 }
 
 export interface LastPost {
@@ -110,9 +120,17 @@ export async function forumTree(viewer: Viewer): Promise<ForumNode[]> {
   for (const row of rows) {
     if (row.is_hidden === 1 && !viewer.isModerator && !viewer.isAdmin) continue;
     const forum = toForum(row);
+    // A category is a container: nothing is posted into one directly, so there
+    // is no permission to resolve and nothing a client could do with the answer.
+    let canPost = false;
+    let canReply = false;
     if (forum.kind === 'forum') {
       const perms = await resolvePermissions(viewer, forum, await ancestryOf(forum.id, parents));
       if (!perms.canView) continue;
+      // The same two conditions the write routes apply, so a client that trusts
+      // this cannot be surprised by a 403 the board could have predicted.
+      canPost = perms.canPost && !forum.isLocked;
+      canReply = perms.canReply && !forum.isLocked;
     }
     const unreadCount = unread.get(forum.id) ?? 0;
     visible.push({
@@ -121,6 +139,8 @@ export async function forumTree(viewer: Viewer): Promise<ForumNode[]> {
       lastPost: lastPosts.get(forum.id) ?? null,
       unreadCount,
       unread: unreadCount > 0,
+      canPost,
+      canReply,
     });
   }
 
