@@ -18,7 +18,17 @@ import { initialState, type State } from '../apps/tui/src/state.ts';
 import { renderApp } from '../apps/tui/src/views.ts';
 
 const DAY = 86_400_000;
-const NOW = Date.parse('2026-09-08T15:00:00.000Z');
+
+/**
+ * Ages are relative to capture time, not to a fixed date.
+ *
+ * The view renders "2h" and "1d" through `relative()`, which compares against
+ * `Date.now()`. Pinning the timestamps instead made those labels drift further
+ * out with every passing hour, so the committed screenshot churned on every
+ * regeneration and a real change could not be seen in the diff. Anchoring to
+ * now keeps the rendered labels identical forever.
+ */
+const NOW = Date.now();
 
 const forum = (
   id: number,
