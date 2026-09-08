@@ -90,7 +90,9 @@ export function openApiDocument(baseUrl: string, settings: Settings): Record<str
         get: {
           operationId: 'listForums',
           summary: 'The same forums, flattened, with a depth on each.',
-          responses: { '200': json('A flat list of forums.') },
+          description:
+            'Each forum carries canPost and canReply for the caller: whether this token may start a topic here and whether it may reply, resolved exactly as the write routes resolve it, so a feed-only forum, a locked one, or one above the caller\'s rank can be told apart before a post is attempted rather than by being refused. `locked` is the forum\'s own flag. A category is never postable.',
+          responses: { '200': json('A flat list of forums, each with what the caller may do in it.') },
         },
       },
       '/api/v1/stats': {
