@@ -751,3 +751,47 @@
 .about-body h2 { font-size: 1.0625rem; margin-top: 1.25rem; }
 .about-body h2:first-child { margin-top: 0; }
 .about-actions { margin-top: 1rem; }
+
+/* --- What the software is -------------------------------------------------- */
+/*
+ * The panel that says what tsbb can do: on the front page for a guest, on the
+ * About page, and at the top of the documentation index. One grid, one set of
+ * classes, so a skin styles it once.
+ */
+.platform-lead {
+  font-size: 0.9375rem;
+  max-width: 72ch;
+  margin-bottom: 1rem;
+}
+.platform-grid {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+}
+.platform-item {
+  padding: 0.75rem 0.875rem;
+  border: 1px solid var(--border);
+  border-radius: calc(var(--radius) - 2px);
+  background: var(--muted);
+}
+.platform-item-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+.platform-item-title {
+  font-weight: 650;
+  font-size: 0.875rem;
+  letter-spacing: -0.01em;
+}
+a.platform-item-title { color: var(--foreground); }
+a.platform-item-title:hover { color: var(--primary); }
+.platform-item-summary {
+  font-size: 0.8125rem;
+  color: var(--muted-foreground);
+  margin-top: 0.375rem;
+}
+.platform-actions { margin-top: 1rem; }
+.docs-list { margin-top: 1rem; }
+.doc-source { margin-top: 1rem; }

@@ -302,3 +302,9 @@ a:hover { text-decoration: underline; }
 }
 .board-stat::before { width: 2px; }
 .board-newest { border-radius: 0; font-size: 10px; }
+
+/* The platform panel, boxed like everything else in this skin. */
+.platform-item { border-radius: 0; border: 1px solid var(--classic-line); }
+.platform-item-title { font-size: 11px; }
+.platform-item-summary { font-size: 11px; }
+.platform-lead { font-size: 11px; }
