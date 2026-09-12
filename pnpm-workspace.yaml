@@ -3,4 +3,4 @@ packages:
   - 'apps/*'
   - 'plugins/*'
 minimumReleaseAgeExclude:
-  - '@profullstack/hqtui@0.1.9'
+  - '@profullstack/hqtui@0.1.9 || 0.5.0'
