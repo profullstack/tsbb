@@ -124,6 +124,18 @@ describe('discovery files and headers', () => {
     await core.setSettings({ 'board.contactEmail': '' });
   });
 
+  it('serves the OpenMCP descriptor verbatim, without a session', async () => {
+    const response = await get('/.well-known/openmcp.json');
+    assert.equal(response.status, 200);
+    assert.equal(response.headers.get('content-type'), 'application/json; charset=utf-8');
+    assert.equal(response.headers.get('cache-control'), 'public, max-age=300');
+
+    const descriptor = (await response.json()) as Record<string, unknown>;
+    assert.equal(descriptor.openmcp, '0.1');
+    assert.equal(descriptor.mcp, 'https://tsbb.dev/api/mcp');
+    assert.ok(Array.isArray(descriptor.tools) && descriptor.tools.includes('board_overview'));
+  });
+
   it('redirects a trailing slash to the one address a page has', async () => {
     const docs = await get('/docs/');
     assert.equal(docs.status, 301);
