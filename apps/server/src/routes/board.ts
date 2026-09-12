@@ -45,6 +45,7 @@ import {
 } from '@tsbb/ui';
 import type { Post, User, Viewer } from '@tsbb/plugin-api';
 import { render, slot, type AppEnv, type Services } from '../context.ts';
+import { PLATFORM_CLAIM, PLATFORM_LEAD, PlatformGrid } from '../platform.ts';
 
 export function boardRoutes(services: Services) {
   const app = new Hono<AppEnv>();
@@ -91,6 +92,7 @@ export function boardRoutes(services: Services) {
             );
           })()}
       ${boardStatsPanel(stats)}
+      ${platformPanel(settings, viewer)}
       ${trusted(below)}`;
 
     return render(c, services, {
@@ -311,6 +313,33 @@ function boardHero(settings: Settings, viewer: Viewer) {
           ${LinkButton('Docs', '/docs', { size: 'sm', variant: 'ghost' })}
         </div>`}
   </section>`;
+}
+
+/**
+ * What the software under this board is, for somebody who has never seen it.
+ *
+ * Guests only, and last on the page: a member came for the forum, and a visitor
+ * reads the forums first and the sales pitch second. The grid itself is data in
+ * platform.ts, so a claim made here is a claim made everywhere, and a feature
+ * that does not exist yet renders as planned rather than as a feature.
+ */
+function platformPanel(settings: Settings, viewer: Viewer) {
+  if (viewer.user || settings['board.showPlatform'] === false) return '';
+
+  return Card(html`
+    ${CardHeader(PLATFORM_CLAIM, { description: 'This board runs on tsbb. So can yours.' })}
+    ${CardContent(html`
+      <p class="platform-lead">${PLATFORM_LEAD}</p>
+      ${PlatformGrid()}
+      <div class="row platform-actions">
+        ${LinkButton('Read the docs', '/docs', { size: 'sm' })}
+        ${LinkButton('About this board', '/about', { size: 'sm', variant: 'outline' })}
+        <!-- Off-site, so it carries rel="noopener" of its own rather than going
+             through LinkButton, which has no rel. -->
+        <a href="https://github.com/profullstack/tsbb" class="btn btn-ghost btn-sm" rel="noopener">Source on GitHub</a>
+      </div>
+    `)}
+  `);
 }
 
 function boardStatsPanel(stats: BoardStats) {

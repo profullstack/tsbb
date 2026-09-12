@@ -6,9 +6,28 @@ A TypeScript bulletin board. Forums, topics, replies, moderation, private
 messages, avatars, signatures, search, feeds — and a plugin system that ships
 with the board rather than being bolted on later.
 
-If you have run phpBB, SMF or vBulletin, you already know what this is. The
-difference is what it is made of: TypeScript that runs unbuilt, one SQLite file
-by default, no client-side JavaScript, and a terminal client.
+If you have run phpBB, SMF or vBulletin, you already know what this is. What is
+different is everything around it. One board answers as pages, as an installable
+app, over a REST API, from a shell, through MCP and in a terminal, all of them
+resolving the same permissions. Plugins are directories you drop in, because
+there is no build step to stop you. A board fetches its own updates. Agent-ok
+and human-ok are the same board, not two products.
+
+| Front door | |
+|---|---|
+| **Pages** | Server-rendered HTML, no client-side JavaScript, three skins. |
+| **App** | An installable PWA: manifest, service worker, offline page. [Docs](docs/PWA.md) |
+| **API** | `/api/v1`, permission-checked, with an OpenAPI description. [Docs](docs/API.md) |
+| **CLI** | `tsbb`, with `--json` on every command. [Docs](docs/CLI.md) |
+| **MCP** | `/api/mcp` over HTTP, `tsbb-mcp` over stdio. [Docs](docs/MCP.md) |
+| **Terminal** | `tsbb-tui`, a real client over SSH. [Docs](docs/SKINS.md) |
+| **Machines** | llms.txt, skill.md, JSON-LD, sitemap index, OPML. [Docs](docs/AGENTS.md) |
+| **Plugins** | A directory in `plugins/`. No build, no registry. [Docs](docs/PLUGINS.md) |
+| **Updates** | A board installs new releases itself. [Docs](docs/UPDATES.md) |
+
+**Not yet: peer to peer.** Boards connecting to other boards, and syncing topics
+between nodes, is the direction and is not in the code. Everything else on this
+page is.
 
 ```
 pnpm install
@@ -37,6 +56,9 @@ Open <http://localhost:3000>, put in your email address, and click the link.
 | **An API** | A permission-checked REST API with an OpenAPI description at `/api/v1/openapi.json`. |
 | **A CLI** | `tsbb` reads and posts against any board from a shell, with `--json` on every command. |
 | **An MCP server** | Served at `/api/mcp`, and as `tsbb-mcp` over stdio, so an assistant can use the board as a member. |
+| **An app** | An installable PWA: a generated manifest, a service worker that is network-first for pages, and an offline page wearing the board's own chrome. |
+| **A machine-readable board** | `llms.txt`, `llms-full.txt`, `skill.md`, a sitemap index, `security.txt`, JSON-LD on every page, OPML for the feeds. |
+| **Self-updating** | A board checks for a new release a minute after boot and every five minutes, installs it and restarts itself. |
 
 ## Design decisions worth knowing before you read the code
 
@@ -86,6 +108,8 @@ else.
 | `modern` | Cards, generous spacing, soft shadows. The default. |
 | `classic` | A 2000s bulletin board: boxy, dense, gradient title bars, Verdana. |
 | `terminal` | Neutral surfaces, hairline rules, monospace chrome, window furniture on section headers. |
+
+Full guide: **[docs/SKINS.md](docs/SKINS.md)**.
 
 `classic` and `terminal` are **layers on top of** the modern sheet rather than
 replacements, so a component's structure is defined in exactly one place and a
@@ -272,6 +296,8 @@ one with a fresh session secret and whatever you already had set.
 The worker runs inside the server by default, so email works from one command.
 
 ## Updates
+
+Full guide: **[docs/UPDATES.md](docs/UPDATES.md)**.
 
 A board keeps itself current. A minute after it starts, and every five minutes
 after that, it asks GitHub for the newest release; when there is one it fetches

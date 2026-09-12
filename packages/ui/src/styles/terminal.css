@@ -320,3 +320,12 @@ h6 {
   font-size: 0.75rem;
   border-top: 1px solid var(--term-rule);
 }
+
+/* The platform panel: hairlines and monospace chrome, like every other box. */
+.platform-item {
+  border-radius: 0;
+  border: 1px solid var(--term-rule);
+  background: transparent;
+}
+.platform-item-title { font-family: var(--font-mono); }
+.platform-item-summary { font-family: var(--font-mono); font-size: 0.75rem; }

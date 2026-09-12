@@ -4,9 +4,10 @@ import { html } from 'hono/html';
 import { forumTree, guestViewer, visibleForumIds, type Settings } from '@tsbb/core';
 import { escapeHtml } from '@tsbb/markup';
 import { all } from '@tsbb/db';
-import { Card, CardContent, LinkButton } from '@tsbb/ui';
+import { Card, CardContent, CardHeader, LinkButton } from '@tsbb/ui';
 import { render, type AppEnv, type Services } from '../context.ts';
-import { DOCS, docMarkdown } from './docs.ts';
+import { DOCS, docMarkdown, docTitle } from './docs.ts';
+import { FRONT_DOORS, LIVE_FRONT_DOORS, PLATFORM_CLAIM, PLATFORM_LEAD, PlatformGrid } from '../platform.ts';
 
 /**
  * The files a machine reads before it reads the board.
@@ -255,7 +256,21 @@ export function discoveryRoutes(services: Services) {
       `${name} is a bulletin board: a tree of forums, each holding topics, each topic a thread of posts. ` +
         'Every public page is complete server-rendered HTML with no client-side script, and every list ' +
         'on the board is also an RSS feed. The same content is reachable through a REST API, a command ' +
-        'line client and an MCP server, all of which apply the permissions the pages do.',
+        'line client, an MCP server, an installable app and a terminal client, all of which apply the ' +
+        'permissions the pages do.',
+      '',
+      `It runs on tsbb, ${PLATFORM_CLAIM.toLowerCase()}. ${PLATFORM_LEAD}`,
+      '',
+      '## What this board can do',
+      '',
+      ...LIVE_FRONT_DOORS.map((door) =>
+        door.href && door.href.startsWith('/')
+          ? `- [${door.title}](${absolute(door.href)}): ${door.summary}`
+          : `- ${door.title}: ${door.summary}`,
+      ),
+      ...FRONT_DOORS.filter((door) => door.status === 'planned').map(
+        (door) => `- ${door.title} (planned, not built yet): ${door.summary}`,
+      ),
       '',
       '## Read the board',
       '',
@@ -274,7 +289,7 @@ export function discoveryRoutes(services: Services) {
       '## Use the board from a program',
       '',
       link('Documentation', '/docs', 'The index of every guide below.'),
-      ...DOCS.map((doc) => link(doc.blurb.split(':')[0]?.replace(/`/g, '') ?? doc.slug, `/docs/${doc.slug}`, doc.blurb.replace(/`/g, ''))),
+      ...DOCS.map((doc) => link(docTitle(doc), `/docs/${doc.slug}`, doc.blurb.replace(/`/g, ''))),
       link('OpenAPI description', '/api/v1/openapi.json', 'The REST API, machine-readable.'),
       link('MCP endpoint', '/api/mcp', 'Streamable HTTP MCP server; a bearer token makes it act as a member.'),
       link('Agent skill', '/skill.md', 'What an agent can do here and how to authenticate.'),
@@ -339,6 +354,10 @@ export function discoveryRoutes(services: Services) {
       `# ${name}`,
       '',
       `${name} is a forum. Use it to read topics, search posts, and — as a signed-in member — start topics and reply.`,
+      '',
+      'It runs on tsbb, which answers the same content four ways: pages, a REST API, a CLI and MCP.',
+      'Whichever one you use, the permissions are the ones the pages apply. Nothing here is an',
+      'agent-only view of the board, and nothing is withheld from a browser that a token can see.',
       '',
       '## Connect',
       '',
@@ -418,8 +437,15 @@ export function discoveryRoutes(services: Services) {
             <li>A <a href="/docs/api">REST API</a>, described by an <a href="/api/v1/openapi.json">OpenAPI file</a>.</li>
             <li>The <a href="/docs/cli"><code>tsbb</code> command line client</a>, with <code>--json</code> on every command.</li>
             <li>An <a href="/docs/mcp">MCP server</a>, so an AI assistant can read and post as a member.</li>
+            <li>An <a href="/docs/pwa">app you can install</a>, and <code>tsbb-tui</code> in a terminal over SSH.</li>
           </ul>
-          <p>They all apply exactly the permissions the pages do.</p>
+          <p>
+            They all apply exactly the permissions the pages do, and none of them is a second-class
+            copy of the site: see <a href="/docs/agents">what this board publishes for machines</a>.
+          </p>
+
+          <h2>What is it built on?</h2>
+          <p>${PLATFORM_LEAD}</p>
 
           <h2>Who runs it?</h2>
           <p>
@@ -430,6 +456,10 @@ export function discoveryRoutes(services: Services) {
           </p>
         </div>`),
       )}
+      ${Card(html`
+        ${CardHeader(PLATFORM_CLAIM, { description: 'tsbb, the software this board runs.' })}
+        ${CardContent(PlatformGrid())}
+      `)}
       <div class="row about-actions">
         ${!viewer.user && mode !== 'closed' ? LinkButton('Join the board', '/signup', { size: 'sm' }) : ''}
         ${LinkButton('Read the docs', '/docs', { size: 'sm', variant: 'outline' })}

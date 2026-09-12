@@ -48,6 +48,16 @@ export const DEFAULT_SETTINGS = {
    * what every board said before this was a setting.
    */
   'board.operator': 'Profullstack, Inc.',
+  /**
+   * Whether the front page tells a VISITOR what the software under it is: the
+   * API, the CLI, MCP, the app, plugins. Signed-in members never see it — they
+   * came for the forum, and they have read it already.
+   *
+   * On by default, because a board whose readers are also the people who might
+   * run one is the normal case, and the panel is how they find out they can.
+   * A board that is a community first and a demo never turns it off here.
+   */
+  'board.showPlatform': true,
 
   /** Registration: 'open' | 'invite' | 'closed' */
   'registration.mode': 'open',

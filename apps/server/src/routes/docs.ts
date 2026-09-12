@@ -4,8 +4,9 @@ import { fileURLToPath } from 'node:url';
 import { Hono } from 'hono';
 import { html } from 'hono/html';
 import { renderInline, renderMarkdown } from '@tsbb/markup';
-import { Card, CardContent, Empty, trusted } from '@tsbb/ui';
+import { Card, CardContent, CardHeader, Empty, trusted } from '@tsbb/ui';
 import { render, type AppEnv, type Services } from '../context.ts';
+import { PLATFORM_CLAIM, PLATFORM_LEAD, PlatformGrid } from '../platform.ts';
 
 /**
  * The board's own documentation, served by the board.
@@ -52,6 +53,26 @@ export const DOCS: Doc[] = [
     slug: 'plugins',
     file: 'PLUGINS.md',
     blurb: 'Writing a plugin: filters, actions, slots, settings and routes.',
+  },
+  {
+    slug: 'agents',
+    file: 'AGENTS.md',
+    blurb: 'What the board publishes for machines, and why an agent and a person get the same board.',
+  },
+  {
+    slug: 'pwa',
+    file: 'PWA.md',
+    blurb: 'Installing a board as an app: the manifest, the service worker, and what is cached.',
+  },
+  {
+    slug: 'updates',
+    file: 'UPDATES.md',
+    blurb: 'How a board keeps itself current, and how to take that over.',
+  },
+  {
+    slug: 'skins',
+    file: 'SKINS.md',
+    blurb: 'The three skins, the terminal client, and the five branding settings.',
   },
 ];
 
@@ -178,6 +199,18 @@ function load(doc: Doc): Rendered | null {
 }
 
 /**
+ * The document's own <h1>, for a link to it.
+ *
+ * Its title is written once, in the file, and everything that links to the page
+ * uses it: the index, llms.txt and skill.md. Deriving a label from the blurb
+ * instead is what produced entries whose link text was the whole sentence that
+ * followed it.
+ */
+export function docTitle(doc: Doc): string {
+  return load(doc)?.title ?? doc.slug;
+}
+
+/**
  * A document as written, links rewritten to site paths, for /llms-full.txt.
  * Markdown is what a language model wants; the rendered HTML would only have
  * to be turned back into it.
@@ -221,40 +254,50 @@ export function docsRoutes(services: Services) {
           <div>
             <h1 class="page-title">Documentation</h1>
             <p class="page-subtitle">
-              This board is not only a website. It has an API, a command line client and an MCP
-              server, and they all answer with the same permissions the pages do.
+              This board is not only a website. It is an API, a command line client, an MCP server,
+              an installable app and a terminal client, and they all answer with the same
+              permissions the pages do.
             </p>
           </div>
         </div>
-        ${entries.length
-          ? Card(
-              CardContent(
-                html`<div class="table-wrap">
-                  <table class="table">
-                    <thead>
-                      <tr>
-                        <th>Document</th>
-                        <th>What it covers</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      ${entries.map(
-                        (entry) => html`<tr>
-                          <td><a href="/docs/${entry.doc.slug}">${entry.rendered.title}</a></td>
-                          <td>${trusted(renderInline(entry.doc.blurb))}</td>
-                        </tr>`,
-                      )}
-                    </tbody>
-                  </table>
-                </div>`,
-                { flush: true },
-              ),
-            )
-          : Card(
-              CardContent(
-                Empty('No documentation', 'This install was deployed without its docs directory.'),
-              ),
-            )}
+        ${Card(html`
+          ${CardHeader(PLATFORM_CLAIM)}
+          ${CardContent(html`
+            <p class="platform-lead">${PLATFORM_LEAD}</p>
+            ${PlatformGrid()}
+          `)}
+        `)}
+        <div class="docs-list">
+          ${entries.length
+            ? Card(
+                CardContent(
+                  html`<div class="table-wrap">
+                    <table class="table">
+                      <thead>
+                        <tr>
+                          <th>Document</th>
+                          <th>What it covers</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        ${entries.map(
+                          (entry) => html`<tr>
+                            <td><a href="/docs/${entry.doc.slug}">${entry.rendered.title}</a></td>
+                            <td>${trusted(renderInline(entry.doc.blurb))}</td>
+                          </tr>`,
+                        )}
+                      </tbody>
+                    </table>
+                  </div>`,
+                  { flush: true },
+                ),
+              )
+            : Card(
+                CardContent(
+                  Empty('No documentation', 'This install was deployed without its docs directory.'),
+                ),
+              )}
+        </div>
       `,
     });
   });
@@ -281,7 +324,10 @@ export function docsRoutes(services: Services) {
              markdown, and the docs get code blocks, tables and quotes styled
              identically in both skins without a line of new CSS. -->
         ${Card(CardContent(html`<div class="post-body">${trusted(rendered.body)}</div>`))}
-        <p class="small muted" style="margin-top:1rem">
+        <!-- A class, not style="…": the board's CSP has no 'unsafe-inline' in
+             style-src, and that governs inline style ATTRIBUTES too, so this
+             line had been rendering unspaced on every documentation page. -->
+        <p class="small muted doc-source">
           This page is
           <a
             href="https://github.com/profullstack/tsbb/blob/main/docs/${doc.file}"

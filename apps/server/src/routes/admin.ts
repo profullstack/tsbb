@@ -215,6 +215,7 @@ export function adminRoutes(services: Services) {
         'board.logoUrl',
         'board.logoHref',
         'board.faviconUrl',
+        'board.showPlatform',
       ],
     },
     { title: 'Registration', keys: ['registration.mode', 'registration.minUsernameLength', 'registration.maxUsernameLength'] },
@@ -243,6 +244,8 @@ export function adminRoutes(services: Services) {
     'board.logoHref':
       'Where the header logo points. / is this board. An absolute URL is for a board that is one room in a larger site — the nav still leads back to the front page, so nobody is stranded.',
     'board.faviconUrl': 'A URL to a browser-tab icon. Replaces the bundled tsbb icons.',
+    'board.showPlatform':
+      'A panel at the foot of the front page telling a visitor what the software under this board can do: the API, the CLI, MCP, the app, plugins. Guests only, never members. Turn it off for a board whose readers are not looking for one of their own.',
     'signatures.minPosts':
       'How many posts before a signature is shown. A new account with a link-filled signature is the shape of every piece of forum spam, so this is 10 by default.',
     'posts.floodSeconds': 'Seconds between posts by the same account. 0 turns flood control off.',
