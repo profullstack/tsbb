@@ -1,3 +1,6 @@
+import { readFileSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { Hono } from 'hono';
 import type { Context } from 'hono';
 import { html } from 'hono/html';
@@ -49,6 +52,9 @@ async function publicForums(): Promise<{ slug: string; name: string; description
     .filter((forum) => readable.has(forum.id))
     .map((forum) => ({ slug: forum.slug, name: forum.name, description: forum.description }));
 }
+
+const HERE = dirname(fileURLToPath(import.meta.url));
+const PUBLIC_DIR = resolve(HERE, '../../public');
 
 const XML_HEAD = '<?xml version="1.0" encoding="UTF-8"?>\n';
 
@@ -338,6 +344,29 @@ export function discoveryRoutes(services: Services) {
       '',
     ];
     return text(c, lines.join('\n'));
+  });
+
+  // --- openmcp.json -----------------------------------------------------------
+  //
+  // The OpenMCP descriptor (https://logicsrc.com/openmcp): where the MCP
+  // endpoint is, how to authenticate to it, and which catalogs list it. Unlike
+  // the files above it is shipped verbatim rather than generated, because it
+  // describes tsbb.dev's MCP server, not this board's forums, and a catalog
+  // verifies the listing by fetching exactly these bytes. It is read on every
+  // request so a redeploy is enough to change it. Public: verification is
+  // done by a catalog with no account here.
+
+  app.get('/.well-known/openmcp.json', (c) => {
+    let body: string;
+    try {
+      body = readFileSync(join(PUBLIC_DIR, '.well-known', 'openmcp.json'), 'utf8');
+    } catch {
+      return c.notFound();
+    }
+    return c.body(body, 200, {
+      'content-type': 'application/json; charset=utf-8',
+      'cache-control': 'public, max-age=300',
+    });
   });
 
   // --- skill.md ---------------------------------------------------------------
