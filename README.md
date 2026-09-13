@@ -25,9 +25,10 @@ and human-ok are the same board, not two products.
 | **Plugins** | A directory in `plugins/`. No build, no registry. [Docs](docs/PLUGINS.md) |
 | **Updates** | A board installs new releases itself. [Docs](docs/UPDATES.md) |
 
-**Not yet: peer to peer.** Boards connecting to other boards, and syncing topics
-between nodes, is the direction and is not in the code. Everything else on this
-page is.
+**Peer to peer / distributed — planned.** The roadmap is a network of independent
+boards that connect and sync topics between nodes. Today, clients can use multiple
+boards and sync their board list across machines; node-to-node topic replication
+is not implemented. [Connecting boards](docs/NETWORK.md) covers both.
 
 ```
 pnpm install

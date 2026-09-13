@@ -45,7 +45,7 @@ import {
 } from '@tsbb/ui';
 import type { Post, User, Viewer } from '@tsbb/plugin-api';
 import { render, slot, type AppEnv, type Services } from '../context.ts';
-import { PLATFORM_CLAIM, PLATFORM_LEAD, PlatformGrid } from '../platform.ts';
+import { PLATFORM_CLAIM, PLATFORM_LEAD, PlatformGrid, PlatformIntro } from '../platform.ts';
 
 export function boardRoutes(services: Services) {
   const app = new Hono<AppEnv>();
@@ -304,6 +304,7 @@ function boardHero(settings: Settings, viewer: Viewer) {
       <h1 class="hero-title">${name}</h1>
       ${tagline ? html`<p class="hero-tagline">${tagline}</p>` : ''}
       ${description && !viewer.user ? html`<p class="hero-description">${description}</p>` : ''}
+      ${!viewer.user && settings['board.showPlatform'] !== false ? PlatformIntro() : ''}
     </div>
     ${viewer.user
       ? ''
