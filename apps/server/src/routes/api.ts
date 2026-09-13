@@ -87,6 +87,7 @@ export function apiRoutes(services: Services) {
         stats: `${base}/api/v1/stats`,
         notifications: `${base}/api/v1/notifications`,
         me: `${base}/api/v1/me`,
+        settings: `${base}/api/v1/settings`,
       },
       mcp: {
         endpoint: `${base}/api/mcp`,

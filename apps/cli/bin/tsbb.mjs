@@ -29,6 +29,7 @@ Using a board (these talk to one over its API, yours or anybody's):
   tsbb boards                  Every board you are signed in to
   tsbb use <server>            Make one of them the default
   tsbb whoami                  Who you are on the current board
+  tsbb sync [save|load|status] The boards you use, on every machine (--force, --dry-run)
 
   tsbb forums                  The forums you can read
   tsbb latest                  Recently active topics
@@ -194,7 +195,8 @@ try {
     case 'search':
     case 'inbox':
     case 'post':
-    case 'reply': {
+    case 'reply':
+    case 'sync': {
       const remote = await import('../src/remote.ts');
       const { flags, rest } = parseFlags(argv.slice(1));
       try {
@@ -232,6 +234,9 @@ try {
             break;
           case 'inbox':
             await remote.inboxCommand(flags);
+            break;
+          case 'sync':
+            await remote.syncCommand(rest[0], flags);
             break;
           case 'post':
             await remote.postCommand(rest, flags);

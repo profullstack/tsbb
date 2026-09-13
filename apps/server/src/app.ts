@@ -16,6 +16,7 @@ import { mcpRoutes } from './routes/mcp.ts';
 import { userRoutes } from './routes/user.ts';
 import { authRoutes } from './routes/auth.ts';
 import { writeRoutes } from './routes/write.ts';
+import { settingsRoutes } from './routes/settings.ts';
 
 export function createApp(registry: Registry, baseUrl: string): Hono<AppEnv> {
   const app = new Hono<AppEnv>();
@@ -225,6 +226,7 @@ export function createApp(registry: Registry, baseUrl: string): Hono<AppEnv> {
   app.route('/', discoveryRoutes(services));
   app.route('/', discoverRoutes(services));
   app.route('/', writeRoutes(services));
+  app.route('/', settingsRoutes(services));
   app.route('/', boardRoutes(services));
 
   mountPluginRoutes(app, services);

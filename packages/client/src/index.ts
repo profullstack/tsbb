@@ -24,6 +24,20 @@ export {
 } from './client.ts';
 export { login, LoginError, type LoginOptions } from './login.ts';
 export {
+  SETTINGS_FILE,
+  SYNC_POLICY,
+  applySettings,
+  settingsFrom,
+  settingsPath,
+  syncContext,
+  syncLoad,
+  syncSave,
+  syncStatus,
+  writeSettingsFile,
+  type BoardSettings,
+  type SyncOptions,
+} from './sync.ts';
+export {
   configPath,
   currentBoard,
   loadConfig,

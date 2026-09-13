@@ -72,6 +72,25 @@ export function openApiDocument(baseUrl: string, settings: Settings): Record<str
           responses: { '200': json('An OpenAPI 3.1 description of this board.') },
         },
       },
+      '/api/v1/settings': {
+        get: {
+          operationId: 'getSettings',
+          summary: "The member's synced settings: the latest snapshot, or empty: true.",
+          responses: { '200': json('The snapshot under its revision, or { empty: true } when nothing is saved.') },
+        },
+        put: {
+          operationId: 'putSettings',
+          summary: 'Save a settings snapshot under the next revision. { snapshot, ifRevision }; 409 when another machine saved first.',
+          responses: { '200': json('The revision saved, or the one already holding these exact files.') },
+        },
+      },
+      '/api/v1/settings/revisions': {
+        get: {
+          operationId: 'listSettingsRevisions',
+          summary: 'The last ten settings revisions, newest first.',
+          responses: { '200': json('Revisions with digest, host, version, size and when.') },
+        },
+      },
       '/api/v1/me': {
         get: {
           operationId: 'getMe',

@@ -292,6 +292,80 @@ export async function replyCommand(args: string[], flags: RemoteFlags): Promise<
  * A stack trace from a CLI is noise: the reader wants to know whether they
  * typed something wrong, are not signed in, or the board is down.
  */
+/**
+ * `tsbb sync [status|save|load|revisions] [--force] [--dry-run]`: the boards
+ * you use, on every machine, through the current board.
+ */
+export async function syncCommand(sub: string | undefined, flags: RemoteFlags & { force?: boolean; dryRun?: boolean }): Promise<void> {
+  const sync = await import('@tsbb/client');
+  const options = { ...(flags.server ? { server: flags.server } : {}) };
+  switch (sub ?? 'status') {
+    case 'status': {
+      const state = await sync.syncStatus(options);
+      emit(flags, state, () => {
+        const lines = [
+          `here   ${state.marker ? `revision ${state.marker.revision}, synced ${state.marker.at.slice(0, 16).replace('T', ' ')}` : 'never synced'}`,
+          `board  ${state.serverRevision !== undefined ? `revision ${state.serverRevision}${state.serverHost ? ` from ${state.serverHost}` : ''}` : 'nothing yet'}`,
+        ];
+        if (state.drifted.length) lines.push(`changed here: ${state.drifted.join(', ')}  (tsbb sync save)`);
+        if (state.behind) lines.push('the board is newer  (tsbb sync load)');
+        if (state.marker && !state.drifted.length && !state.behind) lines.push('in sync.');
+        return lines.join('\n');
+      });
+      return;
+    }
+    case 'save': {
+      const result = await sync.syncSave({ ...options, force: flags.force });
+      emit(flags, result, () => {
+        switch (result.status) {
+          case 'saved':
+            return `Saved revision ${result.revision}: the boards you use.`;
+          case 'unchanged':
+            return `Nothing changed since revision ${result.revision}.`;
+          case 'empty':
+            return 'Nothing to save yet.';
+          case 'conflict':
+            return `Not saved: another machine saved revision ${result.serverRevision} first. \`tsbb sync load\` to take theirs, or \`tsbb sync save --force\`.`;
+        }
+      });
+      if (result.status === 'conflict') process.exitCode = 1;
+      return;
+    }
+    case 'load': {
+      const result = await sync.syncLoad({ ...options, force: flags.force, dryRun: flags.dryRun });
+      emit(flags, result, () => {
+        switch (result.status) {
+          case 'empty':
+            return 'Nothing saved on the board yet. `tsbb sync save` on the machine whose boards you want.';
+          case 'same':
+            return `Already at revision ${result.revision}.`;
+          case 'planned':
+            return result.plan.map((entry) => `${entry.status.padEnd(8)} ${entry.path}`).concat(`Would take revision ${result.revision}; nothing written.`).join('\n');
+          case 'local_changes':
+            return `Not loaded: ${result.drifted.join(', ')} changed here since the last sync. \`tsbb sync save\` to keep yours, \`tsbb sync load --force\` to replace them.`;
+          case 'newer':
+            return 'The board holds settings saved by a newer tsbb. Upgrade first.';
+          case 'loaded':
+            return `Loaded revision ${result.revision}.${result.added.length ? ` Added ${result.added.join(', ')}; \`tsbb login\` each to get a token.` : ''}`;
+        }
+      });
+      if (result.status === 'local_changes') process.exitCode = 1;
+      return;
+    }
+    case 'revisions': {
+      const revisions = await sync.syncContext(options).client.revisions();
+      emit(flags, revisions, () =>
+        revisions.length
+          ? revisions.map((entry) => `${String(entry.revision).padStart(4)}  ${entry.savedAt.slice(0, 16).replace('T', ' ')}  ${entry.host ?? ''}  ${entry.size} bytes`).join('\n')
+          : 'Nothing saved yet.',
+      );
+      return;
+    }
+    default:
+      throw new UsageError(`Unknown: tsbb sync ${sub}. Try status, save, load or revisions.`);
+  }
+}
+
 export function reportRemoteError(error: unknown): void {
   process.exitCode = 1;
   if (error instanceof UsageError || error instanceof LoginError) {
