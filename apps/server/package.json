@@ -5,17 +5,18 @@
   "type": "module",
   "dependencies": {
     "@hono/node-server": "^1.13.7",
+    "@profullstack/synconfig": "^0.1.2",
     "@tsbb/client": "workspace:*",
     "@tsbb/core": "workspace:*",
-    "@tsbb/mcp": "workspace:*",
     "@tsbb/db": "workspace:*",
     "@tsbb/design-tokens": "workspace:*",
     "@tsbb/mail": "workspace:*",
     "@tsbb/markup": "workspace:*",
+    "@tsbb/mcp": "workspace:*",
     "@tsbb/plugin-api": "workspace:*",
     "@tsbb/plugin-host": "workspace:*",
     "@tsbb/ui": "workspace:*",
-    "hono": "^4.6.14",
-    "@tsbb/worker": "workspace:*"
+    "@tsbb/worker": "workspace:*",
+    "hono": "^4.6.14"
   }
 }

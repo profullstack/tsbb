@@ -63,6 +63,9 @@ importers:
       '@hono/node-server':
         specifier: ^1.13.7
         version: 1.19.17(hono@4.13.5)
+      '@profullstack/synconfig':
+        specifier: ^0.1.2
+        version: 0.1.2
       '@tsbb/client':
         specifier: workspace:*
         version: link:../../packages/client
@@ -121,7 +124,11 @@ importers:
         specifier: workspace:*
         version: link:../../packages/mail
 
-  packages/client: {}
+  packages/client:
+    dependencies:
+      '@profullstack/synconfig':
+        specifier: ^0.1.2
+        version: 0.1.2
 
   packages/core:
     dependencies:
@@ -446,6 +453,10 @@ packages:
     engines: {bun: '>=1.1', node: '>=22.6'}
     hasBin: true
 
+  '@profullstack/synconfig@0.1.2':
+    resolution: {integrity: sha512-t1Pdms+k/+A7tgFCAcNx8Dry0kwboPEue9Pw2pbn/chXSMfp1dxrcFz672zWkDgvcB7YBmYpIjnvW4NkNkE4Rg==}
+    engines: {node: '>=22'}
+
   '@types/node@24.13.3':
     resolution: {integrity: sha512-Dh8vAsV36ig5wa9OX4pXvMc9D3Veibfw2wix0CUwYODLD8nkj9UsLjASr49nPg+2eKzxhBV+v7L8pXvT4e639Q==}
 
@@ -724,6 +735,8 @@ snapshots:
   '@neon-rs/load@0.0.4': {}
 
   '@profullstack/hqtui@0.5.0': {}
+
+  '@profullstack/synconfig@0.1.2': {}
 
   '@types/node@24.13.3':
     dependencies:
