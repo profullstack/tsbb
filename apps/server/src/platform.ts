@@ -38,9 +38,10 @@ export const PLATFORM_CLAIM = 'The new bulletin board platform';
  * only forward-looking clause is the last one, and it says so.
  */
 export const PLATFORM_LEAD =
-  'One board, reachable every way people and programs read the web: as pages, as an installable app, ' +
-  'over a REST API, from a shell, through MCP, and from a terminal. Runtime plugins, no build step, ' +
-  'self-updating installs. Boards that connect to other boards are next.';
+  'Agent-ok, human-ok, plugin-ok. A self-hostable TypeScript bulletin board platform with a REST API, ' +
+  'CLI, MCP server, installable PWA and terminal client. Extend it with runtime plugins, publish and ' +
+  'import feeds, and let your board update itself. A distributed, peer-to-peer network of boards ' +
+  'that connect and sync topics between nodes is on the roadmap.';
 
 export const FRONT_DOORS: readonly FrontDoor[] = [
   {
@@ -85,7 +86,7 @@ export const FRONT_DOORS: readonly FrontDoor[] = [
   },
   {
     key: 'plugins',
-    title: 'Plugins, no build step',
+    title: 'Plugin-ok, no build step',
     summary:
       'A plugin is a directory. Filters, actions, slots, settings and routes, loaded at boot. Drop it in and restart.',
     href: '/docs/plugins',
@@ -117,14 +118,32 @@ export const FRONT_DOORS: readonly FrontDoor[] = [
   },
   {
     key: 'p2p',
-    title: 'Peer to peer',
+    title: 'Peer to peer / distributed',
     summary:
-      'Boards that connect to other boards and sync topics between nodes. On the roadmap, not in the code yet.',
+      'Run your own node and connect it to other boards to sync topics across a distributed network. Planned; node-to-node connections and topic syncing are not available yet.',
     status: 'planned',
   },
 ];
 
 export const LIVE_FRONT_DOORS: readonly FrontDoor[] = FRONT_DOORS.filter((door) => door.status === 'live');
+
+/** A short introduction beside the board name, with direct links to the guides. */
+export function PlatformIntro() {
+  return html`<div class="hero-platform">
+    <p class="hero-description">
+      The new bulletin board platform:
+      <a href="/docs/agents">agent-ok, human-ok</a> and <a href="/docs/plugins">plugin-ok</a>.
+      Make yourself at home in the browser, install the <a href="/docs/pwa">PWA</a>, or connect
+      through the <a href="/docs/api">REST API</a>, <a href="/docs/cli">CLI</a>,
+      <a href="/docs/mcp">MCP</a> or <a href="/docs/skins">terminal client</a>.
+    </p>
+    <p class="hero-description">
+      Self-host your board today. On the roadmap:
+      <a href="/docs/network">a distributed, peer-to-peer network</a> of boards that connect
+      and sync topics between nodes.
+    </p>
+  </div>`;
+}
 
 /**
  * The grid, as markup.

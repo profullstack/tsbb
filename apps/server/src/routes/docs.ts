@@ -74,6 +74,11 @@ export const DOCS: Doc[] = [
     file: 'SKINS.md',
     blurb: 'The three skins, the terminal client, and the five branding settings.',
   },
+  {
+    slug: 'network',
+    file: 'NETWORK.md',
+    blurb: 'Using multiple boards today, and the roadmap for a distributed, peer-to-peer network of connected nodes.',
+  },
 ];
 
 const BY_SLUG = new Map(DOCS.map((doc) => [doc.slug, doc]));
@@ -248,15 +253,15 @@ export function docsRoutes(services: Services) {
 
     return render(c, services, {
       title: 'Documentation',
-      description: 'How to use this board from a browser, a shell, a script or an AI assistant.',
+      description: 'The tsbb platform: API, CLI, MCP, agents, PWA, plugins, and the roadmap for distributed boards.',
       body: html`
         <div class="page-head">
           <div>
             <h1 class="page-title">Documentation</h1>
             <p class="page-subtitle">
-              This board is not only a website. It is an API, a command line client, an MCP server,
-              an installable app and a terminal client, and they all answer with the same
-              permissions the pages do.
+              Build a community for people and agents. Use the API, CLI, MCP server, installable
+              PWA or terminal client, all with the same board permissions. Extend your board
+              with plugins and explore the roadmap for connecting boards across a distributed network.
             </p>
           </div>
         </div>
