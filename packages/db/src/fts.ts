@@ -35,3 +35,30 @@ export function toFtsQuery(input: string, { prefix = true } = {}): string | null
 export function ftsPhrase(input: string): string {
   return `"${input.replace(/"/g, '""')}"`;
 }
+
+/**
+ * The same query for Postgres, in `tsquery` syntax for `to_tsquery('simple', ?)`:
+ * a phrase becomes lexemes joined by `<->` (adjacent), a term becomes a quoted
+ * lexeme with `:*` for prefix matching, and everything is ANDed with `&`. The
+ * tokens are letters, digits and underscore only, so quoting them is enough.
+ */
+export function toTsQuery(input: string, { prefix = true } = {}): string | null {
+  const phrases: string[] = [];
+
+  const rest = input.replace(/"([^"]{1,120})"/g, (_m, body: string) => {
+    const inner = body.split(TOKEN_SPLIT).filter(Boolean);
+    if (inner.length) phrases.push(inner.map((t) => `'${t.toLowerCase()}'`).join(' <-> '));
+    return ' ';
+  });
+
+  const terms = rest
+    .split(TOKEN_SPLIT)
+    .filter(Boolean)
+    .map((t) => t.toLowerCase())
+    .filter((t) => t.length > 1 || /\p{N}/u.test(t));
+
+  const quoted = terms.slice(0, MAX_TERMS).map((t) => `'${t}'${prefix ? ':*' : ''}`);
+  const parts = [...phrases.map((p) => (p.includes('<->') ? `(${p})` : p)), ...quoted];
+  if (!parts.length) return null;
+  return parts.join(' & ');
+}

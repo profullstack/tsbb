@@ -81,7 +81,17 @@ replica. This is the right trade at avatar scale; a board serving large
 attachments should put those behind object storage.
 
 **One SQLite file by default.** `TSBB_DATABASE_URL=file:./data/tsbb.db`. Point it
-at a `libsql://` URL and the same board runs on Turso with no other change.
+at a `libsql://` URL and the same board runs on Turso; point it at a
+`postgres://` URL and it runs on Postgres. The queries are written once, in
+SQLite's dialect, and [`@profullstack/libsql-pg`](https://github.com/profullstack/libsql-pg)
+rewrites them per statement; the Postgres schema lives beside the SQLite one in
+`packages/db/src/migrations-pg`, file for file under the same names, so one
+migration ledger describes a board on either engine. Full-text search is FTS5
+on SQLite and a generated `tsvector` on Postgres. To move a board across:
+`npx libsql-pg copy --from libsql://... --token ... --to postgres://... --verify`
+after starting the board once against the empty Postgres database (which
+creates the schema), leaving out the FTS5 shadow tables, then refill
+`posts_fts` and `users_fts` from `posts`/`topics` and `users`.
 
 **Counters are derived, never incremented.** Hiding or deleting a post takes its
 contribution with it, so a count can never drift permanently away from what is
@@ -280,7 +290,7 @@ one with a fresh session secret and whatever you already had set.
 
 | Variable | Default | |
 |---|---|---|
-| `TSBB_DATABASE_URL` | `file:./data/tsbb.db` | A path, or a `libsql://` URL for Turso |
+| `TSBB_DATABASE_URL` | `file:./data/tsbb.db` | A path, a `libsql://` URL for Turso, or a `postgres://` URL |
 | `TSBB_BASE_URL` | `http://localhost:3000` | Used for links in email and canonical URLs |
 | `TSBB_PORT` | `3000` | |
 | `TSBB_SESSION_SECRET` | — | 32 random bytes; also salts stored IP hashes |
@@ -374,14 +384,15 @@ framing — only happen when it is done for real.
 
 ## Deployment
 
-`tsbb.dev` runs on Railway from this repository's `main` branch: one Docker
-service, a Turso database, and no volume — uploads are rows, so a redeploy
-loses nothing and the service is not pinned to one replica.
+`tsbb.dev` runs on dev2 from this repository's `main` branch (every merge
+deploys, `.github/workflows/deploy-dev2.yml`): one Docker service, a Postgres
+database in the box's shared cluster, and no volume — uploads are rows, so a
+redeploy loses nothing and the service is not pinned to one replica.
 
 | | |
 |---|---|
-| Host | Railway, service `tsbb`, Dockerfile build, healthcheck `/healthz` |
-| Database | Turso (`libsql://tsbb-profullstack.aws-us-west-2.turso.io`) |
+| Host | dev2, `/home/anthony/www/tsbb.dev`, Dockerfile build, healthcheck `/healthz` |
+| Database | Postgres (`TSBB_DATABASE_URL=postgres://...`), via `@profullstack/libsql-pg` |
 | Sending | Resend, from `board@tsbb.dev` (its MX sits on `send.tsbb.dev`) |
 | Receiving | Forward Email on the apex MX |
 | DNS | Porkbun — apex `ALIAS`, `www` `CNAME`, one SPF record covering both senders |

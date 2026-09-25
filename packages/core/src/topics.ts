@@ -241,7 +241,8 @@ export async function markRead(topicId: Id, userId: Id, lastPostId: Id): Promise
   await run(
     `INSERT INTO topic_reads (user_id, topic_id, last_post_id, read_at) VALUES (?, ?, ?, ?)
      ON CONFLICT (user_id, topic_id) DO UPDATE SET
-       last_post_id = MAX(excluded.last_post_id, topic_reads.last_post_id),
+       last_post_id = CASE WHEN excluded.last_post_id > topic_reads.last_post_id
+                           THEN excluded.last_post_id ELSE topic_reads.last_post_id END,
        read_at = excluded.read_at`,
     [userId, topicId, lastPostId, now()],
   );
@@ -250,13 +251,15 @@ export async function markRead(topicId: Id, userId: Id, lastPostId: Id): Promise
 export async function recountTopic(topicId: Id): Promise<void> {
   await run(
     `UPDATE topics SET
-       reply_count = MAX(0, (SELECT COUNT(*) FROM posts WHERE topic_id = ? AND is_deleted = 0 AND is_hidden = 0) - 1),
+       reply_count = CASE WHEN (SELECT COUNT(*) FROM posts WHERE topic_id = ? AND is_deleted = 0 AND is_hidden = 0) > 1
+                          THEN (SELECT COUNT(*) FROM posts WHERE topic_id = ? AND is_deleted = 0 AND is_hidden = 0) - 1
+                          ELSE 0 END,
        first_post_id = (SELECT id FROM posts WHERE topic_id = ? AND is_deleted = 0 ORDER BY position, id LIMIT 1),
        last_post_id  = (SELECT id FROM posts WHERE topic_id = ? AND is_deleted = 0 AND is_hidden = 0 ORDER BY position DESC, id DESC LIMIT 1),
        last_post_at  = (SELECT created_at FROM posts WHERE topic_id = ? AND is_deleted = 0 AND is_hidden = 0 ORDER BY position DESC, id DESC LIMIT 1),
        last_poster_id = (SELECT user_id FROM posts WHERE topic_id = ? AND is_deleted = 0 AND is_hidden = 0 ORDER BY position DESC, id DESC LIMIT 1)
      WHERE id = ?`,
-    [topicId, topicId, topicId, topicId, topicId, topicId],
+    [topicId, topicId, topicId, topicId, topicId, topicId, topicId],
   );
 }
 
