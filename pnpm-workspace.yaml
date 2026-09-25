@@ -5,3 +5,4 @@ packages:
 minimumReleaseAgeExclude:
   - '@profullstack/hqtui@0.1.9 || 0.5.0'
   - '@profullstack/synconfig@0.1.2'
+  - '@profullstack/libsql-pg@0.1.2'

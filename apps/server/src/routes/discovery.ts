@@ -6,7 +6,7 @@ import type { Context } from 'hono';
 import { html } from 'hono/html';
 import { forumTree, guestViewer, visibleForumIds, type Settings } from '@tsbb/core';
 import { escapeHtml } from '@tsbb/markup';
-import { all } from '@tsbb/db';
+import { all, sqlMonth } from '@tsbb/db';
 import { Card, CardContent, CardHeader, LinkButton } from '@tsbb/ui';
 import { render, type AppEnv, type Services } from '../context.ts';
 import { DOCS, docMarkdown, docTitle } from './docs.ts';
@@ -157,7 +157,7 @@ export function discoveryRoutes(services: Services) {
     const forumIds = await visibleForumIds(await guestViewer());
     const months = forumIds.length
       ? await all<{ month: string; modified: number }>(
-          `SELECT strftime('%Y-%m', created_at / 1000, 'unixepoch') AS month,
+          `SELECT ${sqlMonth('created_at')} AS month,
                   MAX(COALESCE(last_post_at, created_at)) AS modified
              FROM topics
             WHERE is_deleted = 0 AND is_hidden = 0
@@ -221,7 +221,7 @@ export function discoveryRoutes(services: Services) {
          FROM topics
         WHERE is_deleted = 0 AND is_hidden = 0
           AND forum_id IN (${forumIds.map(() => '?').join(',')})
-          AND strftime('%Y-%m', created_at / 1000, 'unixepoch') = ?
+          AND ${sqlMonth('created_at')} = ?
         ORDER BY created_at, id
         LIMIT 50000`,
       [...forumIds, month],

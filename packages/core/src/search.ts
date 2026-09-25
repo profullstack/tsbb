@@ -1,4 +1,4 @@
-import { all, toFtsQuery } from '@tsbb/db';
+import { all, isPostgres, toFtsQuery, toTsQuery } from '@tsbb/db';
 import type { Id, Viewer } from '@tsbb/plugin-api';
 import { highlight } from '@tsbb/markup';
 import { visibleForumIds } from './permissions.ts';
@@ -27,6 +27,11 @@ export interface SearchHit {
  * which is what makes searching for a topic's name find that topic rather than
  * every post that mentions it. And bm25 returns a *negative* score where more
  * relevant is more negative, so ascending order is the relevant one.
+ *
+ * On Postgres the same shape holds: `posts_fts` is a real table with a
+ * generated tsvector (title weighted A, body B) and `ts_rank_cd` is negated so
+ * the ORDER BY reads the same. The query text is the one thing the dialect
+ * rewriter cannot translate, so it is spelled per engine here.
  */
 export async function searchPosts(input: {
   query: string;
@@ -42,7 +47,10 @@ export async function searchPosts(input: {
   const allowed = input.forumId ? [input.forumId] : await visibleForumIds(input.viewer);
   if (!allowed.length) return { hits: [], terms: [] };
 
-  const args: unknown[] = [match, ...allowed];
+  const pg = isPostgres();
+  const tsQuery = pg ? toTsQuery(input.query) : null;
+  if (pg && !tsQuery) return { hits: [], terms: [] };
+  const args: unknown[] = pg ? [tsQuery, tsQuery, ...allowed] : [match, ...allowed];
   let userClause = '';
   if (input.userId !== undefined) {
     userClause = 'AND f.user_id = ?';
@@ -68,12 +76,12 @@ export async function searchPosts(input: {
     `SELECT f.post_id, f.topic_id, f.forum_id, f.user_id,
             t.title, t.slug, p.body, u.username,
             u.email, u.avatar_kind, u.avatar_url, p.created_at,
-            bm25(posts_fts, 8.0, 1.0) AS score
+            ${pg ? "-ts_rank_cd(f.tsv, to_tsquery('simple', ?))" : 'bm25(posts_fts, 8.0, 1.0)'} AS score
        FROM posts_fts f
        JOIN posts p ON p.id = f.post_id
        JOIN topics t ON t.id = f.topic_id
        LEFT JOIN users u ON u.id = f.user_id
-      WHERE posts_fts MATCH ?
+      WHERE ${pg ? "f.tsv @@ to_tsquery('simple', ?)" : 'posts_fts MATCH ?'}
         AND f.forum_id IN (${allowed.map(() => '?').join(',')})
         ${userClause}
         AND p.is_deleted = 0 AND p.is_hidden = 0
@@ -123,15 +131,22 @@ function snippetAround(body: string, terms: string[], width = 220): string {
 export async function searchUsers(query: string, limit = 10): Promise<
   { id: Id; username: string; displayName: string | null }[]
 > {
-  const match = toFtsQuery(query);
+  const pg = isPostgres();
+  const match = pg ? toTsQuery(query) : toFtsQuery(query);
   if (!match) return [];
   const rows = await all<{ user_id: number; username: string; display_name: string | null }>(
-    `SELECT f.user_id, u.username, u.display_name
-       FROM users_fts f
-       JOIN users u ON u.id = f.user_id
-      WHERE users_fts MATCH ? AND u.is_deleted = 0
-      ORDER BY bm25(users_fts) LIMIT ?`,
-    [match, limit],
+    pg
+      ? `SELECT f.user_id, u.username, u.display_name
+           FROM users_fts f
+           JOIN users u ON u.id = f.user_id
+          WHERE f.tsv @@ to_tsquery('simple', ?) AND u.is_deleted = 0
+          ORDER BY ts_rank_cd(f.tsv, to_tsquery('simple', ?)) DESC LIMIT ?`
+      : `SELECT f.user_id, u.username, u.display_name
+           FROM users_fts f
+           JOIN users u ON u.id = f.user_id
+          WHERE users_fts MATCH ? AND u.is_deleted = 0
+          ORDER BY bm25(users_fts) LIMIT ?`,
+    pg ? [match, match, limit] : [match, limit],
   );
   return rows.map((r) => ({ id: r.user_id, username: r.username, displayName: r.display_name }));
 }
