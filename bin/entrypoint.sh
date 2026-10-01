@@ -22,7 +22,13 @@ REPO="${TSBB_UPDATE_REPO:-profullstack/tsbb}"
 
 if [ -z "$DIR" ]; then
   cd "$IMAGE_ROOT"
-  exec node apps/server/src/index.ts
+  # The image's own code runs on Bun when the image has it (the Dockerfile
+  # copies it in). TSBB_RUNTIME=node runs it on Node instead. A checkout on a
+  # volume (below) always runs on Node: it installs each release with pnpm,
+  # which is the contract every self-hosted board follows.
+  RUNTIME="${TSBB_RUNTIME:-bun}"
+  command -v "$RUNTIME" >/dev/null 2>&1 || RUNTIME=node
+  exec "$RUNTIME" apps/server/src/index.ts
 fi
 
 if [ ! -d "$DIR/.git" ]; then

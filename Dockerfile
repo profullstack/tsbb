@@ -1,5 +1,14 @@
-# tsbb runs its TypeScript unbuilt through Node's type stripping, so there is no
-# build stage here at all — only install, then run.
+# tsbb runs its TypeScript unbuilt, so there is no build stage here at all —
+# only install, then run.
+#
+# The image runs the board on Bun (bin/entrypoint.sh), which executes the same
+# unbuilt .ts that Node 24 type-strips. Node and pnpm stay in the image because
+# the repository's own contract is still Node 24 + pnpm: a board running from a
+# self-updating checkout (TSBB_CHECKOUT_DIR) installs each release with pnpm
+# and runs it on Node, exactly as before. Set TSBB_RUNTIME=node to run the
+# image's own code on Node instead.
+FROM oven/bun:1.4.0-slim AS bun
+
 FROM node:24-slim
 
 WORKDIR /app
@@ -8,6 +17,8 @@ ENV NODE_ENV=production \
     PATH=/pnpm:$PATH
 
 RUN corepack enable
+
+COPY --from=bun /usr/local/bin/bun /usr/local/bin/bun
 
 # git is for a container that runs from a checkout on a volume and updates
 # itself (TSBB_CHECKOUT_DIR — see bin/entrypoint.sh). An image without it can

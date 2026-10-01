@@ -31,8 +31,7 @@
       "@tsbb/client": ["packages/client/src/index.ts"],
       "@tsbb/client/*": ["packages/client/src/*"],
       "@tsbb/mcp": ["packages/mcp/src/index.ts"],
-      "@tsbb/mcp/*": ["packages/mcp/src/*"],
-      "@tsbb/plugin-host": ["packages/plugin-host/src/index.ts"]
+      "@tsbb/mcp/*": ["packages/mcp/src/*"]
     }
   },
   "include": ["packages/**/*.ts", "apps/**/*.ts", "plugins/**/*.ts", "test/**/*.ts", "scripts/**/*.ts"],
