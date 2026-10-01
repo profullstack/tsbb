@@ -2,11 +2,11 @@
 # only install, then run.
 #
 # The image runs the board on Bun (bin/entrypoint.sh), which executes the same
-# unbuilt .ts that Node 24 type-strips. Node and pnpm stay in the image because
-# the repository's own contract is still Node 24 + pnpm: a board running from a
-# self-updating checkout (TSBB_CHECKOUT_DIR) installs each release with pnpm
-# and runs it on Node, exactly as before. Set TSBB_RUNTIME=node to run the
-# image's own code on Node instead.
+# unbuilt .ts that Node 24 type-strips, from the image's own code or from a
+# self-updating checkout (TSBB_CHECKOUT_DIR). Node and pnpm stay in the image
+# because the repository's own contract is still Node 24 + pnpm: the updater
+# installs each release with pnpm, and Bun runs that tree as it is. Set
+# TSBB_RUNTIME=node to run the board on Node instead.
 FROM oven/bun:1.4.0-slim AS bun
 
 FROM node:24-slim

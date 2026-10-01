@@ -20,14 +20,16 @@ IMAGE_ROOT="${TSBB_IMAGE_ROOT:-/app}"
 DIR="${TSBB_CHECKOUT_DIR:-}"
 REPO="${TSBB_UPDATE_REPO:-profullstack/tsbb}"
 
+# The board runs on Bun when the image has it (the Dockerfile copies it in),
+# both from the image's own code and from a checkout on a volume.
+# TSBB_RUNTIME=node runs it on Node instead. Either way dependencies are
+# installed with pnpm, which stays the contract every self-hosted board
+# follows: Bun runs a pnpm-installed tree as it is.
+RUNTIME="${TSBB_RUNTIME:-bun}"
+command -v "$RUNTIME" >/dev/null 2>&1 || RUNTIME=node
+
 if [ -z "$DIR" ]; then
   cd "$IMAGE_ROOT"
-  # The image's own code runs on Bun when the image has it (the Dockerfile
-  # copies it in). TSBB_RUNTIME=node runs it on Node instead. A checkout on a
-  # volume (below) always runs on Node: it installs each release with pnpm,
-  # which is the contract every self-hosted board follows.
-  RUNTIME="${TSBB_RUNTIME:-bun}"
-  command -v "$RUNTIME" >/dev/null 2>&1 || RUNTIME=node
   exec "$RUNTIME" apps/server/src/index.ts
 fi
 
@@ -52,14 +54,14 @@ if [ ! -d "$DIR/.git" ]; then
 fi
 
 cd "$DIR"
-echo "[tsbb] running from $DIR at $(git rev-parse --short HEAD) ($(git describe --tags --always 2>/dev/null))"
+echo "[tsbb] running from $DIR at $(git rev-parse --short HEAD) ($(git describe --tags --always 2>/dev/null)) on $RUNTIME"
 
 # The updater exits after installing a release; this loop is the supervisor
 # that brings the new code up. A crash waits a few seconds so a broken build
 # cannot spin the container.
 export TSBB_RESTART=exit
 while :; do
-  if node apps/server/src/index.ts; then
+  if "$RUNTIME" apps/server/src/index.ts; then
     echo "[tsbb] server exited; starting again from $(git rev-parse --short HEAD)"
   else
     code=$?
