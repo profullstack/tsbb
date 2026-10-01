@@ -134,7 +134,9 @@ describe('the CLI against a live board', () => {
     }
     assert.ok(message.length > 0 && !message.includes('\n    at '), 'no stack trace');
     assert.equal(process.exitCode, 1);
-    process.exitCode = before;
+    // `?? 0`, not `before`: Bun ignores `process.exitCode = undefined`, so the
+    // 1 set above would outlive this test and fail the run under Bun.
+    process.exitCode = before ?? 0;
   });
 
   describe('tsbb-mcp over stdio', () => {

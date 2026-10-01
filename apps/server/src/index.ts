@@ -66,5 +66,12 @@ export async function boot(options: { port?: number; listen?: boolean } = {}) {
 }
 
 if (import.meta.filename === process.argv[1]) {
+  /*
+   * In a container the server is PID 1, and the kernel gives PID 1 no default
+   * action for SIGTERM: without a handler `docker stop` (every deploy) waits
+   * out its ten seconds and then SIGKILLs. Exiting here is no worse than that
+   * kill and ends the wait.
+   */
+  for (const signal of ['SIGTERM', 'SIGINT'] as const) process.on(signal, () => process.exit(0));
   await boot();
 }
