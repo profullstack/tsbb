@@ -1,0 +1,222 @@
+/*
+ * The "deals" skin: a coupon and deal-sharing storefront.
+ *
+ * Built to sit inside a deals site and look like part of it (c0upons.com/bbs
+ * was the first), so it borrows the vocabulary of a modern shop rather than a
+ * forum:
+ *   - white surfaces and neutral slate greys, no warm tint and no page wash
+ *   - the accent as a FLAT fill with white text, exactly as chosen: no
+ *     gradient, no glow, no lightness adjustment on buttons and badges
+ *   - Geist, 12px cards with a gray hairline, 8px controls
+ *   - every forum icon in the accent rather than a rainbow of hues
+ *   - a dark footer, as storefront footers are
+ *
+ * Like classic and terminal it is a LAYER over the modern sheet: it argues
+ * about looks, never about structure.
+ *
+ * `--brand` is the board accent as the administrator typed it (brand.ts emits
+ * it beside the contrast-adjusted `--primary`). Fills use `--brand`; link TEXT
+ * keeps `--primary`, because a bright orange that works as a button
+ * background is too light to read as body-size text on white.
+ */
+
+@font-face {
+  font-family: 'Geist';
+  src: url('/assets/fonts/geist.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --radius: 0.75rem;
+  --font-sans:
+    'Geist', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
+    sans-serif;
+
+  --deals-brand: var(--brand, var(--primary));
+  --deals-brand-foreground: var(--brand-foreground, var(--primary-foreground));
+  --deals-tint: color-mix(in oklab, var(--deals-brand) 8%, var(--card));
+  --deals-tint-line: color-mix(in oklab, var(--deals-brand) 22%, var(--card));
+  --deals-footer: oklch(0.21 0.034 264.665);
+  --deals-footer-text: oklch(0.707 0.022 261.325);
+
+  /* Tailwind-style neutral grey, not the warm board default. */
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.21 0.034 264.665);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.21 0.034 264.665);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.21 0.034 264.665);
+  --secondary: oklch(0.967 0.003 264.542);
+  --secondary-foreground: oklch(0.21 0.034 264.665);
+  --muted: oklch(0.967 0.003 264.542);
+  --muted-foreground: oklch(0.551 0.027 264.364);
+  --accent: oklch(0.967 0.003 264.542);
+  --accent-foreground: oklch(0.21 0.034 264.665);
+  --border: oklch(0.928 0.006 264.531);
+  --input: oklch(0.872 0.01 258.338);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --background: oklch(0.13 0.028 261.692);
+    --foreground: oklch(0.967 0.003 264.542);
+    --card: oklch(0.21 0.034 264.665);
+    --card-foreground: oklch(0.967 0.003 264.542);
+    --popover: oklch(0.21 0.034 264.665);
+    --popover-foreground: oklch(0.967 0.003 264.542);
+    --secondary: oklch(0.278 0.033 256.848);
+    --secondary-foreground: oklch(0.967 0.003 264.542);
+    --muted: oklch(0.278 0.033 256.848);
+    --muted-foreground: oklch(0.707 0.022 261.325);
+    --accent: oklch(0.278 0.033 256.848);
+    --accent-foreground: oklch(0.967 0.003 264.542);
+    --border: oklch(1 0 0 / 10%);
+    --input: oklch(1 0 0 / 16%);
+    --deals-tint: color-mix(in oklab, var(--deals-brand) 16%, var(--card));
+    --deals-tint-line: color-mix(in oklab, var(--deals-brand) 34%, var(--card));
+    --deals-footer: oklch(0.13 0.028 261.692);
+  }
+}
+:root[data-theme='dark'] {
+  --background: oklch(0.13 0.028 261.692);
+  --foreground: oklch(0.967 0.003 264.542);
+  --card: oklch(0.21 0.034 264.665);
+  --card-foreground: oklch(0.967 0.003 264.542);
+  --popover: oklch(0.21 0.034 264.665);
+  --popover-foreground: oklch(0.967 0.003 264.542);
+  --secondary: oklch(0.278 0.033 256.848);
+  --secondary-foreground: oklch(0.967 0.003 264.542);
+  --muted: oklch(0.278 0.033 256.848);
+  --muted-foreground: oklch(0.707 0.022 261.325);
+  --accent: oklch(0.278 0.033 256.848);
+  --accent-foreground: oklch(0.967 0.003 264.542);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 16%);
+  --deals-tint: color-mix(in oklab, var(--deals-brand) 16%, var(--card));
+  --deals-tint-line: color-mix(in oklab, var(--deals-brand) 34%, var(--card));
+  --deals-footer: oklch(0.13 0.028 261.692);
+}
+
+body { -webkit-font-smoothing: antialiased; }
+/* The accent tail sets a --page-wash; a storefront is plain white. */
+.shell { background: var(--background); }
+h1, h2, h3 { letter-spacing: -0.02em; }
+
+/* --- Header --------------------------------------------------------------- */
+
+.site-header {
+  background: color-mix(in oklab, var(--background) 94%, transparent);
+  box-shadow: 0 1px 2px oklch(0 0 0 / 0.04);
+}
+.site-header::after { display: none; }
+.site-header-inner { min-height: 3.5rem; }
+.brand { font-weight: 900; letter-spacing: -0.03em; }
+
+.nav-link {
+  padding: 0.375rem 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.9375rem;
+  color: color-mix(in oklab, var(--foreground) 75%, var(--background));
+}
+.nav-link:hover { color: var(--foreground); background: var(--accent); }
+.nav-link.active { color: var(--foreground); background: var(--accent); box-shadow: none; font-weight: 600; }
+
+.search-form .input { height: 2.5rem; min-height: 2.5rem; width: 16rem; border-radius: 0.5rem; font-size: 0.875rem; }
+
+/* --- Controls ------------------------------------------------------------- */
+
+.btn {
+  border-radius: 0.5rem;
+  font-weight: 600;
+  box-shadow: none;
+}
+.btn:hover { filter: none; box-shadow: none; }
+.btn:not(.btn-secondary):not(.btn-outline):not(.btn-ghost):not(.btn-destructive):not(.btn-link) {
+  background: var(--deals-brand);
+  color: var(--deals-brand-foreground);
+}
+.btn:not(.btn-secondary):not(.btn-outline):not(.btn-ghost):not(.btn-destructive):not(.btn-link):hover {
+  background: color-mix(in oklab, var(--deals-brand) 88%, black);
+}
+.btn-outline, .btn-secondary {
+  background: var(--card);
+  color: var(--foreground);
+  border-color: var(--border);
+}
+.btn-outline:hover, .btn-secondary:hover { background: var(--accent); color: var(--foreground); }
+
+.input, .textarea, .select { border-radius: 0.5rem; }
+.input:focus-visible, .textarea:focus-visible, .select:focus-visible {
+  border-color: var(--deals-brand);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--deals-brand) 22%, transparent);
+}
+
+.badge { border-radius: 0.375rem; font-weight: 700; }
+.badge:not(.badge-secondary):not(.badge-outline):not(.badge-destructive):not(.badge-success):not(.badge-warning):not(.badge-staff) {
+  background: var(--deals-brand);
+  color: var(--deals-brand-foreground);
+}
+
+/* --- Cards and the forum index -------------------------------------------- */
+
+.card { border-color: var(--border); box-shadow: none; }
+
+.hero {
+  padding: 2rem 1.75rem;
+  border: 1px solid var(--deals-tint-line);
+  border-radius: var(--radius);
+  background: linear-gradient(180deg, var(--deals-tint) 0%, var(--card) 100%);
+}
+.hero-title { font-size: 2rem; font-weight: 800; letter-spacing: -0.035em; }
+.hero-tagline { font-size: 1.0625rem; }
+
+.category-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  text-transform: none;
+  letter-spacing: -0.015em;
+}
+.category-title::after { display: none; }
+
+.forum-row:hover, .topic-row:hover { background: color-mix(in oklab, var(--muted) 60%, var(--card)); }
+.forum-icon {
+  border-radius: 0.5rem;
+  background: var(--deals-tint);
+  color: var(--deals-brand);
+  box-shadow: inset 0 0 0 1px var(--deals-tint-line);
+}
+.forum-row.unread .forum-icon {
+  background: var(--deals-brand);
+  color: var(--deals-brand-foreground);
+  box-shadow: none;
+}
+.forum-row:hover .forum-icon { transform: none; }
+.forum-name { font-weight: 600; letter-spacing: -0.01em; }
+.forum-row:hover .forum-name, .topic-row:hover .topic-title { color: var(--primary); }
+
+.forum-stat strong {
+  min-width: 0;
+  padding: 0;
+  margin-right: 0.25rem;
+  background: none;
+}
+
+/* --- Footer --------------------------------------------------------------- */
+
+.site-footer {
+  margin-top: 3rem;
+  border-top: 0;
+  background: var(--deals-footer);
+  color: var(--deals-footer-text);
+}
+.site-footer a { color: var(--deals-footer-text); }
+.site-footer a:hover { color: oklch(1 0 0); }
+
+/* Board statistics read like the storefront's own counters: a bold number, a
+   grey label, no rainbow. */
+.board-stat { background: var(--muted); border-radius: 0.5rem; }
+.board-stat::before { display: none; }
+.board-stat strong { font-weight: 800; }
+.board-stat span { text-transform: none; letter-spacing: 0; font-size: 0.8125rem; font-weight: 500; }

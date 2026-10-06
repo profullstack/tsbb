@@ -14,7 +14,7 @@ export const DEFAULT_SETTINGS = {
   'board.timezone': 'UTC',
   /** 'system' | 'light' | 'dark' — what a reader with no cookie is shown. */
   'board.theme': 'system',
-  /** 'modern', 'classic' (the 2000s bulletin board) or 'terminal'. */
+  /** 'modern', 'classic' (the 2000s bulletin board), 'terminal' or 'deals' (a coupon/deal storefront). */
   'board.skin': 'modern',
   /**
    * One hex colour that links, buttons and highlights follow. EMPTY means the

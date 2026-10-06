@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import type { Context } from 'hono';
 import { loadSettings, touchLastSeen, viewerFromToken } from '@tsbb/core';
-import { Card, CardContent, Empty, stylesheet, stylesheetForHash } from '@tsbb/ui';
+import { Card, CardContent, Empty, fontFile, stylesheet, stylesheetForHash } from '@tsbb/ui';
 import type { Registry } from '@tsbb/plugin-host';
 import type { PluginRequest, Viewer } from '@tsbb/plugin-api';
 import { readTheme, render, resolveViewer, type AppEnv, type Services } from './context.ts';
@@ -39,6 +39,16 @@ export function createApp(registry: Registry, baseUrl: string): Hono<AppEnv> {
    * to write and does not match, and the failure is silent — every request
    * falls through to the 404 handler and the board renders unstyled.
    */
+  // Fonts a skin ships. Immutable for the same reason: a new face is a new name.
+  app.get('/assets/fonts/:file', (c) => {
+    const font = fontFile(c.req.param('file'));
+    if (!font) return c.notFound();
+    return c.body(new Uint8Array(font), 200, {
+      'content-type': 'font/woff2',
+      'cache-control': 'public, max-age=31536000, immutable',
+    });
+  });
+
   app.get('/assets/:file', (c) => {
     const match = /^app\.([0-9a-f]+)\.css$/.exec(c.req.param('file'));
     if (!match?.[1]) return c.notFound();
