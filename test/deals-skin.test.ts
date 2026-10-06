@@ -51,6 +51,33 @@ describe('the deals skin', () => {
     assert.doesNotMatch(brandCss('#fde68a'), /--brand-foreground: oklch\(1 0 0\)/);
   });
 
+  it('puts the host site navigation in the header, around the board items', async () => {
+    const { siteLinks } = await import('../apps/server/src/context.ts');
+    const parsed = siteLinks({
+      'board.navLinks': [
+        'Coupons | https://c0upons.com/',
+        'Bad | /stores',
+        'Nope | javascript:alert(1)',
+        '{forums}',
+        'Blog | https://c0upons.com/blog',
+      ].join('\n'),
+    });
+    assert.deepEqual(parsed.items.map((i) => i.label), ['Coupons', 'Blog'], 'absolute http(s) only');
+    assert.equal(parsed.forumsOnly, true);
+    assert.ok((parsed.items[0]?.weight ?? 0) < 0 && (parsed.items[1]?.weight ?? 0) > 100);
+
+    const { setSettings } = await import('../packages/core/src/index.ts');
+    await setSettings({
+      'board.navLinks': 'Coupons | https://c0upons.com/\n{forums}\nBlog | https://c0upons.com/blog',
+    });
+    const page = await (await get('/')).text();
+    const nav = /<nav class="site-nav"[^>]*>([\s\S]*?)<\/nav>/.exec(page)?.[1] ?? '';
+    const labels = [...nav.matchAll(/>\s*([A-Za-z]+)\s*<\/a/g)].map((m) => m[1]);
+    assert.deepEqual(labels, ['Coupons', 'Forums', 'Blog']);
+    assert.match(page, /class="search-submit"/);
+    await setSettings({ 'board.navLinks': '' });
+  });
+
   it('serves the font, and nothing else from the font route', async () => {
     assert.ok(fontFile('geist.woff2')?.length);
     const font = await get('/assets/fonts/geist.woff2');

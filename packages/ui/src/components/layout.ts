@@ -177,6 +177,7 @@ export function Layout(props: LayoutProps) {
           <div class="header-actions">
             <form class="search-form" action="/search" method="get" role="search">
               <input class="input" type="search" name="q" placeholder="Search…" aria-label="Search the board" />
+              <button class="search-submit" type="submit">Search</button>
             </form>
             ${ThemeToggle(theme)}
             ${props.viewer.user

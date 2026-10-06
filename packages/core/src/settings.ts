@@ -58,6 +58,11 @@ export const DEFAULT_SETTINGS = {
    * A board that is a community first and a demo never turns it off here.
    */
   'board.showPlatform': true,
+  /**
+   * The host site's navigation, for a board inside a larger site: one
+   * `Label | https://…` per line, and `{board}` where the board's own items go.
+   */
+  'board.navLinks': '',
 
   /** Registration: 'open' | 'invite' | 'closed' */
   'registration.mode': 'open',

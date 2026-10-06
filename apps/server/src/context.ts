@@ -89,6 +89,37 @@ function navFor(viewer: Viewer, path: string): NavItem[] {
   return items;
 }
 
+/**
+ * `board.navLinks`: the host site's own navigation, for a board that is one
+ * room in a larger site. One link per line, `Label | https://…`. A line that
+ * says `{board}` marks where the board's own items (Forums, Latest, Members)
+ * go, and `{forums}` puts only the Forums link there, for a site whose header
+ * has no room for more; without either, the site's links come first.
+ *
+ * Only absolute http(s) URLs are accepted. A root-relative path would be read
+ * as a path on the board, and a board mounted under /bbs would rewrite it.
+ */
+export function siteLinks(settings: Record<string, unknown>): { items: NavItem[]; forumsOnly: boolean } {
+  const lines = String(settings['board.navLinks'] ?? '')
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean);
+  const isToken = (line: string) => line === '{board}' || line === '{forums}';
+  const boardAt = lines.findIndex(isToken);
+  const items: NavItem[] = [];
+  lines.forEach((line, index) => {
+    if (isToken(line)) return;
+    const bar = line.indexOf('|');
+    if (bar < 1) return;
+    const label = line.slice(0, bar).trim();
+    const href = line.slice(bar + 1).trim();
+    if (!label || !/^https?:\/\/[^\s"'<>]+$/i.test(href)) return;
+    const after = boardAt !== -1 && index > boardAt;
+    items.push({ label, href, weight: after ? 1000 + index : -1000 + index });
+  });
+  return { items, forumsOnly: lines[boardAt] === '{forums}' };
+}
+
 export interface RenderOptions {
   title: string;
   description?: string;
@@ -140,7 +171,14 @@ export async function render(
   ]);
 
   const slots: LayoutSlots = { head, header, bodyStart, bodyEnd, footer };
-  const nav = await bus.applyFilter('nav:items', navFor(viewer, url.pathname), renderContext);
+  const site = siteLinks(settings as Record<string, unknown>);
+  const own = navFor(viewer, url.pathname).filter(
+    // `{forums}` asks for the board's Forums link alone in the site's nav.
+    (item) => !site.forumsOnly || item.href === '/',
+  );
+  const nav = (await bus.applyFilter('nav:items', [...own, ...site.items], renderContext)).sort(
+    (a, b) => (a.weight ?? 0) - (b.weight ?? 0),
+  );
 
   const skin = skinOf(settings as Record<string, unknown>);
   const boardName = String(settings['board.name'] ?? 'tsbb');
