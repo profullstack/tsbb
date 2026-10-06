@@ -77,7 +77,7 @@ describe('a board mounted under a path', () => {
   });
 
   it('prefixes redirects and cookie paths from the app', async () => {
-    const stub = mountAt('/bbs', async () => {
+    const stub = mountAt('/bbs', async (_request: Request) => {
       const headers = new Headers({ location: '/login' });
       headers.append('set-cookie', 'tsbb_session=abc; Path=/; HttpOnly');
       headers.append('set-cookie', 'other=1; Path=/settings');
