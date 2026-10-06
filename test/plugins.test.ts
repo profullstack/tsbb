@@ -31,7 +31,7 @@ describe('the plugin host', () => {
   after(() => db.setDb(null));
 
   it('discovers the bundled plugins', () => {
-    assert.deepEqual([...registry.plugins.keys()].sort(), ['crawlproof-ads', 'hello-world']);
+    assert.deepEqual([...registry.plugins.keys()].sort(), ['crawlproof-ads', 'hello-world', 'openemoji']);
     assert.deepEqual([...registry.errors.entries()], [], 'no plugin failed to load');
   });
 

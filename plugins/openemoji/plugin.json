@@ -1,0 +1,8 @@
+{
+  "slug": "openemoji",
+  "name": "OpenEmoji",
+  "description": "An emoji picker in every composer, and emoji drawn with OpenEmoji in posts and signatures. On by default; every file is served by the board itself.",
+  "author": "Profullstack, Inc.",
+  "homepage": "https://github.com/profullstack/openemoji",
+  "license": "MIT"
+}
