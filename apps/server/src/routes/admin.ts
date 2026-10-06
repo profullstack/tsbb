@@ -215,6 +215,7 @@ export function adminRoutes(services: Services) {
         'board.logoUrl',
         'board.logoHref',
         'board.faviconUrl',
+        'board.navLinks',
         'board.showPlatform',
       ],
     },
@@ -234,7 +235,7 @@ export function adminRoutes(services: Services) {
     'board.contactEmail':
       'Shown on the About page and published in /.well-known/security.txt. Leave empty to use the address the board sends from.',
     'board.skin':
-      'modern is cards and generous spacing. classic is a 2000s bulletin board: boxy, dense, gradient title bars. terminal is neutral surfaces, hairline rules and monospace chrome. Same board either way — only the stylesheet changes.',
+      'modern is cards and generous spacing. classic is a 2000s bulletin board: boxy, dense, gradient title bars. terminal is neutral surfaces, hairline rules and monospace chrome. deals is a coupon or shopping storefront: white, slate, flat accent buttons, Geist, a card grid. Same board either way — only the stylesheet changes.',
     'board.theme':
       'What a reader who has never touched the theme toggle sees. system follows their operating system. Anyone who does use the toggle keeps their own choice either way.',
     'board.accent':
@@ -244,6 +245,8 @@ export function adminRoutes(services: Services) {
     'board.logoHref':
       'Where the header logo points. / is this board. An absolute URL is for a board that is one room in a larger site — the nav still leads back to the front page, so nobody is stranded.',
     'board.faviconUrl': 'A URL to a browser-tab icon. Replaces the bundled tsbb icons.',
+    'board.navLinks':
+      'Your site\'s own navigation, for a board inside a larger site. One link per line as Label | https://example.com/page. Put {board} on its own line where Forums, Latest and Members should sit, or {forums} for the Forums link alone; without either your links come first. Absolute URLs only.',
     'board.showPlatform':
       'A panel at the foot of the front page telling a visitor what the software under this board can do: the API, the CLI, MCP, the app, plugins. Guests only, never members. Turn it off for a board whose readers are not looking for one of their own.',
     'signatures.minPosts':
@@ -1032,6 +1035,13 @@ function settingField(key: string, value: unknown, help?: string) {
       <select class="select" id="${key}" name="${key}">
         ${options.map((option) => html`<option value="${option}" ${value === option ? 'selected' : ''}>${option}</option>`)}
       </select>
+      ${help ? html`<div class="field-hint">${help}</div>` : ''}
+    </div>`;
+  }
+  if (key === 'board.navLinks') {
+    return html`<div class="field">
+      <label class="label" for="${key}">${label}</label>
+      <textarea class="textarea" id="${key}" name="${key}" rows="6">${String(value ?? '')}</textarea>
       ${help ? html`<div class="field-hint">${help}</div>` : ''}
     </div>`;
   }

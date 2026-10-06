@@ -30,7 +30,7 @@ pnpm tui                 # or: tsbb-tui
 
 ## Branding
 
-Five settings sit beside the skin.
+Six settings sit beside the skin.
 
 | Setting | |
 |---|---|
@@ -39,6 +39,7 @@ Five settings sit beside the skin.
 | `board.logoUrl` | Your own artwork in the header, replacing the generated letter mark. |
 | `board.logoHref` | Where that logo points. `/` is the board; an absolute URL is for a board that is one room in a larger site. |
 | `board.faviconUrl` | Your own browser-tab icon. |
+| `board.navLinks` | Your site's own navigation for a board inside a larger site: one `Label \| https://…` per line, `{board}` where Forums, Latest and Members go, or `{forums}` for Forums alone. The `deals` skin lays the header out like a storefront: logo, search with its button, then this nav. |
 
 Two things about the accent are worth knowing, because both are the difference
 between a setting that works and one that looks broken on half the boards using
