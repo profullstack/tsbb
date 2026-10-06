@@ -7,6 +7,7 @@ import { renderInline, renderMarkdown } from '@tsbb/markup';
 import { Card, CardContent, CardHeader, Empty, trusted } from '@tsbb/ui';
 import { render, type AppEnv, type Services } from '../context.ts';
 import { PLATFORM_CLAIM, PLATFORM_LEAD, PlatformGrid } from '../platform.ts';
+import { boardUrl } from '@tsbb/core';
 
 /**
  * The board's own documentation, served by the board.
@@ -317,7 +318,7 @@ export function docsRoutes(services: Services) {
     return render(c, services, {
       title: rendered.title,
       description: doc.blurb.replace(/`/g, ''),
-      canonical: new URL(`/docs/${doc.slug}`, services.baseUrl).toString(),
+      canonical: boardUrl(`/docs/${doc.slug}`, services.baseUrl),
       body: html`
         <div class="page-head">
           <div>

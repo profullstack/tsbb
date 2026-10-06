@@ -10,7 +10,7 @@ import type {
   RouteOptions,
   HttpMethod,
 } from '@tsbb/plugin-api';
-import { defaultSettings } from '@tsbb/plugin-api';
+import { defaultSettings, boardUrl } from '@tsbb/plugin-api';
 import type { HookBus } from './bus.ts';
 
 export interface RegisteredRoute {
@@ -170,7 +170,7 @@ export function buildContext(plugin: Plugin, deps: ContextDeps): PluginContext {
     },
 
     url(path: string) {
-      return new URL(path, deps.baseUrl).toString();
+      return boardUrl(path, deps.baseUrl);
     },
   };
 }

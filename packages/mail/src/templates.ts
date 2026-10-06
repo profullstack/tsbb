@@ -1,4 +1,5 @@
 import { escapeHtml } from '@tsbb/markup';
+import { boardUrl } from '@tsbb/core';
 
 /**
  * Email templates.
@@ -109,7 +110,7 @@ export function notificationEmail(input: {
 
   const items = input.lines
     .map((line) => {
-      const href = new URL(line.url, input.baseUrl).toString();
+      const href = boardUrl(line.url, input.baseUrl);
       return (
         `<tr><td style="padding:12px 0;border-bottom:1px solid ${BORDER}">` +
         `<a href="${escapeHtml(href)}" style="font-size:14px;font-weight:600;color:${INK};text-decoration:none">${escapeHtml(describe(line))}</a>` +
@@ -124,7 +125,7 @@ export function notificationEmail(input: {
   const body =
     `<h1 style="margin:0 0 12px;font-size:18px;font-weight:650">${escapeHtml(single ? 'New activity' : heading)}</h1>` +
     `<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">${items}</table>` +
-    (single && first ? button(new URL(first.url, input.baseUrl).toString(), 'Read it') : '');
+    (single && first ? button(boardUrl(first.url, input.baseUrl), 'Read it') : '');
 
   return {
     subject: single && first ? describe(first) : `${input.lines.length} new notifications · ${input.boardName}`,
@@ -137,7 +138,7 @@ export function notificationEmail(input: {
     text:
       `${heading}\n\n` +
       input.lines
-        .map((l) => `- ${describe(l)}\n  ${new URL(l.url, input.baseUrl).toString()}`)
+        .map((l) => `- ${describe(l)}\n  ${boardUrl(l.url, input.baseUrl)}`)
         .join('\n') +
       `\n\nChange what you are emailed about: ${input.unsubscribeUrl}`,
   };
@@ -153,11 +154,11 @@ export function welcomeEmail(input: {
     `<p style="margin:0;font-size:14px;line-height:1.6;color:${MUTED}">` +
     `You are signed in as <strong style="color:${INK}">${escapeHtml(input.username)}</strong>. ` +
     `Your username and picture can be changed in settings at any time.</p>` +
-    button(new URL('/settings', input.baseUrl).toString(), 'Set up your profile');
+    button(boardUrl('/settings', input.baseUrl), 'Set up your profile');
 
   return {
     subject: `Welcome to ${input.boardName}`,
     html: shell(input.boardName, body, `You received this because an account was created for this address.`),
-    text: `Welcome to ${input.boardName}.\n\nYou are signed in as ${input.username}.\nSet up your profile: ${new URL('/settings', input.baseUrl).toString()}`,
+    text: `Welcome to ${input.boardName}.\n\nYou are signed in as ${input.username}.\nSet up your profile: ${boardUrl('/settings', input.baseUrl)}`,
   };
 }
