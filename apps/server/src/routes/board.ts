@@ -27,6 +27,7 @@ import {
   visibleForumIds,
   isSubscribed,
   type Settings,
+  boardUrl,
 } from '@tsbb/core';
 import {
   Breadcrumb,
@@ -565,8 +566,8 @@ async function topicPage(c: Context<AppEnv>, services: Services) {
    */
   const opening = posts[0];
   const person = (name: string | null) =>
-    name ? { '@type': 'Person', name, url: new URL(`/u/${name}`, baseUrl).toString() } : undefined;
-  const topicUrl = new URL(`/t/${canonicalHandle}`, baseUrl).toString();
+    name ? { '@type': 'Person', name, url: boardUrl(`/u/${name}`, baseUrl) } : undefined;
+  const topicUrl = boardUrl(`/t/${canonicalHandle}`, baseUrl);
   const discussion = {
     '@context': 'https://schema.org',
     '@type': 'DiscussionForumPosting',
@@ -577,7 +578,7 @@ async function topicPage(c: Context<AppEnv>, services: Services) {
     datePublished: new Date(topic.createdAt).toISOString(),
     ...(topic.lastPostAt ? { dateModified: new Date(topic.lastPostAt).toISOString() } : {}),
     ...(opening?.authorName ? { author: person(opening.authorName) } : {}),
-    isPartOf: { '@type': 'WebPage', name: forum.name, url: new URL(`/f/${forum.slug}`, baseUrl).toString() },
+    isPartOf: { '@type': 'WebPage', name: forum.name, url: boardUrl(`/f/${forum.slug}`, baseUrl) },
     commentCount: topic.replyCount,
     interactionStatistic: [
       { '@type': 'InteractionCounter', interactionType: 'https://schema.org/CommentAction', userInteractionCount: topic.replyCount },
@@ -585,7 +586,7 @@ async function topicPage(c: Context<AppEnv>, services: Services) {
     ],
     comment: posts.slice(page === 1 ? 1 : 0).map((post) => ({
       '@type': 'Comment',
-      url: new URL(`/t/${canonicalHandle}/p/${post.id}`, baseUrl).toString(),
+      url: boardUrl(`/t/${canonicalHandle}/p/${post.id}`, baseUrl),
       text: excerpt(post.body, post.bodyFormat, 300),
       datePublished: new Date(post.createdAt).toISOString(),
       ...(post.authorName ? { author: person(post.authorName) } : {}),

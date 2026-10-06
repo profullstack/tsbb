@@ -12,6 +12,7 @@ import {
   startMagicLink,
   userByEmail,
   userCount,
+  boardUrl,
 } from '@tsbb/core';
 import { magicLinkEmail, welcomeEmail } from '@tsbb/mail';
 import { Alert, Button, Card, CardContent, CardHeader } from '@tsbb/ui';
@@ -67,7 +68,7 @@ export function authRoutes(services: Services) {
         ip: clientIp(c),
         redirectTo: redirectTo && redirectTo.startsWith('/') ? redirectTo : null,
       });
-      const url = new URL(`/auth/${token}`, services.baseUrl).toString();
+      const url = boardUrl(`/auth/${token}`, services.baseUrl);
       const message = magicLinkEmail({
         boardName: String(settings['board.name'] ?? 'tsbb'),
         url,

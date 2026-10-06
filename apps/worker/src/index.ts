@@ -9,6 +9,7 @@ import {
   pruneExpired,
   queueEmail,
   unemailedNotifications,
+  boardUrl,
 } from '@tsbb/core';
 import { notificationEmail, transport, type NotificationLine } from '@tsbb/mail';
 import type { HookBus } from '@tsbb/plugin-host';
@@ -85,7 +86,7 @@ export async function fanOutNotificationEmails(baseUrl: string): Promise<number>
       baseUrl,
       username: first.username,
       lines,
-      unsubscribeUrl: new URL('/settings/notifications', baseUrl).toString(),
+      unsubscribeUrl: boardUrl('/settings/notifications', baseUrl),
     });
 
     await queueEmail({

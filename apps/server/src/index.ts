@@ -2,10 +2,11 @@ import { serve } from '@hono/node-server';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { migrate } from '@tsbb/db/migrate';
-import { loadSettings, pruneExpired } from '@tsbb/core';
+import { basePathOf, loadSettings, pruneExpired } from '@tsbb/core';
 import { loadPlugins } from '@tsbb/plugin-host';
 import { startWorker } from '../../worker/src/index.ts';
 import { createApp } from './app.ts';
+import { mountAt } from './mount.ts';
 import { registerServer, startUpdater } from './updates.ts';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -53,7 +54,7 @@ export async function boot(options: { port?: number; listen?: boolean } = {}) {
    * first so a self-hoster can be explicit.
    */
   const port = options.port ?? Number(process.env.TSBB_PORT ?? process.env.PORT ?? 3000);
-  const server = serve({ fetch: app.fetch, port }, (info) => {
+  const server = serve({ fetch: mountAt(basePathOf(baseUrl), app.fetch), port }, (info) => {
     console.log(`[tsbb] listening on http://localhost:${info.port}  (base URL ${baseUrl})`);
   });
 

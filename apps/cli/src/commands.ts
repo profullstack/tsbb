@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { all, databaseUrl, now, one, run } from '@tsbb/db';
 import { migrate } from '@tsbb/db/migrate';
 import { seed } from '@tsbb/db/seed';
-import { loadSettings, queueEmail, startMagicLink, userByEmail } from '@tsbb/core';
+import { loadSettings, queueEmail, startMagicLink, userByEmail, boardUrl } from '@tsbb/core';
 import { magicLinkEmail } from '@tsbb/mail';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -126,7 +126,7 @@ export async function demote(email: string): Promise<void> {
 export async function invite(email: string, baseUrl: string): Promise<void> {
   const settings = await loadSettings();
   const { token } = await startMagicLink({ email });
-  const url = new URL(`/auth/${token}`, baseUrl).toString();
+  const url = boardUrl(`/auth/${token}`, baseUrl);
   const existing = await userByEmail(email);
   const message = magicLinkEmail({
     boardName: String(settings['board.name'] ?? 'tsbb'),

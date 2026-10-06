@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { Hono } from 'hono';
 import type { Context } from 'hono';
 import { html } from 'hono/html';
-import { forumTree, guestViewer, visibleForumIds, type Settings } from '@tsbb/core';
+import { forumTree, guestViewer, visibleForumIds, type Settings, boardUrl } from '@tsbb/core';
 import { escapeHtml } from '@tsbb/markup';
 import { all, sqlMonth } from '@tsbb/db';
 import { Card, CardContent, CardHeader, LinkButton } from '@tsbb/ui';
@@ -78,7 +78,7 @@ function isoDate(ms: number): string {
 
 export function discoveryRoutes(services: Services) {
   const app = new Hono<AppEnv>();
-  const absolute = (path: string) => new URL(path, services.baseUrl).toString();
+  const absolute = (path: string) => boardUrl(path, services.baseUrl);
 
   // --- robots.txt ---------------------------------------------------------
 

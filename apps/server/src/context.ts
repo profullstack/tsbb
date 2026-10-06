@@ -2,7 +2,7 @@ import type { Context } from 'hono';
 import { getCookie } from 'hono/cookie';
 import type { NavItem, Viewer } from '@tsbb/plugin-api';
 import type { Registry } from '@tsbb/plugin-host';
-import { guestViewer, loadSettings, unreadCount, viewerFromSession, type Settings } from '@tsbb/core';
+import { guestViewer, loadSettings, unreadCount, viewerFromSession, type Settings, boardUrl } from '@tsbb/core';
 import {
   Layout,
   isSkin,
@@ -165,7 +165,7 @@ export async function render(
         '@type': 'SearchAction',
         target: {
           '@type': 'EntryPoint',
-          urlTemplate: `${new URL('/search', services.baseUrl).toString()}?q={search_term_string}`,
+          urlTemplate: `${boardUrl('/search', services.baseUrl)}?q={search_term_string}`,
         },
         'query-input': 'required name=search_term_string',
       },
@@ -197,7 +197,7 @@ export async function render(
     logoHref: urlSetting(settings as Record<string, unknown>, 'board.logoHref'),
     faviconUrl: urlSetting(settings as Record<string, unknown>, 'board.faviconUrl'),
     themeColor: SKIN_THEME_COLOR[skin],
-    canonical: options.canonical ?? new URL(url.pathname, services.baseUrl).toString(),
+    canonical: options.canonical ?? boardUrl(url.pathname, services.baseUrl),
     feedUrl: options.feedUrl,
     slots,
     theme: c.get('theme') ?? readTheme(c, settings as Record<string, unknown>),

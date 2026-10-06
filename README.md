@@ -291,7 +291,7 @@ one with a fresh session secret and whatever you already had set.
 | Variable | Default | |
 |---|---|---|
 | `TSBB_DATABASE_URL` | `file:./data/tsbb.db` | A path, a `libsql://` URL for Turso, or a `postgres://` URL |
-| `TSBB_BASE_URL` | `http://localhost:3000` | Used for links in email and canonical URLs |
+| `TSBB_BASE_URL` | `http://localhost:3000` | Used for links in email and canonical URLs. A path mounts the board under it (`https://example.com/bbs`): requests outside it are redirected in, links, redirects and cookies are prefixed. Point the reverse proxy at the board **without** stripping the path. |
 | `TSBB_PORT` | `3000` | |
 | `TSBB_SESSION_SECRET` | — | 32 random bytes; also salts stored IP hashes |
 | `TSBB_MAIL_TRANSPORT` | `console` | `console`, `resend` or `smtp` |
