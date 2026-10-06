@@ -27,6 +27,7 @@ tsbb update             # fetch the newest release tag, install, and stop
 |---|---|
 | `updates.auto` | Whether a board applies what it finds. On by default. |
 | `TSBB_UPDATES=off` | Disables the check entirely, for a board whose deployment owns its version. |
+| `TSBB_UPDATE_SOURCE=api` | Ask the GitHub REST API instead of `git ls-remote`. The API allows 60 unauthenticated requests an hour per IP, shared by everything on the host, so several boards on one box exhaust it; git does not. Set `TSBB_GITHUB_TOKEN` if you use it. |
 | `TSBB_RESTART=exit` | Exit instead of respawning, for systemd, pm2 or anything else that restarts a process. |
 | `TSBB_CHECKOUT_DIR` | A directory on a volume: the container runs, and updates, a checkout there. |
 

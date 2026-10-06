@@ -302,6 +302,8 @@ one with a fresh session secret and whatever you already had set.
 | `TSBB_UPDATES` | on | Set to `off` and the board never checks for a release |
 | `TSBB_RESTART` | `respawn` | `exit` under a supervisor that restarts the process itself |
 | `TSBB_UPDATE_REPO` | `profullstack/tsbb` | A fork that publishes its own releases |
+| `TSBB_UPDATE_SOURCE` | git | How the check finds releases: `git ls-remote` on the repository (no rate limit), falling back to the GitHub API. `api` skips git |
+| `TSBB_GITHUB_TOKEN` | | Sent to the GitHub API fallback (or `GITHUB_TOKEN`); lifts its 60-an-hour-per-IP limit |
 | `TSBB_CHECKOUT_DIR` | — | A directory on a volume; the container runs, and updates, a checkout there |
 
 The worker runs inside the server by default, so email works from one command.

@@ -89,12 +89,90 @@ export function installKind(root = REPO_ROOT): InstallKind {
   return existsSync(join(root, '.git')) ? 'git' : 'image';
 }
 
+/**
+ * Release tags on the remote, read over git rather than GitHub's REST API.
+ *
+ * The REST API allows 60 unauthenticated requests an hour PER IP, and that
+ * budget is shared by everything on the host. A board checking every five
+ * minutes spends 12 of them by itself; three boards on one box spend 36, and
+ * the first busy hour leaves every board answering "GitHub answered 403" and
+ * never updating again. Git's smart-HTTP endpoint has no such per-IP quota,
+ * and a self-updating board is a git checkout already.
+ *
+ * Returns null when git is unavailable or the remote cannot be read, so the
+ * caller can fall back to the API.
+ */
+export async function gitReleaseTags(
+  repo = UPDATE_REPO,
+  run: (file: string, args: string[], cwd: string) => Promise<{ stdout: string }> = lsRemoteRun,
+): Promise<string[] | null> {
+  try {
+    const { stdout } = await run(
+      'git',
+      ['ls-remote', '--tags', '--refs', `https://github.com/${repo}.git`],
+      REPO_ROOT,
+    );
+    return stdout
+      .split('\n')
+      .map((line) => line.split('\trefs/tags/')[1]?.trim())
+      .filter((tag): tag is string => Boolean(tag));
+  } catch {
+    return null;
+  }
+}
+
+async function lsRemoteRun(file: string, args: string[], cwd: string): Promise<{ stdout: string }> {
+  const { stdout } = await exec(file, args, {
+    cwd,
+    timeout: 15_000,
+    maxBuffer: 4 * 1024 * 1024,
+    // Never stop to ask for credentials: the repository is public, and a prompt
+    // in a server process is a hang.
+    env: { ...process.env, GIT_TERMINAL_PROMPT: '0' },
+  });
+  return { stdout: String(stdout) };
+}
+
+/**
+ * The newest STABLE release tag: `v1.2.3`, never `v1.2.3-rc.1`, matching what
+ * the API's "latest release" would have said.
+ */
+export function newestReleaseTag(tags: string[]): string | null {
+  let newest: string | null = null;
+  for (const tag of tags) {
+    if (!/^v\d+\.\d+\.\d+$/.test(tag)) continue;
+    if (!newest || compareVersions(tag.slice(1), newest.slice(1)) > 0) newest = tag;
+  }
+  return newest;
+}
+
+function releaseFromTag(tag: string, repo = UPDATE_REPO): Release {
+  return {
+    version: tag.replace(/^v/, ''),
+    tag,
+    url: `https://github.com/${repo}/releases/tag/${tag}`,
+    publishedAt: null,
+    notes: '',
+  };
+}
+
+/**
+ * The REST API's view of the latest release: the fallback when git cannot be
+ * run (an image install without it). Sends `TSBB_GITHUB_TOKEN` (or
+ * `GITHUB_TOKEN`) when one is set, which lifts the limit to 5,000 an hour.
+ */
 export async function fetchLatestRelease(
   fetchImpl: typeof fetch = fetch,
   repo = UPDATE_REPO,
 ): Promise<Release | null> {
+  const token = process.env.TSBB_GITHUB_TOKEN || process.env.GITHUB_TOKEN;
+  const headers: Record<string, string> = {
+    accept: 'application/vnd.github+json',
+    'user-agent': 'tsbb-updater',
+  };
+  if (token) headers.authorization = `Bearer ${token}`;
   const response = await fetchImpl(`https://api.github.com/repos/${repo}/releases/latest`, {
-    headers: { accept: 'application/vnd.github+json', 'user-agent': 'tsbb-updater' },
+    headers,
     signal: AbortSignal.timeout(15_000),
   });
   if (response.status === 404) return null;
@@ -126,13 +204,29 @@ export async function fetchLatestRelease(
  * answer everywhere, and so a failed check leaves a message rather than a blank.
  */
 export async function checkForUpdate(
-  options: { fetch?: typeof fetch; root?: string } = {},
+  options: {
+    fetch?: typeof fetch;
+    root?: string;
+    /** Injected for tests. null means "git could not answer", which falls back to the API. */
+    listTags?: (repo: string) => Promise<string[] | null>;
+  } = {},
 ): Promise<UpdateCheck> {
   const root = options.root ?? REPO_ROOT;
   const current = currentVersion(root);
   const checkedAt = Date.now();
   try {
-    const latest = await fetchLatestRelease(options.fetch ?? fetch);
+    // Tags over git first (no per-IP quota); the REST API only when git cannot answer.
+    // TSBB_UPDATE_SOURCE=api skips git entirely (a host without outbound git).
+    const listTags =
+      options.listTags ??
+      (process.env.TSBB_UPDATE_SOURCE === 'api' ? async () => null : (repo: string) => gitReleaseTags(repo));
+    const tags = await listTags(UPDATE_REPO);
+    const newest = tags ? newestReleaseTag(tags) : null;
+    const latest = tags
+      ? newest
+        ? releaseFromTag(newest)
+        : null
+      : await fetchLatestRelease(options.fetch ?? fetch);
     await setSettings({
       'updates.latestVersion': latest?.version ?? null,
       'updates.latestUrl': latest?.url ?? null,

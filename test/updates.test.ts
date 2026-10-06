@@ -21,6 +21,9 @@ const core = await import('../packages/core/src/index.ts');
 const db = await import('../packages/db/src/index.ts');
 
 /** A fake GitHub that publishes one release. */
+/** Git could not answer: the check falls back to the REST API. */
+const noGit = async () => null;
+
 function github(tag: string | null, status = 200): typeof fetch {
   return (async () =>
     new Response(
@@ -54,7 +57,7 @@ describe('checking for a release', () => {
   after(() => db.setDb(null));
 
   it('reports a newer release and records it for the panel', async () => {
-    const check = await core.checkForUpdate({ fetch: github('v99.0.0') });
+    const check = await core.checkForUpdate({ listTags: noGit, fetch: github('v99.0.0') });
     assert.equal(check.available, true);
     assert.equal(check.latest?.version, '99.0.0');
     assert.equal(check.current, core.currentVersion());
@@ -67,20 +70,63 @@ describe('checking for a release', () => {
   });
 
   it('is not tempted by an older or equal release', async () => {
-    const check = await core.checkForUpdate({ fetch: github(`v${core.currentVersion()}`) });
+    const check = await core.checkForUpdate({ listTags: noGit, fetch: github(`v${core.currentVersion()}`) });
     assert.equal(check.available, false);
-    const older = await core.checkForUpdate({ fetch: github('v0.0.1') });
+    const older = await core.checkForUpdate({ listTags: noGit, fetch: github('v0.0.1') });
     assert.equal(older.available, false);
   });
 
   it('treats no release at all as nothing to do', async () => {
-    const check = await core.checkForUpdate({ fetch: github(null) });
+    const check = await core.checkForUpdate({ listTags: noGit, fetch: github(null) });
     assert.equal(check.latest, null);
     assert.equal(check.available, false);
   });
 
+  it('reads release tags over git and never touches the rate-limited API', async () => {
+    // Every API call fails: if the check reaches it, the test fails.
+    const api = (async () => new Response('rate limited', { status: 403 })) as unknown as typeof fetch;
+    const listTags = async () => ['v0.1.0', 'v99.1.0-rc.1', 'v99.0.0', 'v10.0.0', 'not-a-release'];
+    const check = await core.checkForUpdate({ listTags, fetch: api });
+    assert.equal(check.latest?.version, '99.0.0', 'the newest stable tag, numerically, never a prerelease');
+    assert.equal(check.latest?.url, 'https://github.com/profullstack/tsbb/releases/tag/v99.0.0');
+    assert.equal(check.available, true);
+    assert.equal((await core.updateState()).checkError, null);
+
+    const none = await core.checkForUpdate({ listTags: async () => [], fetch: api });
+    assert.equal(none.latest, null, 'a remote with no release tags is nothing to do');
+  });
+
+  it('parses git ls-remote output', async () => {
+    const run = async () => ({
+      stdout:
+        'aaa\trefs/tags/v0.9.0\nbbb\trefs/tags/v0.10.0\nccc\trefs/tags/v0.10.1-rc.1\n',
+    });
+    const tags = await core.gitReleaseTags('profullstack/tsbb', run);
+    assert.deepEqual(tags, ['v0.9.0', 'v0.10.0', 'v0.10.1-rc.1']);
+    assert.equal(core.newestReleaseTag(tags ?? []), 'v0.10.0');
+    const broken = await core.gitReleaseTags('profullstack/tsbb', async () => {
+      throw new Error('git: not found');
+    });
+    assert.equal(broken, null, 'no git means fall back, not fail');
+  });
+
+  it('sends a token to the API when one is configured', async () => {
+    let seen: string | null = null;
+    const api = (async (_url: string, init?: RequestInit) => {
+      seen = new Headers(init?.headers).get('authorization');
+      return Response.json({ tag_name: 'v1.0.0' });
+    }) as unknown as typeof fetch;
+    process.env.TSBB_GITHUB_TOKEN = 'test-token';
+    try {
+      await core.fetchLatestRelease(api);
+    } finally {
+      delete process.env.TSBB_GITHUB_TOKEN;
+    }
+    assert.equal(seen, 'Bearer test-token');
+  });
+
   it('records a failed check instead of hiding it', async () => {
-    await assert.rejects(core.checkForUpdate({ fetch: github('v1.0.0', 503) }), /503/);
+    await assert.rejects(core.checkForUpdate({ listTags: noGit, fetch: github('v1.0.0', 503) }), /503/);
     const state = await core.updateState();
     assert.match(String(state.checkError), /503/);
   });
@@ -201,11 +247,13 @@ describe('the admin panel', () => {
   it('says when a new version is out, and offers to install it', async () => {
     const realFetch = globalThis.fetch;
     globalThis.fetch = github('v99.0.0');
+    process.env.TSBB_UPDATE_SOURCE = 'api';
     try {
       const response = await post('/admin/updates/check');
       assert.equal(response.status, 303);
     } finally {
       globalThis.fetch = realFetch;
+      delete process.env.TSBB_UPDATE_SOURCE;
     }
     const body = await (await get('/admin')).text();
     assert.ok(body.includes('Version 99.0.0'), 'the card names the release');
