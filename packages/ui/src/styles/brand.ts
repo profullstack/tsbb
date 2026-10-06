@@ -146,6 +146,10 @@ export function brandCss(accent: string | undefined | null): string {
     `/* Board accent: ${accent} */`,
     `:root {`,
     accentTokens(light),
+    // The accent exactly as chosen, for skins that fill with it (deals). Text
+    // that sits on it is white unless the colour itself is very light.
+    `  --brand: ${oklch(parsed)};`,
+    `  --brand-foreground: ${parsed.l > 0.8 ? oklch({ l: 0.21, c: 0.034, h: 264.665 }) : oklch({ l: 1, c: 0, h: 0 })};`,
     `}`,
     ``,
     `@media (prefers-color-scheme: dark) {`,

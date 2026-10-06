@@ -10,8 +10,9 @@ look and not another.
 | `modern` | Cards, generous spacing, soft shadows. The default. |
 | `classic` | A 2000s bulletin board: boxy, dense, gradient title bars, Verdana. |
 | `terminal` | Neutral surfaces, hairline rules, monospace chrome, window furniture on section headers. |
+| `deals` | A coupon and deal-sharing storefront: white surfaces, slate greys, the accent as a flat fill with white text, Geist (self-hosted), a dark footer. Made for a board that lives inside a deals site, like [c0upons.com/bbs](https://c0upons.com/bbs). |
 
-`classic` and `terminal` are **layers on top of** the modern sheet rather than
+`classic`, `terminal` and `deals` are **layers on top of** the modern sheet rather than
 replacements. A component's structure is defined in exactly one place, and a
 skin only argues about how it looks. That is why a new component appears in all
 three the day it is written.

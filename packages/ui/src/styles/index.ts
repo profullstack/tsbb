@@ -13,20 +13,22 @@ const TOKENS = join(HERE, '../../../design-tokens/src/tokens.css');
  *   modern    cards, generous spacing, soft shadows
  *   classic   a 2000s bulletin board: boxy, dense, gradient title bars
  *   terminal  neutral surfaces, hairline rules, monospace chrome
+ *   deals     a coupon/deal storefront: white, slate, flat accent fills, Geist
  *
  * Each is a LAYER on top of the modern sheet rather than a replacement, so
  * there is exactly one place where a component's structure is defined and the
  * skin only argues about how it looks. A second full stylesheet would drift
  * from the first within a week.
  */
-export type Skin = 'modern' | 'classic' | 'terminal';
+export type Skin = 'modern' | 'classic' | 'terminal' | 'deals';
 
-export const SKINS: readonly Skin[] = ['modern', 'classic', 'terminal'];
+export const SKINS: readonly Skin[] = ['modern', 'classic', 'terminal', 'deals'];
 
 const BASE = ['base.css', 'components.css', 'forum.css'];
 const LAYER: Partial<Record<Skin, string>> = {
   classic: 'classic.css',
   terminal: 'terminal.css',
+  deals: 'deals.css',
 };
 
 export interface Brand {
@@ -45,6 +47,7 @@ export const SKIN_THEME_COLOR: Record<Skin, { light: string; dark: string }> = {
   modern: { light: '#fffcf9', dark: '#1a120c' },
   classic: { light: '#fffcf9', dark: '#1a120c' },
   terminal: { light: '#fefefe', dark: '#0b0b0b' },
+  deals: { light: '#ffffff', dark: '#030712' },
 };
 
 /**
@@ -119,4 +122,17 @@ export function stylesheetUrl(skin: Skin = 'modern', brand: Brand = {}): string 
 
 export function isSkin(value: unknown): value is Skin {
   return SKINS.includes(value as Skin);
+}
+
+const FONTS = join(HERE, '../fonts');
+const FONT_FILES: Record<string, string> = { 'geist.woff2': 'geist.woff2' };
+
+/**
+ * A font a skin ships (served at /assets/fonts/<name>). Self-hosted because the
+ * board's policy is `font-src 'self'`, and a third-party font host would see
+ * every reader anyway. Geist is SIL OFL 1.1 (GEIST-OFL.txt beside it).
+ */
+export function fontFile(name: string): Buffer | null {
+  const file = FONT_FILES[name];
+  return file ? readFileSync(join(FONTS, file)) : null;
 }

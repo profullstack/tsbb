@@ -4,6 +4,7 @@ export * from './components/layout.ts';
 export * from './components/board.ts';
 export {
   stylesheet,
+  fontFile,
   stylesheetForHash,
   stylesheetUrl,
   isSkin,
