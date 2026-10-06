@@ -6,7 +6,7 @@ import { Card, CardContent, Empty, fontFile, stylesheet, stylesheetForHash } fro
 import type { Registry } from '@tsbb/plugin-host';
 import type { PluginRequest, Viewer } from '@tsbb/plugin-api';
 import { readTheme, render, resolveViewer, type AppEnv, type Services } from './context.ts';
-import { bridgeConfig, wantsSilentSignIn } from './bridge.ts';
+import { bridgeConfig, coinpayConfig, wantsSilentSignIn } from './bridge.ts';
 import { adminRoutes } from './routes/admin.ts';
 import { pwaRoutes } from './routes/pwa.ts';
 import { apiRoutes } from './routes/api.ts';
@@ -22,7 +22,7 @@ import { settingsRoutes } from './routes/settings.ts';
 
 export function createApp(registry: Registry, baseUrl: string): Hono<AppEnv> {
   const app = new Hono<AppEnv>();
-  const services: Services = { registry, baseUrl, bridge: bridgeConfig(baseUrl) };
+  const services: Services = { registry, baseUrl, bridge: bridgeConfig(baseUrl), coinpay: coinpayConfig(baseUrl) };
 
   /*
    * The stylesheet is served under a content hash, so it can be cached for a

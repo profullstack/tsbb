@@ -308,6 +308,7 @@ one with a fresh session secret and whatever you already had set.
 | `TSBB_BRIDGE_AUTHORIZE_URL`, `TSBB_BRIDGE_TOKEN_URL`, `TSBB_BRIDGE_CLIENT_ID`, `TSBB_BRIDGE_SECRET` | — | A host site whose accounts work here ([@profullstack/bridges](https://github.com/profullstack/bridges)): a "Continue with …" button, and accounts linked by the host's id for each person |
 | `TSBB_BRIDGE_NAME` | the host | The button label |
 | `TSBB_BRIDGE_AUTO_COOKIE` | — | A cookie the host sets for signed-in users. When the board shares the host's origin and sees it, a guest is signed in silently (no prompt); guests and crawlers without it never are. `TSBB_BRIDGE_AUTO=off` disables silent sign-in |
+| `TSBB_COINPAY_CLIENT_ID`, `TSBB_COINPAY_CLIENT_SECRET` | — | Sign in with CoinPay (OAuth 2.1). Register the board at coinpayportal.com with the callback `<board>/auth/coinpay/callback` and scopes `openid did profile email`. People are linked by their CoinPay DID, the same id a CoinPay-backed host site bridges, so both ways in reach one account. From a terminal: `tsbb login <board> --with coinpay` |
 
 The worker runs inside the server by default, so email works from one command.
 

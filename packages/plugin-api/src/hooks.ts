@@ -66,7 +66,7 @@ export interface ActionMap {
   'topic:locked': { topic: Topic; viewer: Viewer };
   'topic:moved': { topic: Topic; fromForumId: Id; toForumId: Id; viewer: Viewer };
   'user:registered': { user: User };
-  'user:login': { user: User; method: 'magic-link' | 'passkey' | 'token' | 'bridge' };
+  'user:login': { user: User; method: 'magic-link' | 'passkey' | 'token' | 'bridge' | 'coinpay' };
   'user:banned': { user: User; reason: string | null; viewer: Viewer };
   'report:created': { reportId: Id; targetType: string; targetId: Id };
   'reaction:added': { postId: Id; userId: Id; kind: string };

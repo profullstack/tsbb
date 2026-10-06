@@ -1,3 +1,4 @@
+import { spawn } from 'node:child_process';
 import {
   ApiError,
   BoardClient,
@@ -26,6 +27,27 @@ export interface RemoteFlags {
   json?: boolean;
   server?: string;
   limit?: number;
+  /** `tsbb login --with coinpay`: sign in through that provider. */
+  with?: string;
+}
+
+/**
+ * Open a URL in the person's browser, best effort. False when there is no
+ * desktop to open it on (SSH, a container): the URL is printed either way.
+ */
+function openBrowser(url: string): boolean {
+  if (process.env.TSBB_NO_BROWSER || (process.platform === 'linux' && !process.env.DISPLAY && !process.env.WAYLAND_DISPLAY)) {
+    return false;
+  }
+  const command = process.platform === 'darwin' ? 'open' : process.platform === 'win32' ? 'explorer' : 'xdg-open';
+  try {
+    const child = spawn(command, [url], { stdio: 'ignore', detached: true });
+    child.on('error', () => {});
+    child.unref();
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 class UsageError extends Error {}
@@ -103,9 +125,14 @@ export async function loginCommand(server: string | undefined, flags: RemoteFlag
   const token = await login(client, {
     label: 'tsbb cli',
     onPrompt: (grant) => {
+      // `--with coinpay` (or `--with bridge`, the board's host site) sends the
+      // browser straight to that sign-in instead of the board's sign-in page.
+      const url = new URL(grant.verifyUrl);
+      if (flags.with) url.searchParams.set('via', flags.with);
+      const opened = flags.json ? false : openBrowser(url.toString());
       if (flags.json) return;
-      console.log('  Open this page and approve the code:\n');
-      console.log(`    ${grant.verifyUrl}`);
+      console.log(opened ? '  Opened your browser. If it did not open, visit:\n' : '  Open this page and approve the code:\n');
+      console.log(`    ${url}`);
       console.log(`    code: ${grant.userCode}\n`);
       console.log('  Waiting…');
     },

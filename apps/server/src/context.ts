@@ -2,7 +2,7 @@ import type { Context } from 'hono';
 import { getCookie } from 'hono/cookie';
 import type { NavItem, Viewer } from '@tsbb/plugin-api';
 import type { Registry } from '@tsbb/plugin-host';
-import type { BridgeConfig } from './bridge.ts';
+import type { BridgeConfig, SignInProvider } from './bridge.ts';
 import { guestViewer, loadSettings, unreadCount, viewerFromSession, type Settings, boardUrl } from '@tsbb/core';
 import {
   Layout,
@@ -49,6 +49,8 @@ export interface Services {
   baseUrl: string;
   /** A host site whose accounts work here, when one is configured. */
   bridge?: BridgeConfig | null;
+  /** CoinPay sign-in, when the board is a registered CoinPay client. */
+  coinpay?: SignInProvider | null;
 }
 
 export async function resolveViewer(c: Context): Promise<Viewer> {

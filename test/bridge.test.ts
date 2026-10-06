@@ -18,6 +18,27 @@ process.env.TSBB_BRIDGE_CLIENT_ID = 'tsbb';
 process.env.TSBB_BRIDGE_SECRET = SECRET;
 process.env.TSBB_BRIDGE_NAME = 'Host';
 process.env.TSBB_BRIDGE_AUTO_COOKIE = 'host_session';
+process.env.TSBB_COINPAY_CLIENT_ID = 'cp_board';
+process.env.TSBB_COINPAY_CLIENT_SECRET = 'cps';
+process.env.TSBB_COINPAY_URL = 'https://coinpay.example';
+
+/** A fake CoinPay: a code per authorize, PKCE checked, userinfo by token. */
+let coinpayUser: Record<string, unknown> = {};
+const coinpayCodes = new Map<string, string>();
+async function coinpayFetch(url: string, init?: RequestInit): Promise<Response> {
+  const u = new URL(url);
+  if (u.pathname === '/api/oauth/token') {
+    const form = new URLSearchParams(String(init?.body));
+    const { pkceChallenge } = await import('@profullstack/bridges');
+    const ok =
+      form.get('client_id') === 'cp_board' &&
+      form.get('client_secret') === 'cps' &&
+      coinpayCodes.get(form.get('code') ?? '') === (await pkceChallenge(form.get('code_verifier') ?? ''));
+    return ok ? Response.json({ access_token: 'cp-at' }) : Response.json({ error: 'invalid_grant' }, { status: 400 });
+  }
+  if (u.pathname === '/api/oauth/userinfo') return Response.json(coinpayUser);
+  return new Response('not found', { status: 404 });
+}
 
 const { seed } = await import('../packages/db/src/seed.ts');
 const { boot } = await import('../apps/server/src/index.ts');
@@ -68,6 +89,7 @@ describe('host accounts on the board (bridges)', () => {
     // boot, because the bridge client takes fetch when it is created.
     globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input instanceof Request ? input.url : input);
+      if (url.startsWith('https://coinpay.example/')) return coinpayFetch(url, init);
       return url.startsWith('https://host.example/') ? host.token(new Request(url, init)) : realFetch(input, init);
     }) as typeof fetch;
     await seed({ quiet: true });
@@ -78,9 +100,43 @@ describe('host accounts on the board (bridges)', () => {
     db.setDb(null);
   });
 
-  it('offers the host on the sign-in page', async () => {
+  it('offers the host and CoinPay on the sign-in page', async () => {
     const page = await (await get('/login')).text();
     assert.match(page, /Continue with Host/);
+    assert.match(page, /Continue with CoinPay/);
+  });
+
+  it('signs in with CoinPay, and a DID lands on the same account as the host bridge', async () => {
+    // First through the host bridge, as a DID...
+    hostUser = { sub: 'did:key:dana', name: 'Dana' };
+    await signIn('login');
+    const viaHost = await db.one<{ user_id: number }>("SELECT user_id FROM user_identities WHERE subject = 'did:key:dana'");
+
+    // ...then straight through CoinPay, with the same DID.
+    coinpayUser = { sub: 'merchant-9', did: 'did:key:dana', name: 'Dana CoinPay', email: 'dana@example.com', email_verified: false };
+    const start = await get('/auth/coinpay?return=%2Ff%2Fgeneral');
+    const authorize = new URL(start.headers.get('location') ?? '');
+    assert.equal(authorize.origin, 'https://coinpay.example');
+    assert.equal(authorize.searchParams.get('scope'), 'openid did profile email');
+    assert.equal(authorize.searchParams.get('redirect_uri'), `${BOARD}/auth/coinpay/callback`);
+    coinpayCodes.set('cp-code', authorize.searchParams.get('code_challenge') ?? '');
+    const callback = await get(
+      `/auth/coinpay/callback?code=cp-code&state=${authorize.searchParams.get('state')}`,
+      cookiesOf(start),
+    );
+    assert.equal(callback.headers.get('location'), '/f/general');
+    assert.ok(cookiesOf(callback).tsbb_session, 'signed in');
+
+    const rows = await db.all<{ provider: string; user_id: number }>(
+      "SELECT provider, user_id FROM user_identities WHERE subject = 'did:key:dana'",
+    );
+    assert.deepEqual(rows.map((r) => r.provider), ['did'], 'one identity for the DID, not one per way in');
+    assert.equal(rows[0]?.user_id, viaHost?.user_id);
+  });
+
+  it('sends a CLI sign-in straight to CoinPay', async () => {
+    const response = await get('/link?code=ABCD-EFGH&via=coinpay');
+    assert.equal(response.headers.get('location'), '/auth/coinpay?return=%2Flink%3Fcode%3DABCD-EFGH');
   });
 
   it('creates and links an account on first arrival, and finds the same one after', async () => {

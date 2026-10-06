@@ -25,7 +25,11 @@ export interface BridgeClaims {
  * verified that email; otherwise anyone could claim an account here by
  * typing its address into their profile there.
  */
-export async function bridgeAccount(provider: string, claims: BridgeClaims): Promise<User> {
+export async function bridgeAccount(source: string, claims: BridgeClaims): Promise<User> {
+  // A DID names one person wherever it appears (that is what it is for), so it
+  // is linked under one key whichever way they arrived: c0upons' bridge and
+  // CoinPay itself both hand over the same CoinPay DID.
+  const provider = claims.sub.startsWith('did:') ? 'did' : source;
   const linked = await one<{ user_id: number }>(
     'SELECT user_id FROM user_identities WHERE provider = ? AND subject = ?',
     [provider, claims.sub],

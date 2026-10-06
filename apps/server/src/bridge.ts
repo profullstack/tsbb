@@ -1,5 +1,58 @@
-import { createBridgeClient, type BridgeClient } from '@profullstack/bridges';
+import { createHash } from 'node:crypto';
+import { createBridgeClient, createCoinPayClient, type BridgeClient } from '@profullstack/bridges';
 import { boardUrl } from '@tsbb/core';
+
+/**
+ * A way to sign in through someone else's accounts: a host site (bridge) or
+ * an OAuth 2.1 provider (CoinPay). Both have the same begin/complete shape, so
+ * one pair of routes serves each: /auth/<id> and /auth/<id>/callback.
+ */
+export interface SignInProvider {
+  /** The route segment: /auth/bridge, /auth/coinpay. */
+  id: 'bridge' | 'coinpay';
+  /** Recorded on each linked identity. */
+  provider: string;
+  /** "Continue with <name>". */
+  name: string;
+  client: BridgeClient;
+}
+
+/**
+ * CoinPay sign-in, when the board is registered as a CoinPay OAuth client:
+ *
+ *   TSBB_COINPAY_CLIENT_ID       the client id CoinPay issued
+ *   TSBB_COINPAY_CLIENT_SECRET   its secret (vault, never the repo)
+ *   TSBB_COINPAY_URL             another CoinPay deployment; default coinpayportal.com
+ *
+ * Register the callback <board>/auth/coinpay/callback with CoinPay.
+ */
+export function coinpayConfig(baseUrl: string, env: NodeJS.ProcessEnv = process.env): SignInProvider | null {
+  const clientId = env.TSBB_COINPAY_CLIENT_ID?.trim();
+  const clientSecret = env.TSBB_COINPAY_CLIENT_SECRET?.trim();
+  if (!clientId || !clientSecret) return null;
+  const base = env.TSBB_COINPAY_URL?.trim() || 'https://coinpayportal.com';
+  try {
+    return {
+      id: 'coinpay',
+      provider: new URL(base).host,
+      name: 'CoinPay',
+      client: createCoinPayClient({
+        baseUrl: base,
+        clientId,
+        clientSecret,
+        redirectUri: boardUrl('/auth/coinpay/callback', baseUrl),
+        // The state cookie is the board's own: sealed with a key derived from
+        // the session secret, whatever length CoinPay's secret happens to be.
+        stateSecret: createHash('sha256')
+          .update(`tsbb-coinpay-state\u0000${env.TSBB_SESSION_SECRET ?? clientSecret}`)
+          .digest('hex'),
+      }),
+    };
+  } catch (error) {
+    console.warn(`[tsbb] coinpay: ${error instanceof Error ? error.message : String(error)}; CoinPay sign-in off`);
+    return null;
+  }
+}
 
 /**
  * A host site whose accounts work here (@profullstack/bridges).
@@ -18,11 +71,8 @@ import { boardUrl } from '@tsbb/core';
  *                               present, so guests and crawlers never do.
  *   TSBB_BRIDGE_AUTO=off        never sign in automatically, only by button
  */
-export interface BridgeConfig {
-  /** The host, as recorded on each linked identity. */
-  provider: string;
-  name: string;
-  client: BridgeClient;
+export interface BridgeConfig extends SignInProvider {
+  id: 'bridge';
   auto: boolean;
   autoCookie: string | null;
 }
@@ -53,6 +103,7 @@ export function bridgeConfig(baseUrl: string, env: NodeJS.ProcessEnv = process.e
       redirectUri: boardUrl('/auth/bridge/callback', baseUrl),
     });
     return {
+      id: 'bridge',
       provider,
       name: env.TSBB_BRIDGE_NAME?.trim() || provider,
       client,
