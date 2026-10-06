@@ -1,0 +1,51 @@
+/* OpenEmoji for tsbb. Classes only: the board's CSP refuses inline styles. */
+
+img.oe { width: 1.25em; height: 1.25em; vertical-align: -0.25em; margin: 0 0.05em; }
+
+.oe-picker { position: relative; }
+.oe-summary {
+  display: inline-flex; align-items: center; gap: 0.35rem; list-style: none; cursor: pointer;
+  padding: 0.3rem 0.55rem; border: 1px solid var(--border); border-radius: var(--radius);
+  color: var(--muted-foreground); font-size: 0.875rem; user-select: none;
+}
+.oe-summary::-webkit-details-marker { display: none; }
+.oe-summary:hover, .oe-picker[open] .oe-summary { color: var(--foreground); background: var(--muted); }
+.oe-icon { flex-shrink: 0; }
+
+.oe-panel {
+  position: absolute; z-index: 30; top: calc(100% + 0.35rem); left: 0;
+  width: min(22rem, calc(100vw - 2rem)); display: flex; flex-direction: column;
+  background: var(--popover, var(--card)); color: var(--popover-foreground, var(--foreground));
+  border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow-lg);
+  padding: 0.4rem;
+}
+.oe-popular, .oe-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(2.25rem, 1fr)); }
+.oe-enhanced .oe-panel { height: 24rem; }
+.oe-enhanced .oe-popular { display: none; }
+.oe-grid { flex: 1; overflow-y: auto; align-content: start; }
+.oe-cell {
+  width: 2.25rem; height: 2.25rem; display: flex; align-items: center; justify-content: center;
+  background: none; border: 0; border-radius: calc(var(--radius) - 2px); cursor: pointer;
+}
+.oe-cell:hover, .oe-cell:focus-visible { background: var(--row-hover, var(--muted)); }
+.oe-hint { margin: 0.4rem 0.2rem 0.1rem; font-size: 0.75rem; color: var(--muted-foreground); }
+
+.oe-search {
+  display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.35rem; padding: 0.3rem 0.5rem;
+  border: 1px solid var(--input, var(--border)); border-radius: var(--radius); color: var(--muted-foreground);
+}
+.oe-search-input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--foreground); font: inherit; font-size: 0.875rem; }
+.oe-tabs { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 0.25rem; }
+.oe-tabs[hidden] { display: none; }
+.oe-tab {
+  flex: 1; display: flex; justify-content: center; padding: 0.35rem 0; background: none; border: 0;
+  border-bottom: 2px solid transparent; color: var(--muted-foreground); cursor: pointer;
+}
+.oe-tab:hover { color: var(--foreground); }
+.oe-tab[aria-selected="true"] { color: var(--primary); border-bottom-color: var(--primary); }
+.oe-empty { grid-column: 1 / -1; padding: 1rem; text-align: center; color: var(--muted-foreground); font-size: 0.875rem; }
+
+.oe-list-page { max-width: 60rem; margin: 2rem auto; padding: 0 1rem; font-family: system-ui, sans-serif; }
+.oe-list { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr)); gap: 0.25rem 1rem; }
+.oe-list li { display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; }
+.oe-list img { width: 24px; height: 24px; }

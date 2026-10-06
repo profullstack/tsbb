@@ -270,9 +270,20 @@ export function createApp(registry: Registry, baseUrl: string): Hono<AppEnv> {
 function mountPluginRoutes(app: Hono<AppEnv>, services: Services): void {
   app.all('/p/:slug/*', async (c) => {
     const url = new URL(c.req.url);
-    const match = services.registry.routes.find(
-      (route) => route.method === c.req.method && route.path === url.pathname,
-    );
+    const routes = services.registry.routes.filter((route) => route.method === c.req.method);
+    // An exact path wins. A path ending in `/*` then matches anything below it
+    // (never the bare prefix), and the rest of the path reaches the handler as
+    // `params['*']`: how a plugin serves a directory of files from one route.
+    let rest: string | undefined;
+    const match =
+      routes.find((route) => route.path === url.pathname) ??
+      routes.find((route) => {
+        if (!route.path.endsWith('/*')) return false;
+        const prefix = route.path.slice(0, -1);
+        if (!url.pathname.startsWith(prefix) || url.pathname.length === prefix.length) return false;
+        rest = url.pathname.slice(prefix.length);
+        return true;
+      });
     if (!match) return c.notFound();
 
     const viewer = c.get('viewer');
@@ -282,6 +293,13 @@ function mountPluginRoutes(app: Hono<AppEnv>, services: Services): void {
     if (requires === 'admin' && !viewer.isAdmin) return c.text('Not allowed', 403);
 
     const request = pluginRequest(c, viewer);
+    if (rest !== undefined) {
+      try {
+        request.params['*'] = decodeURIComponent(rest);
+      } catch {
+        return c.notFound(); // a malformed %-escape names no file
+      }
+    }
     const result = await match.handler(request);
 
     if (result instanceof Response) return result;

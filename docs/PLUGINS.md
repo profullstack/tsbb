@@ -210,6 +210,21 @@ ctx.route('POST', '/hook', async (req) => {
 Mounted under `/p/<slug>`. Return a `Response`, a string (sent as HTML), or an
 object (sent as JSON).
 
+A path ending in `/*` matches everything below it, and the remainder arrives as
+`req.params['*']`. An exact path always wins over a wildcard. That is how a
+plugin serves its own files; check the remainder against an allowlist, because
+it is whatever the visitor typed:
+
+```ts
+ctx.route('GET', '/a/*', async (req) => {
+  const name = req.params['*'];
+  if (!/^[a-z0-9-]+\.webp$/.test(name)) return new Response('Not found', { status: 404 });
+  return new Response(await readFile(join(import.meta.dirname, '..', 'assets', name)), {
+    headers: { 'Content-Type': 'image/webp' },
+  });
+});
+```
+
 `requires` is enforced by the host, not by you — `guest`, `user`, `moderator` or
 `admin`. A plugin that forgets to check would otherwise be a hole in the board.
 
