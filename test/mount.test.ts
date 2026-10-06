@@ -85,6 +85,13 @@ describe('a board mounted under a path', () => {
     });
     const response = await stub(new Request('http://localhost:3994/bbs/whatever'));
     assert.equal(response.headers.get('location'), '/bbs/login');
+
+    // The site around the board shares its host; a redirect there is not ours.
+    const toHost = mountAt('/bbs', async (_request: Request) =>
+      new Response(null, { status: 302, headers: { location: 'http://localhost:3994/api/v1/bridge/authorize?x=1' } }),
+    );
+    const out = await toHost(new Request('http://localhost:3994/bbs/auth/bridge'));
+    assert.equal(out.headers.get('location'), 'http://localhost:3994/api/v1/bridge/authorize?x=1');
     assert.deepEqual(response.headers.getSetCookie(), [
       'tsbb_session=abc; Path=/bbs; HttpOnly',
       'other=1; Path=/bbs/settings',

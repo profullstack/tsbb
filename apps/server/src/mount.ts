@@ -62,17 +62,11 @@ export function mountAt<F extends Fetch>(base: string, fetch: F): F {
     if (location) {
       if (location.startsWith('/') && !location.startsWith('//')) {
         headers.set('location', base + location);
-      } else {
-        try {
-          const target = new URL(location);
-          if (target.host === url.host && !withinBase(target.pathname, base)) {
-            target.pathname = base + target.pathname;
-            headers.set('location', target.toString());
-          }
-        } catch {
-          // Not a URL we can read; leave it alone.
-        }
       }
+      // An absolute URL is left exactly as it is, even on this host: a board
+      // under a path shares its host with the site around it, and a redirect
+      // to that site (c0upons.com/api/v1/bridge/authorize) is not the board's.
+      // The board builds its own absolute URLs with boardUrl(), prefix included.
     }
 
     const cookies = headers.getSetCookie();

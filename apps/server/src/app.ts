@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { getCookie } from 'hono/cookie';
 import type { Context } from 'hono';
-import { loadSettings, touchLastSeen, viewerFromToken } from '@tsbb/core';
+import { boardUrl, loadSettings, touchLastSeen, viewerFromToken } from '@tsbb/core';
 import { Card, CardContent, Empty, fontFile, stylesheet, stylesheetForHash } from '@tsbb/ui';
 import type { Registry } from '@tsbb/plugin-host';
 import type { PluginRequest, Viewer } from '@tsbb/plugin-api';
@@ -88,9 +88,8 @@ export function createApp(registry: Registry, baseUrl: string): Hono<AppEnv> {
   app.use('*', async (c, next) => {
     const url = new URL(c.req.url);
     if (canonicalHost && url.host !== canonicalHost && url.host === `www.${canonicalHost}`) {
-      url.host = canonicalHost;
-      url.protocol = new URL(baseUrl).protocol;
-      return c.redirect(url.toString(), 308);
+      // boardUrl keeps a mount prefix: under /bbs this path arrives without it.
+      return c.redirect(boardUrl(url.pathname + url.search, baseUrl), 308);
     }
     await next();
   });
