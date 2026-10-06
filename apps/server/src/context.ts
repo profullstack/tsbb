@@ -2,6 +2,7 @@ import type { Context } from 'hono';
 import { getCookie } from 'hono/cookie';
 import type { NavItem, Viewer } from '@tsbb/plugin-api';
 import type { Registry } from '@tsbb/plugin-host';
+import type { BridgeConfig } from './bridge.ts';
 import { guestViewer, loadSettings, unreadCount, viewerFromSession, type Settings, boardUrl } from '@tsbb/core';
 import {
   Layout,
@@ -46,6 +47,8 @@ export interface AppEnv {
 export interface Services {
   registry: Registry;
   baseUrl: string;
+  /** A host site whose accounts work here, when one is configured. */
+  bridge?: BridgeConfig | null;
 }
 
 export async function resolveViewer(c: Context): Promise<Viewer> {

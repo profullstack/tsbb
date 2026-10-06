@@ -5,6 +5,7 @@
   "type": "module",
   "dependencies": {
     "@hono/node-server": "^1.13.7",
+    "@profullstack/bridges": "^0.1.0",
     "@profullstack/synconfig": "^0.1.2",
     "@tsbb/client": "workspace:*",
     "@tsbb/core": "workspace:*",

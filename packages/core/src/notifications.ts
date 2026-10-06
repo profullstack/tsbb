@@ -290,6 +290,11 @@ export interface PendingEmail {
   attempts: number;
 }
 
+/** An address on the reserved `.invalid` TLD: a placeholder, never a mailbox. */
+export function isUndeliverable(email: string): boolean {
+  return /\.invalid$/i.test(email.trim());
+}
+
 export async function queueEmail(input: {
   to: string;
   userId?: Id | null;
@@ -300,6 +305,10 @@ export async function queueEmail(input: {
   dedupeKey?: string;
   delayMs?: number;
 }): Promise<void> {
+  // An account that came from a host site without an email has a placeholder
+  // on the reserved .invalid domain (RFC 2606). Nothing can be delivered there,
+  // so nothing is queued: a bounce would only count against the sender.
+  if (isUndeliverable(input.to)) return;
   const timestamp = now();
   await run(
     `INSERT INTO email_queue

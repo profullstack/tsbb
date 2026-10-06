@@ -13,9 +13,11 @@ import {
   userByEmail,
   userCount,
   boardUrl,
+  bridgeAccount,
 } from '@tsbb/core';
 import { magicLinkEmail, welcomeEmail } from '@tsbb/mail';
 import { Alert, Button, Card, CardContent, CardHeader } from '@tsbb/ui';
+import { BRIDGE_SKIP_COOKIE, BRIDGE_STATE_COOKIE, localPath } from '../bridge.ts';
 import { render, SESSION_COOKIE, THEME_COOKIE, type AppEnv, type Services } from '../context.ts';
 
 const EMAIL_SHAPE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
@@ -41,6 +43,44 @@ export function authRoutes(services: Services) {
    */
   app.get('/login', async (c) => authPage(c, services, { sent: false }));
   app.get('/signup', async (c) => authPage(c, services, { sent: false, isSignup: true }));
+
+  // Registered before /auth/:token (the magic link), which would otherwise
+  // take /auth/bridge for a token.
+  // --- A host site's accounts (@profullstack/bridges) ----------------------
+
+  app.get('/auth/bridge', async (c) => {
+    const bridge = services.bridge;
+    if (!bridge) return c.notFound();
+    const prompt = c.req.query('prompt') === 'none' ? 'none' : 'login';
+    const { url, cookie, maxAge } = await bridge.client.begin({ returnTo: localPath(c.req.query('return')), prompt });
+    setCookie(c, BRIDGE_STATE_COOKIE, cookie, { path: '/auth/bridge', httpOnly: true, secure, sameSite: 'Lax', maxAge });
+    return c.redirect(url, 302);
+  });
+
+  app.get('/auth/bridge/callback', async (c) => {
+    const bridge = services.bridge;
+    if (!bridge) return c.notFound();
+    const result = await bridge.client.complete(c.req.url, getCookie(c, BRIDGE_STATE_COOKIE));
+    deleteCookie(c, BRIDGE_STATE_COOKIE, { path: '/auth/bridge' });
+    const back = localPath(result.returnTo);
+
+    if (!result.ok) {
+      // A silent attempt that found nobody (or failed in any way) must not be
+      // retried on the very next page, or the guest bounces forever.
+      setCookie(c, BRIDGE_SKIP_COOKIE, '1', { path: '/', httpOnly: true, secure, sameSite: 'Lax', maxAge: 30 * 60 });
+      if (result.prompt === 'none') return c.redirect(back, 302);
+      console.warn(`[tsbb] bridge: sign-in with ${bridge.provider} failed: ${result.error}`);
+      return c.redirect(`/login?bridge_error=${encodeURIComponent(result.error)}`, 302);
+    }
+
+    const user = await bridgeAccount(bridge.provider, result.user);
+    if (user.isBanned) return c.redirect('/login?bridge_error=banned', 302);
+    const session = await createSession(user.id, { userAgent: c.req.header('user-agent'), ip: clientIp(c) });
+    setCookie(c, SESSION_COOKIE, session.id, cookieOptions(secure));
+    deleteCookie(c, BRIDGE_SKIP_COOKIE, { path: '/' });
+    await services.registry.bus.emit('user:login', { user, method: 'bridge' });
+    return c.redirect(back, 302);
+  });
 
   app.post('/login', async (c) => {
     const form = await c.req.parseBody();
@@ -132,8 +172,14 @@ export function authRoutes(services: Services) {
     const sessionId = getCookie(c, SESSION_COOKIE);
     if (sessionId) await destroySession(sessionId);
     deleteCookie(c, SESSION_COOKIE, { path: '/' });
+    // Signing out here while still signed in on the host would otherwise be
+    // undone by the next page view. Hold off the silent sign-in for a while.
+    if (services.bridge) {
+      setCookie(c, BRIDGE_SKIP_COOKIE, '1', { path: '/', httpOnly: true, secure, sameSite: 'Lax', maxAge: 12 * 3600 });
+    }
     return c.redirect('/', 302);
   });
+
 
   /** Theme is a cookie, so the server can put it in the markup before paint. */
   app.post('/prefs/theme', async (c) => {
@@ -220,6 +266,11 @@ async function authPage(
 ) {
   const heading = state.isSignup ? 'Create your account' : 'Sign in';
   const redirect = c.req.query('redirect') ?? '';
+  const bridgeError = c.req.query('bridge_error')
+    ? c.req.query('bridge_error') === 'banned'
+      ? 'This account is suspended on this board.'
+      : `Signing in with ${services.bridge?.name ?? 'your account'} did not work. Try again, or use your email below.`
+    : null;
 
   const body = html`<div style="max-width:26rem;margin:2rem auto">
     ${Card(html`
@@ -235,6 +286,13 @@ async function authPage(
             )
           : html`
               ${state.error ? Alert(state.error, { variant: 'destructive' }) : ''}
+              ${bridgeError ? Alert(bridgeError, { variant: 'destructive' }) : ''}
+              ${services.bridge
+                ? html`<a class="btn btn-block" href="/auth/bridge?prompt=login&amp;return=${encodeURIComponent(localPath(redirect))}"
+                      >Continue with ${services.bridge.name}</a
+                    >
+                    <div class="separator-label"><span>or use your email</span></div>`
+                : ''}
               <form method="post" action="/login">
                 ${redirect ? html`<input type="hidden" name="redirect" value="${redirect}" />` : ''}
                 <div class="field">

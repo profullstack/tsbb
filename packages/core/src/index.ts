@@ -15,3 +15,4 @@ export * from './search.ts';
 export * from './feed-parser.ts';
 export * from './feed-sources.ts';
 export { boardUrl, basePathOf } from '@tsbb/plugin-api';
+export * from './bridge.ts';

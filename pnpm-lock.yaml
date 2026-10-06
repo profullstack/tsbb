@@ -12,6 +12,9 @@ importers:
         specifier: ^0.35.4
         version: 0.35.4(@types/node@24.13.3)
     devDependencies:
+      '@profullstack/bridges':
+        specifier: ^0.1.0
+        version: 0.1.0
       '@profullstack/hqtui':
         specifier: ^0.5.0
         version: 0.5.0
@@ -63,6 +66,9 @@ importers:
       '@hono/node-server':
         specifier: ^1.13.7
         version: 1.19.17(hono@4.13.5)
+      '@profullstack/bridges':
+        specifier: ^0.1.0
+        version: 0.1.0
       '@profullstack/synconfig':
         specifier: ^0.1.2
         version: 0.1.2
@@ -457,6 +463,11 @@ packages:
   '@neon-rs/load@0.0.4':
     resolution: {integrity: sha512-kTPhdZyTQxB+2wpiRcFWrDcejc4JI6tkPuS7UZCG4l6Zvc5kU/gGQ/ozvHTh1XR5tS+UlfAfGuPajjzQjCiHCw==}
 
+  '@profullstack/bridges@0.1.0':
+    resolution: {integrity: sha512-UhEPgj8JvN/OSyWIyOB6jdmMDHezupXLp4XpGwtL5JZUdW5XtkYT/GVGRiUQBu5Jpdn5PgF2PBKDY3et4zqQIQ==}
+    engines: {node: '>=20'}
+    hasBin: true
+
   '@profullstack/hqtui@0.5.0':
     resolution: {integrity: sha512-jDwILBmdQx8pQA0ao/tzzty8u5nFNS4XhvU9xXhZvdIaMeiF3HBJIVtP6cS6kigS4lXmHR7sztbb9QJpaWwhig==}
     engines: {bun: '>=1.1', node: '>=22.6'}
@@ -805,6 +816,8 @@ snapshots:
     optional: true
 
   '@neon-rs/load@0.0.4': {}
+
+  '@profullstack/bridges@0.1.0': {}
 
   '@profullstack/hqtui@0.5.0': {}
 

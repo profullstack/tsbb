@@ -305,6 +305,9 @@ one with a fresh session secret and whatever you already had set.
 | `TSBB_UPDATE_SOURCE` | git | How the check finds releases: `git ls-remote` on the repository (no rate limit), falling back to the GitHub API. `api` skips git |
 | `TSBB_GITHUB_TOKEN` | | Sent to the GitHub API fallback (or `GITHUB_TOKEN`); lifts its 60-an-hour-per-IP limit |
 | `TSBB_CHECKOUT_DIR` | — | A directory on a volume; the container runs, and updates, a checkout there |
+| `TSBB_BRIDGE_AUTHORIZE_URL`, `TSBB_BRIDGE_TOKEN_URL`, `TSBB_BRIDGE_CLIENT_ID`, `TSBB_BRIDGE_SECRET` | — | A host site whose accounts work here ([@profullstack/bridges](https://github.com/profullstack/bridges)): a "Continue with …" button, and accounts linked by the host's id for each person |
+| `TSBB_BRIDGE_NAME` | the host | The button label |
+| `TSBB_BRIDGE_AUTO_COOKIE` | — | A cookie the host sets for signed-in users. When the board shares the host's origin and sees it, a guest is signed in silently (no prompt); guests and crawlers without it never are. `TSBB_BRIDGE_AUTO=off` disables silent sign-in |
 
 The worker runs inside the server by default, so email works from one command.
 
