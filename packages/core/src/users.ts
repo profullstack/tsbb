@@ -117,7 +117,17 @@ export function validateUsername(
  * where the visitor never chose one. They can change it afterwards.
  */
 export async function suggestUsername(email: string): Promise<string> {
-  const base = slugify(email.split('@')[0] ?? 'member', 'member').replace(/-/g, '_').slice(0, 20);
+  return freeUsername(email.split('@')[0] ?? 'member');
+}
+
+/**
+ * A free, valid username built from anything a person might be called: an
+ * email's local part, a display name from a host site. Reserved names and
+ * names too short to register get a suffix.
+ */
+export async function freeUsername(raw: string): Promise<string> {
+  let base = slugify(raw, 'member').replace(/-/g, '_').slice(0, 20);
+  if (base.length < 3 || RESERVED.has(base)) base = `${base}_member`.slice(0, 20);
   if (!(await usernameTaken(base))) return base;
   for (let i = 2; i < 500; i += 1) {
     const candidate = `${base}${i}`;

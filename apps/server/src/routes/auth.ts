@@ -13,9 +13,11 @@ import {
   userByEmail,
   userCount,
   boardUrl,
+  bridgeAccount,
 } from '@tsbb/core';
 import { magicLinkEmail, welcomeEmail } from '@tsbb/mail';
 import { Alert, Button, Card, CardContent, CardHeader } from '@tsbb/ui';
+import { BRIDGE_SKIP_COOKIE, BRIDGE_STATE_COOKIE, localPath, type SignInProvider } from '../bridge.ts';
 import { render, SESSION_COOKIE, THEME_COOKIE, type AppEnv, type Services } from '../context.ts';
 
 const EMAIL_SHAPE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
@@ -41,6 +43,54 @@ export function authRoutes(services: Services) {
    */
   app.get('/login', async (c) => authPage(c, services, { sent: false }));
   app.get('/signup', async (c) => authPage(c, services, { sent: false, isSignup: true }));
+
+  // --- Signing in through someone else's accounts ---------------------------
+  //
+  // A host site (bridge, @profullstack/bridges) and CoinPay (OAuth 2.1) share
+  // one shape, so one pair of routes each: /auth/<id> and /auth/<id>/callback.
+  // Registered before /auth/:token (the magic link), which would otherwise take
+  // /auth/bridge for a token.
+  for (const id of ['bridge', 'coinpay'] as const) {
+    const providerOf = () => (id === 'bridge' ? services.bridge : services.coinpay) ?? null;
+    const stateCookie = `${BRIDGE_STATE_COOKIE}_${id}`;
+
+    app.get(`/auth/${id}`, async (c) => {
+      const source = providerOf();
+      if (!source) return c.notFound();
+      // Only the host bridge can be asked to answer silently.
+      const prompt = id === 'bridge' && c.req.query('prompt') === 'none' ? 'none' : 'login';
+      const { url, cookie, maxAge } = await source.client.begin({ returnTo: localPath(c.req.query('return')), prompt });
+      setCookie(c, stateCookie, cookie, { path: `/auth/${id}`, httpOnly: true, secure, sameSite: 'Lax', maxAge });
+      return c.redirect(url, 302);
+    });
+
+    app.get(`/auth/${id}/callback`, async (c) => {
+      const source = providerOf();
+      if (!source) return c.notFound();
+      const result = await source.client.complete(c.req.url, getCookie(c, stateCookie));
+      deleteCookie(c, stateCookie, { path: `/auth/${id}` });
+      const back = localPath(result.returnTo);
+
+      if (!result.ok) {
+        if (id === 'bridge') {
+          // A silent attempt that found nobody (or failed in any way) must not
+          // be retried on the very next page, or the guest bounces forever.
+          setCookie(c, BRIDGE_SKIP_COOKIE, '1', { path: '/', httpOnly: true, secure, sameSite: 'Lax', maxAge: 30 * 60 });
+          if (result.prompt === 'none') return c.redirect(back, 302);
+        }
+        console.warn(`[tsbb] ${id}: sign-in with ${source.provider} failed: ${result.error}`);
+        return c.redirect(`/login?via=${id}&bridge_error=${encodeURIComponent(result.error)}`, 302);
+      }
+
+      const user = await bridgeAccount(source.provider, result.user);
+      if (user.isBanned) return c.redirect(`/login?via=${id}&bridge_error=banned`, 302);
+      const session = await createSession(user.id, { userAgent: c.req.header('user-agent'), ip: clientIp(c) });
+      setCookie(c, SESSION_COOKIE, session.id, cookieOptions(secure));
+      deleteCookie(c, BRIDGE_SKIP_COOKIE, { path: '/' });
+      await services.registry.bus.emit('user:login', { user, method: id });
+      return c.redirect(back, 302);
+    });
+  }
 
   app.post('/login', async (c) => {
     const form = await c.req.parseBody();
@@ -132,8 +182,14 @@ export function authRoutes(services: Services) {
     const sessionId = getCookie(c, SESSION_COOKIE);
     if (sessionId) await destroySession(sessionId);
     deleteCookie(c, SESSION_COOKIE, { path: '/' });
+    // Signing out here while still signed in on the host would otherwise be
+    // undone by the next page view. Hold off the silent sign-in for a while.
+    if (services.bridge) {
+      setCookie(c, BRIDGE_SKIP_COOKIE, '1', { path: '/', httpOnly: true, secure, sameSite: 'Lax', maxAge: 12 * 3600 });
+    }
     return c.redirect('/', 302);
   });
+
 
   /** Theme is a cookie, so the server can put it in the markup before paint. */
   app.post('/prefs/theme', async (c) => {
@@ -160,7 +216,14 @@ export function authRoutes(services: Services) {
     const viewer = c.get('viewer');
     const code = c.req.query('code') ?? '';
     if (!viewer.user) {
-      return c.redirect(`/login?redirect=${encodeURIComponent(`/link?code=${code}`)}`, 302);
+      // `tsbb login --with coinpay` names the way in, so the person goes straight
+      // to it instead of choosing on the sign-in page.
+      const back = `/link?code=${encodeURIComponent(code)}`;
+      const via = c.req.query('via');
+      if ((via === 'coinpay' && services.coinpay) || (via === 'bridge' && services.bridge)) {
+        return c.redirect(`/auth/${via}?return=${encodeURIComponent(back)}`, 302);
+      }
+      return c.redirect(`/login?redirect=${encodeURIComponent(back)}`, 302);
     }
     return render(c, services, {
       title: 'Link a device',
@@ -220,6 +283,13 @@ async function authPage(
 ) {
   const heading = state.isSignup ? 'Create your account' : 'Sign in';
   const redirect = c.req.query('redirect') ?? '';
+  const providers = [services.bridge, services.coinpay].filter((p): p is SignInProvider => Boolean(p));
+  const via = providers.find((p) => p.id === c.req.query('via'));
+  const bridgeError = c.req.query('bridge_error')
+    ? c.req.query('bridge_error') === 'banned'
+      ? 'This account is suspended on this board.'
+      : `Signing in with ${via?.name ?? 'that account'} did not work. Try again, or use your email below.`
+    : null;
 
   const body = html`<div style="max-width:26rem;margin:2rem auto">
     ${Card(html`
@@ -235,6 +305,17 @@ async function authPage(
             )
           : html`
               ${state.error ? Alert(state.error, { variant: 'destructive' }) : ''}
+              ${bridgeError ? Alert(bridgeError, { variant: 'destructive' }) : ''}
+              ${providers.length
+                ? html`<div class="stack">
+                      ${providers.map(
+                        (p) => html`<a class="btn btn-block" href="/auth/${p.id}?return=${encodeURIComponent(localPath(redirect))}"
+                          >Continue with ${p.name}</a
+                        >`,
+                      )}
+                    </div>
+                    <div class="separator-label"><span>or use your email</span></div>`
+                : ''}
               <form method="post" action="/login">
                 ${redirect ? html`<input type="hidden" name="redirect" value="${redirect}" />` : ''}
                 <div class="field">

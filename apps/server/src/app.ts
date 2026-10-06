@@ -1,10 +1,12 @@
 import { Hono } from 'hono';
+import { getCookie } from 'hono/cookie';
 import type { Context } from 'hono';
 import { loadSettings, touchLastSeen, viewerFromToken } from '@tsbb/core';
 import { Card, CardContent, Empty, fontFile, stylesheet, stylesheetForHash } from '@tsbb/ui';
 import type { Registry } from '@tsbb/plugin-host';
 import type { PluginRequest, Viewer } from '@tsbb/plugin-api';
 import { readTheme, render, resolveViewer, type AppEnv, type Services } from './context.ts';
+import { bridgeConfig, coinpayConfig, wantsSilentSignIn } from './bridge.ts';
 import { adminRoutes } from './routes/admin.ts';
 import { pwaRoutes } from './routes/pwa.ts';
 import { apiRoutes } from './routes/api.ts';
@@ -20,7 +22,7 @@ import { settingsRoutes } from './routes/settings.ts';
 
 export function createApp(registry: Registry, baseUrl: string): Hono<AppEnv> {
   const app = new Hono<AppEnv>();
-  const services: Services = { registry, baseUrl };
+  const services: Services = { registry, baseUrl, bridge: bridgeConfig(baseUrl), coinpay: coinpayConfig(baseUrl) };
 
   /*
    * The stylesheet is served under a content hash, so it can be cached for a
@@ -132,6 +134,25 @@ export function createApp(registry: Registry, baseUrl: string): Hono<AppEnv> {
     if (viewer.user) {
       // Fire and forget: a presence write must never delay a page.
       void touchLastSeen(viewer.user.id).catch(() => {});
+    }
+
+    // Signed in on the host site but not here: take a silent detour through
+    // it and come back signed in. Nothing is shown either way.
+    const bridge = services.bridge;
+    if (
+      bridge &&
+      !viewer.user &&
+      !viewer.viaToken &&
+      wantsSilentSignIn(bridge, {
+        method: c.req.method,
+        path: new URL(c.req.url).pathname,
+        accept: c.req.header('accept') ?? '',
+        userAgent: c.req.header('user-agent') ?? '',
+        cookie: (name) => getCookie(c, name),
+      })
+    ) {
+      const here = new URL(c.req.url);
+      return c.redirect(`/auth/bridge?prompt=none&return=${encodeURIComponent(here.pathname + here.search)}`, 302);
     }
     await next();
   });

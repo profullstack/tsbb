@@ -25,6 +25,7 @@ Running a board (these read the database beside you):
 
 Using a board (these talk to one over its API, yours or anybody's):
   tsbb login [server]          Sign in by approving a code in a browser
+    --with coinpay             ...signing in with CoinPay (or --with bridge: the board's host site)
   tsbb logout [server]         Forget the token for a board
   tsbb boards                  Every board you are signed in to
   tsbb use <server>            Make one of them the default
@@ -104,6 +105,8 @@ function parseFlags(args) {
     else if (arg === '--limit' || arg === '-n') flags.limit = Number(args[(i += 1)]);
     else if (arg?.startsWith('--server=')) flags.server = arg.slice(9);
     else if (arg?.startsWith('--limit=')) flags.limit = Number(arg.slice(8));
+    else if (arg === '--with') flags.with = args[(i += 1)];
+    else if (arg?.startsWith('--with=')) flags.with = arg.slice(7);
     else rest.push(arg);
   }
   return { flags, rest };

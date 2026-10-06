@@ -477,3 +477,7 @@
   color: var(--muted-foreground);
 }
 .empty-title { font-weight: 600; color: var(--foreground); }
+
+/* "or" between two ways of doing one thing, such as signing in. */
+.separator-label { display: flex; align-items: center; gap: 0.75rem; margin-block: 1rem; font-size: 0.75rem; color: var(--muted-foreground); }
+.separator-label::before, .separator-label::after { content: ""; flex: 1; height: 1px; background: var(--border); }
