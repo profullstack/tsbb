@@ -14,16 +14,21 @@ anybody else's.
 The packages are not on npm yet, so both jobs are done from a checkout:
 
 ```
+curl -fsSL https://tsbb.dev/install.sh | sh
+```
+
+That installs `tsbb`, `tsbb-tui` and `tsbb-mcp` from npm (`@profullstack/tsbb`,
+`-tui`, `-mcp`; Node 22.6+), with bun if you have it, and into `~/.local` rather
+than asking for sudo. Re-run it to upgrade.
+
+The installed `tsbb` is the client half: everything under "Using a board". The
+commands that *run* a board (`init`, `serve`, `migrate`, `admin`, …) need a
+checkout:
+
+```
 git clone https://github.com/profullstack/tsbb
 cd tsbb && pnpm install
 pnpm exec tsbb --help
-```
-
-Put it on your path if you are going to use it from elsewhere, which is what the
-rest of this page assumes:
-
-```
-ln -s "$PWD/apps/cli/bin/tsbb.mjs" ~/.local/bin/tsbb
 ```
 
 ## Signing in

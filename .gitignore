@@ -10,3 +10,4 @@ data/
 uploads/
 .DS_Store
 coverage/
+npm/
