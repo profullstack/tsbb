@@ -1,8 +1,15 @@
 #!/usr/bin/env node
-import { currentBoard, loadConfig, normaliseServer, rememberBoard } from '../src/config.ts';
+import { currentBoard, loadConfig, normaliseServer, rememberBoard } from '@tsbb/client';
 import { run } from '../src/app.ts';
 
 const argv = process.argv.slice(2);
+
+if (argv.includes('--version') || argv.includes('-v')) {
+  const { readFileSync } = await import('node:fs');
+  const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
+  console.log(pkg.version);
+  process.exit(0);
+}
 
 if (argv.includes('--help') || argv.includes('-h')) {
   console.log(`tsbb-tui — terminal client for a tsbb bulletin board

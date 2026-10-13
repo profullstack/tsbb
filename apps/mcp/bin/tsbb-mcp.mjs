@@ -12,5 +12,10 @@ try {
   /* the version is a label in the handshake, not something to fail over */
 }
 
+if (process.argv[2] === '--version' || process.argv[2] === '-v') {
+  console.log(version);
+  process.exit(0);
+}
+
 const { main } = await import('../src/main.ts');
 process.exitCode = await main(process.argv.slice(2), version);

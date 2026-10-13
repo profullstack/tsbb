@@ -72,6 +72,16 @@ describe('discovery files and headers', () => {
     assert.ok(body.includes('User-agent: ClaudeBot'));
   });
 
+  it('serves the client installer as a shell script, not a page', async () => {
+    const response = await get('/install.sh');
+    assert.equal(response.status, 200);
+    assert.match(response.headers.get('content-type') ?? '', /^text\/x-shellscript/);
+    const body = await response.text();
+    assert.ok(body.startsWith('#!/bin/sh'));
+    assert.ok(body.includes('@profullstack/tsbb@latest'));
+    assert.ok((await (await get('/llms.txt')).text()).includes('/install.sh | sh'));
+  });
+
   it('serves a sitemap index whose files list the public pages and topics', async () => {
     const index = await (await get('/sitemap.xml')).text();
     assert.ok(index.includes('<sitemapindex'));

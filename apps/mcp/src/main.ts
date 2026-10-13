@@ -37,8 +37,8 @@ Claude Desktop MCP config:
   {
     "mcpServers": {
       "myboard": {
-        "command": "node",
-        "args": ["/path/to/tsbb/apps/mcp/bin/tsbb-mcp.mjs", "--server", "https://board.example"],
+        "command": "tsbb-mcp",
+        "args": ["--server", "https://board.example"],
         "env": { "TSBB_TOKEN": "…" }
       }
     }

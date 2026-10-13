@@ -240,6 +240,17 @@ export function discoveryRoutes(services: Services) {
     );
   });
 
+  // --- install.sh -----------------------------------------------------------
+  // The client installer: curl -fsSL https://<board>/install.sh | sh. It
+  // installs tsbb, tsbb-tui and tsbb-mcp from npm, which work against any board.
+
+  app.get('/install.sh', (c) =>
+    c.body(readFileSync(join(PUBLIC_DIR, 'install.sh'), 'utf8'), 200, {
+      'content-type': 'text/x-shellscript; charset=utf-8',
+      'cache-control': 'public, max-age=600',
+    }),
+  );
+
   // --- llms.txt -------------------------------------------------------------
 
   app.get('/llms.txt', async (c) => {
@@ -299,6 +310,7 @@ export function discoveryRoutes(services: Services) {
       link('OpenAPI description', '/api/v1/openapi.json', 'The REST API, machine-readable.'),
       link('MCP endpoint', '/api/mcp', 'Streamable HTTP MCP server; a bearer token makes it act as a member.'),
       link('Agent skill', '/skill.md', 'What an agent can do here and how to authenticate.'),
+      `- Terminal client, CLI and stdio MCP server: \`curl -fsSL ${absolute('/install.sh')} | sh\` (npm: @profullstack/tsbb, @profullstack/tsbb-tui, @profullstack/tsbb-mcp)`,
       '',
       '## Optional',
       '',

@@ -36,6 +36,9 @@ pnpm exec tsbb init
 pnpm start
 ```
 
+Just want to use a board from the terminal? `curl -fsSL https://tsbb.dev/install.sh | sh`
+installs the client (`tsbb`, `tsbb-tui`, `tsbb-mcp`) from npm.
+
 Open <http://localhost:3000>, put in your email address, and click the link.
 **The first account to sign in becomes the administrator.**
 
@@ -216,8 +219,11 @@ Turn it off in the admin panel and the `frame-src` permission goes with it.
 ## The terminal client
 
 ```
-pnpm exec tsbb-tui https://forum.example.com
+curl -fsSL https://tsbb.dev/install.sh | sh    # tsbb, tsbb-tui and tsbb-mcp
+tsbb-tui https://forum.example.com
 ```
+
+From a checkout, `pnpm exec tsbb-tui https://forum.example.com` is the same client.
 
 Press `L` to sign in: the client shows a short code, you approve it in a browser,
 and the board hands the terminal a token — once. It is a *client* of a

@@ -18,18 +18,20 @@ missing from `list_forums` is a forum that member cannot read.
 
 ## Over stdio
 
-`tsbb-mcp` is not on npm yet, so point your client at the binary in a checkout:
+Install it (with `tsbb` and `tsbb-tui`; Node 22.6+):
+
+```
+curl -fsSL https://tsbb.dev/install.sh | sh
+```
+
+Then point your client at it:
 
 ```json
 {
   "mcpServers": {
     "myboard": {
-      "command": "node",
-      "args": [
-        "/path/to/tsbb/apps/mcp/bin/tsbb-mcp.mjs",
-        "--server",
-        "https://forum.example.com"
-      ],
+      "command": "tsbb-mcp",
+      "args": ["--server", "https://forum.example.com"],
       "env": { "TSBB_TOKEN": "tsbb_…" }
     }
   }
@@ -39,12 +41,11 @@ missing from `list_forums` is a forum that member cannot read.
 Or, in Claude Code:
 
 ```
-claude mcp add myboard -- node /path/to/tsbb/apps/mcp/bin/tsbb-mcp.mjs --server https://forum.example.com
+claude mcp add myboard -- tsbb-mcp --server https://forum.example.com
 ```
 
-Nothing needs building — Node runs the TypeScript directly — but the checkout
-does need `pnpm install` once, because the server shares the board's client
-package.
+Without installing anything: `"command": "npx", "args": ["-y", "@profullstack/tsbb-mcp", "--server", "…"]`.
+From a checkout, `node /path/to/tsbb/apps/mcp/bin/tsbb-mcp.mjs` is the same program.
 
 Where the token comes from, in order: `--token`, `TSBB_TOKEN`, then whichever
 board you last ran `tsbb login` against. If you have already signed in with the

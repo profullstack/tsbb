@@ -87,6 +87,25 @@ if (existsSync(envPath)) {
 
 const baseUrl = process.env.TSBB_BASE_URL ?? 'http://localhost:3000';
 
+/*
+ * Running a board needs the whole repository (server, migrations, plugins). The
+ * npm package (curl -fsSL https://tsbb.dev/install.sh | sh) is only the client
+ * half, so say how to get a board instead of failing on a missing module.
+ */
+const BOARD_COMMANDS = new Set([
+  'init', 'serve', 'start', 'worker', 'migrate', 'status', 'update', 'upgrade',
+  'admin', 'unadmin', 'invite', 'plugin', 'plugins',
+]);
+if (BOARD_COMMANDS.has(command) && !existsSync(join(REPO_ROOT, 'apps/server/src/index.ts'))) {
+  console.error(`tsbb ${command} runs a board, which needs a checkout of the repository:
+
+  git clone https://github.com/profullstack/tsbb && cd tsbb
+  pnpm install && node apps/cli/bin/tsbb.mjs init
+
+This install is the client: tsbb login, forums, latest, read, post, mcp (see tsbb --help).`);
+  process.exit(1);
+}
+
 /**
  * Split the flags out of the arguments.
  *
