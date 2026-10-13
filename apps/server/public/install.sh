@@ -26,6 +26,10 @@ say "Installing tsbb, tsbb-tui and tsbb-mcp..."
 node_ok || die "Node >= 22.6 required (found $(node -v 2>/dev/null || echo none)). Install it from https://nodejs.org"
 
 if have bun; then
+  # Without a global manifest, bun add -g writes into the nearest package.json above it.
+  BUN_GLOBAL="${BUN_INSTALL:-$HOME/.bun}/install/global"
+  mkdir -p "$BUN_GLOBAL"
+  [ -f "$BUN_GLOBAL/package.json" ] || printf '{}\n' > "$BUN_GLOBAL/package.json"
   bun add -g $PKGS
   BIN_DIR="${BUN_INSTALL:-$HOME/.bun}/bin"
 elif have npm; then
