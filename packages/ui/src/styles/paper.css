@@ -10,7 +10,8 @@
  *     for small-caps labels ("eyebrows"), counters and code
  *   - a 100px header ruled off by a hairline, a wordmark that ends in a full
  *     stop in the accent, plain-text navigation, one outlined call to action
- *   - forums as a grid of catalogue cards, topics as a ruled list
+ *   - a standard forum list (category boxes, one row per forum), topics as a
+ *     ruled list
  *   - a three-column site footer
  *   - the accent as a flat fill (primary buttons) and as text (links, the
  *     current page); everything else is ink
@@ -392,47 +393,57 @@ code, kbd, pre, samp { font-size: 0.88em; }
 .hero-compact { padding: 48px 0 24px; }
 .hero-compact .hero-tagline { font-size: 46px; }
 
-/* --- Forum index: a catalogue of cards ------------------------------------ */
+/* --- Forum index: a standard forum list ---------------------------------- */
 
-.category { margin: 0; padding: 40px 0 0; }
-.category-header { display: block; margin-bottom: 26px; padding: 0; }
-.category-header::before { content: 'Forums'; display: block; color: var(--paper-ink); }
+/* Each category is a ruled box: a serif title over an ink rule, then one row
+ * per forum (icon, name and description, counts, latest post), hairlines
+ * between. Counts and the latest post drop out on narrow screens exactly as
+ * in the modern sheet (forum.css). */
+.category { margin: 0; padding: 36px 0 0; }
+.category-header {
+  display: flex;
+  align-items: baseline;
+  margin: 0;
+  padding: 0 0 12px;
+  border-bottom: 2px solid var(--paper-ink);
+}
 .category-title {
   display: block;
-  margin-top: 15px;
+  margin: 0;
   color: var(--paper-ink);
   font-family: var(--paper-serif);
-  font-size: 47px;
+  font-size: 28px;
   font-weight: 400;
-  letter-spacing: -0.045em;
-  line-height: 1.04;
+  letter-spacing: -0.035em;
+  line-height: 1.1;
   text-transform: none;
 }
 .category-title::after { display: none; }
-.category > .card { background: none; border: 0; border-radius: 0; overflow: visible; }
-.category > .card > .card-content {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 18px;
+.category > .card {
+  background: var(--paper-card);
+  border: 1px solid var(--paper-line);
+  border-top: 0;
+  border-radius: 0 0 7px 7px;
+  overflow: hidden;
 }
-@media (max-width: 1000px) { .category > .card > .card-content { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (max-width: 720px) { .category > .card > .card-content { grid-template-columns: minmax(0, 1fr); } }
+.category > .card > .card-content { display: block; padding: 0; }
 
 .forum-row {
   display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 0;
-  padding: 23px 23px 0;
-  border: 1px solid var(--paper-line);
-  border-radius: 7px;
-  background: var(--paper-card);
-  transition: transform 0.15s, border-color 0.15s;
+  flex-direction: row;
+  align-items: center;
+  gap: 18px;
+  padding: 16px 20px;
+  border: 0;
+  border-bottom: 1px solid var(--paper-line);
+  border-radius: 0;
+  background: none;
 }
-.forum-row:last-child { border-bottom: 1px solid var(--paper-line); }
-.forum-row:hover { transform: translateY(-3px); border-color: #9aa98b; background: var(--paper-card); }
+.forum-row:last-child { border-bottom: 0; }
+.forum-row:hover { background: #f1f0e7; }
 .forum-row:hover .forum-icon { transform: none; }
 .forum-icon {
+  flex: none;
   width: 30px;
   height: 30px;
   border-radius: 3px;
@@ -442,46 +453,48 @@ code, kbd, pre, samp { font-size: 0.88em; }
   font-size: 14px;
 }
 .forum-row.unread .forum-icon { background: var(--paper-accent); color: var(--paper-accent-ink); box-shadow: none; }
-.forum-row > .grow { flex: 1; }
+.forum-row > .grow { flex: 1; min-width: 0; }
 .forum-name {
   display: block;
-  margin: 29px 0 15px;
+  margin: 0 0 3px;
   color: var(--paper-ink);
   font-family: var(--paper-serif);
-  font-size: 26px;
+  font-size: 20px;
   font-weight: 400;
-  letter-spacing: -0.04em;
-  line-height: 1.1;
+  letter-spacing: -0.03em;
+  line-height: 1.2;
 }
 .forum-name:hover { color: var(--primary); }
-.forum-row:hover .forum-name { color: var(--paper-ink); }
-.forum-desc { margin: 0 0 22px; font-size: 13px; line-height: 1.7; color: var(--paper-muted); }
+.forum-desc { margin: 0; font-size: 13px; line-height: 1.6; color: var(--paper-muted); }
 .forum-unread { border-radius: 3px; background: var(--paper-accent); color: var(--paper-accent-ink); box-shadow: none; font-family: var(--font-mono); font-size: 9px; }
 
-/* Counts and the latest post along the card's foot, in the mono. */
+/* Counts as small columns, the latest post beside them, all in the mono. */
 .forum-meta {
   display: flex;
-  align-items: baseline;
-  gap: 16px;
-  margin-top: 18px;
-  padding: 16px 0;
-  border-top: 1px solid var(--paper-line);
+  align-items: center;
+  gap: 22px;
+  margin: 0;
+  padding: 0;
+  border: 0;
   font-family: var(--font-mono);
   font-size: 10px;
   color: var(--paper-muted);
-  text-align: left;
 }
-.forum-stat { display: block; min-width: 0; }
+.forum-stat { min-width: 4rem; text-align: center; text-transform: uppercase; letter-spacing: 0.08em; font-size: 9px; }
 .forum-stat strong {
+  display: block;
   min-width: 0;
   padding: 0;
-  margin: 0 4px 0 0;
+  margin: 0 0 2px;
   background: none;
   color: var(--paper-ink);
-  font-size: 10px;
-  font-weight: 600;
+  font-family: var(--paper-serif);
+  font-size: 18px;
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  text-transform: none;
 }
-.forum-last { display: block; margin-left: auto; max-width: 11rem; text-align: right; }
+.forum-last { width: 13rem; max-width: 13rem; margin-left: 0; text-align: left; }
 .forum-last-title { color: var(--paper-ink); font-family: var(--font-sans); font-size: 12px; font-weight: 600; }
 .forum-last .tiny, .forum-last.tiny { font-size: 10px; }
 .forum-last a { color: inherit; }
