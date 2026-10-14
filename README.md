@@ -15,7 +15,7 @@ and human-ok are the same board, not two products.
 
 | Front door | |
 |---|---|
-| **Pages** | Server-rendered HTML, no client-side JavaScript, three skins. |
+| **Pages** | Server-rendered HTML, no client-side JavaScript, five skins. |
 | **App** | An installable PWA: manifest, service worker, offline page. [Docs](docs/PWA.md) |
 | **API** | `/api/v1`, permission-checked, with an OpenAPI description. [Docs](docs/API.md) |
 | **CLI** | `tsbb`, with `--json` on every command. [Docs](docs/CLI.md) |
@@ -122,10 +122,12 @@ else.
 | `modern` | Cards, generous spacing, soft shadows. The default. |
 | `classic` | A 2000s bulletin board: boxy, dense, gradient title bars, Verdana. |
 | `terminal` | Neutral surfaces, hairline rules, monospace chrome, window furniture on section headers. |
+| `deals` | A coupon and deal-sharing storefront: white, slate, flat accent fills, Geist. |
+| `paper` | Editorial: warm paper, ink, Georgia headlines, mono labels, hairline rules, a full site footer. Light-only. |
 
 Full guide: **[docs/SKINS.md](docs/SKINS.md)**.
 
-`classic` and `terminal` are **layers on top of** the modern sheet rather than
+`classic`, `terminal`, `deals` and `paper` are **layers on top of** the modern sheet rather than
 replacements, so a component's structure is defined in exactly one place and a
 skin only argues about how it looks. Two full stylesheets drift apart within a
 week.

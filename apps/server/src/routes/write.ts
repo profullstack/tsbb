@@ -379,7 +379,7 @@ function composerPage(
   options: ComposerOptions,
 ) {
   const format = String(options.settings['posts.defaultFormat'] ?? 'markdown');
-  return html`<div style="max-width:48rem">
+  return html`<div class="composer-page">
     ${Card(html`
       ${CardHeader(options.heading)}
       ${CardContent(html`

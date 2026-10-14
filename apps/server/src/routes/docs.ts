@@ -73,7 +73,7 @@ export const DOCS: Doc[] = [
   {
     slug: 'skins',
     file: 'SKINS.md',
-    blurb: 'The three skins, the terminal client, and the five branding settings.',
+    blurb: 'The five skins, the terminal client, and the branding settings.',
   },
   {
     slug: 'network',

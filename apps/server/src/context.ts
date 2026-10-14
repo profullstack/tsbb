@@ -9,6 +9,7 @@ import {
   isSkin,
   stylesheetUrl,
   SKIN_THEME_COLOR,
+  LIGHT_ONLY_SKINS,
   type Brand,
   type LayoutSlots,
   type Skin,
@@ -25,6 +26,16 @@ export function skinOf(settings: Record<string, unknown>): Skin {
 export function brandOf(settings: Record<string, unknown>): Brand {
   const accent = settings['board.accent'];
   return { accent: typeof accent === 'string' && accent.trim() ? accent.trim() : null };
+}
+
+/** The host name of an absolute URL, for labelling a host site's links. */
+function hostOf(href: string | undefined): string | undefined {
+  if (!href || !/^https?:/i.test(href)) return undefined;
+  try {
+    return new URL(href).hostname.replace(/^www\./, '');
+  } catch {
+    return undefined;
+  }
 }
 
 /** A configured URL, or undefined for the empty string every setting defaults to. */
@@ -100,29 +111,51 @@ function navFor(viewer: Viewer, path: string): NavItem[] {
  * says `{board}` marks where the board's own items (Forums, Latest, Members)
  * go, and `{forums}` puts only the Forums link there, for a site whose header
  * has no room for more; without either, the site's links come first.
+ * `Label | {forums}` does the same under the host site's own word for it
+ * ("Community"), and a link ending `| button` is drawn as the header's call to
+ * action beside the account controls rather than as a nav item.
  *
  * Only absolute http(s) URLs are accepted. A root-relative path would be read
  * as a path on the board, and a board mounted under /bbs would rewrite it.
  */
-export function siteLinks(settings: Record<string, unknown>): { items: NavItem[]; forumsOnly: boolean } {
+export function siteLinks(settings: Record<string, unknown>): {
+  items: NavItem[];
+  actions: NavItem[];
+  forumsOnly: boolean;
+  forumsLabel: string | null;
+} {
   const lines = String(settings['board.navLinks'] ?? '')
     .split('\n')
     .map((line) => line.trim())
     .filter(Boolean);
-  const isToken = (line: string) => line === '{board}' || line === '{forums}';
-  const boardAt = lines.findIndex(isToken);
+  const parts = (line: string) => line.split('|').map((part) => part.trim());
+  const tokenOf = (line: string) => {
+    const bits = parts(line);
+    const token = bits.length === 1 ? bits[0] : bits.length === 2 ? bits[1] : '';
+    return token === '{board}' || token === '{forums}' ? token : null;
+  };
+  const boardAt = lines.findIndex((line) => tokenOf(line) !== null);
   const items: NavItem[] = [];
+  const actions: NavItem[] = [];
   lines.forEach((line, index) => {
-    if (isToken(line)) return;
-    const bar = line.indexOf('|');
-    if (bar < 1) return;
-    const label = line.slice(0, bar).trim();
-    const href = line.slice(bar + 1).trim();
+    if (tokenOf(line)) return;
+    const [label = '', href = '', kind = ''] = parts(line);
     if (!label || !/^https?:\/\/[^\s"'<>]+$/i.test(href)) return;
+    if (kind.toLowerCase() === 'button') {
+      actions.push({ label, href, weight: index });
+      return;
+    }
     const after = boardAt !== -1 && index > boardAt;
     items.push({ label, href, weight: after ? 1000 + index : -1000 + index });
   });
-  return { items, forumsOnly: lines[boardAt] === '{forums}' };
+  const token = boardAt === -1 ? null : tokenOf(lines[boardAt]!);
+  const named = boardAt === -1 ? [] : parts(lines[boardAt]!);
+  return {
+    items,
+    actions,
+    forumsOnly: token === '{forums}',
+    forumsLabel: token === '{forums}' && named.length === 2 && named[0] ? named[0] : null,
+  };
 }
 
 export interface RenderOptions {
@@ -177,15 +210,23 @@ export async function render(
 
   const slots: LayoutSlots = { head, header, bodyStart, bodyEnd, footer };
   const site = siteLinks(settings as Record<string, unknown>);
-  const own = navFor(viewer, url.pathname).filter(
-    // `{forums}` asks for the board's Forums link alone in the site's nav.
-    (item) => !site.forumsOnly || item.href === '/',
-  );
+  const board = navFor(viewer, url.pathname);
+  const own = site.forumsOnly
+    ? // `{forums}` asks for the board's Forums link alone in the site's nav.
+      // It is then the board's only entry in someone else's header, so it is
+      // the current section on every board page, not just the front one.
+      board
+        .filter((item) => item.href === '/')
+        .map((item) => ({ ...item, label: site.forumsLabel ?? item.label, match: 'active' }))
+    : board;
   const nav = (await bus.applyFilter('nav:items', [...own, ...site.items], renderContext)).sort(
     (a, b) => (a.weight ?? 0) - (b.weight ?? 0),
   );
 
   const skin = skinOf(settings as Record<string, unknown>);
+  // A light-only skin is light for everybody: it has no dark palette to show,
+  // so neither a cookie nor board.theme can ask it for one.
+  const lightOnly = LIGHT_ONLY_SKINS.includes(skin);
   const boardName = String(settings['board.name'] ?? 'tsbb');
   const tagline = String(settings['board.tagline'] ?? '').trim();
   const operator = String(settings['board.operator'] ?? '').trim() || undefined;
@@ -236,6 +277,16 @@ export async function render(
     nav,
     unread,
     stylesheetUrl: stylesheetUrl(skin, brandOf(settings as Record<string, unknown>)),
+    actions: site.actions,
+    footerNav: {
+      site: site.items,
+      siteLabel: hostOf(urlSetting(settings as Record<string, unknown>, 'board.logoHref')) ?? hostOf(site.items[0]?.href),
+      board: [
+        ...board.filter((item) => !item.requires).map((item) => ({ ...item, match: undefined })),
+        { label: 'Search', href: '/search' },
+      ],
+    },
+    showThemeToggle: !lightOnly,
     logoUrl: urlSetting(settings as Record<string, unknown>, 'board.logoUrl'),
     logoHref: urlSetting(settings as Record<string, unknown>, 'board.logoHref'),
     faviconUrl: urlSetting(settings as Record<string, unknown>, 'board.faviconUrl'),
@@ -243,7 +294,7 @@ export async function render(
     canonical: options.canonical ?? boardUrl(url.pathname, services.baseUrl),
     feedUrl: options.feedUrl,
     slots,
-    theme: c.get('theme') ?? readTheme(c, settings as Record<string, unknown>),
+    theme: lightOnly ? 'light' : (c.get('theme') ?? readTheme(c, settings as Record<string, unknown>)),
     body: options.body as never,
   });
 

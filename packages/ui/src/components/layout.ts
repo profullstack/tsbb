@@ -27,6 +27,19 @@ export interface LayoutProps {
   faviconUrl?: string;
   /** `board.logoHref`. Where the header brand points. Defaults to the board. */
   logoHref?: string;
+  /**
+   * The host site's call-to-action links (`board.navLinks` lines ending
+   * `| button`), drawn beside the account controls.
+   */
+  actions?: NavItem[];
+  /**
+   * Link columns for skins that draw a full site footer (paper): the host
+   * site's links under its host name, and the board's own. Hidden by every
+   * skin that does not ask for them.
+   */
+  footerNav?: { site: NavItem[]; siteLabel?: string; board: NavItem[] };
+  /** False for a light-only skin, which has nothing for the toggle to switch to. */
+  showThemeToggle?: boolean;
   /** The browser-chrome colour for the active skin, light and dark. */
   themeColor?: { light: string; dark: string };
   canonical?: string;
@@ -162,9 +175,10 @@ export function Layout(props: LayoutProps) {
         <div class="container site-header-inner">
           <a class="brand" href="${props.logoHref ?? '/'}">
             ${props.logoUrl
-              ? html`<img class="brand-logo" src="${props.logoUrl}" alt="${props.boardName}" />`
+              ? html`<img class="brand-logo" src="${props.logoUrl}" alt="${props.boardName}" />
+            <span class="brand-name" aria-hidden="true">${props.boardName}</span>`
               : html`<span class="brand-mark" aria-hidden="true">${props.boardName.slice(0, 1).toUpperCase()}</span>
-            <span>${props.boardName}</span>`}
+            <span class="brand-name">${props.boardName}</span>`}
           </a>
           <nav class="site-nav" aria-label="Main">
             ${props.nav.map(
@@ -179,7 +193,8 @@ export function Layout(props: LayoutProps) {
               <input class="input" type="search" name="q" placeholder="Search…" aria-label="Search the board" />
               <button class="search-submit" type="submit">Search</button>
             </form>
-            ${ThemeToggle(theme)}
+            ${(props.actions ?? []).map(SiteAction)}
+            ${props.showThemeToggle === false ? '' : ThemeToggle(theme)}
             ${props.viewer.user
               ? html`${NotificationBell(props.unread ?? 0)}${UserMenu(props.viewer.user, props.viewer.isAdmin)}`
               : LinkButton('Sign in', '/login', { size: 'sm' })}
@@ -189,7 +204,8 @@ export function Layout(props: LayoutProps) {
       </header>
       <main class="main" id="main"><div class="container">${props.body}</div></main>
       <footer class="site-footer">
-        <div class="container row-between">
+        ${props.footerNav ? FooterColumns(props, props.footerNav) : ''}
+        <div class="container row-between footer-bottom">
           <span>
             &copy; ${new Date().getFullYear()} ${props.operator ?? 'Profullstack, Inc.'} &middot; running on
             <a href="https://github.com/profullstack/tsbb" rel="noopener">tsbb</a>
@@ -218,6 +234,45 @@ export function Layout(props: LayoutProps) {
     ${trusted(slots.bodyEnd)}
   </body>
 </html>`;
+}
+
+/**
+ * A host site's call to action. A trailing arrow in the label (`Start
+ * building ↗`) is set apart as decoration, the way the sites that use one
+ * mark it up, so the button reads as its words.
+ */
+function SiteAction(item: NavItem) {
+  const arrow = /\s*([↗→›»])$/.exec(item.label);
+  const words = arrow ? item.label.slice(0, arrow.index) : item.label;
+  return html`<a class="btn btn-outline btn-sm site-action" href="${item.href}"
+    >${words}${arrow ? html` <span class="site-action-arrow" aria-hidden="true">${arrow[1]}</span>` : ''}</a
+  >`;
+}
+
+/**
+ * The full footer: the board's name and tagline, the host site's links and the
+ * board's own. Rendered for every board but shown only by the skins that draw a
+ * site footer (paper); the rest keep their one-line footer and hide it.
+ */
+function FooterColumns(props: LayoutProps, nav: NonNullable<LayoutProps['footerNav']>) {
+  return html`<div class="container footer-columns">
+    <div class="footer-about">
+      <a class="brand footer-brand" href="${props.logoHref ?? '/'}"
+        ><span class="brand-name">${props.boardName}</span></a
+      >
+      ${props.tagline ? html`<p>${props.tagline}</p>` : ''}
+    </div>
+    ${nav.site.length
+      ? html`<nav class="footer-col" aria-label="${nav.siteLabel ?? 'Site'}">
+          ${nav.siteLabel ? html`<span class="footer-heading">${nav.siteLabel}</span>` : ''}
+          ${nav.site.map((item) => html`<a href="${item.href}">${item.label}</a>`)}
+        </nav>`
+      : ''}
+    <nav class="footer-col" aria-label="${props.boardName}">
+      <span class="footer-heading">The board</span>
+      ${nav.board.map((item) => html`<a href="${item.href}">${item.label}</a>`)}
+    </nav>
+  </div>`;
 }
 
 function NotificationBell(unread: number) {

@@ -235,7 +235,7 @@ export function adminRoutes(services: Services) {
     'board.contactEmail':
       'Shown on the About page and published in /.well-known/security.txt. Leave empty to use the address the board sends from.',
     'board.skin':
-      'modern is cards and generous spacing. classic is a 2000s bulletin board: boxy, dense, gradient title bars. terminal is neutral surfaces, hairline rules and monospace chrome. deals is a coupon or shopping storefront: white, slate, flat accent buttons, Geist, a card grid. Same board either way — only the stylesheet changes.',
+      'modern is cards and generous spacing. classic is a 2000s bulletin board: boxy, dense, gradient title bars. terminal is neutral surfaces, hairline rules and monospace chrome. deals is a coupon or shopping storefront: white, slate, flat accent buttons, Geist, a card grid. paper is editorial: warm paper, ink, Georgia headlines, hairline rules, a full site footer; it is light-only, so it ignores the theme setting. Same board either way — only the stylesheet changes.',
     'board.theme':
       'What a reader who has never touched the theme toggle sees. system follows their operating system. Anyone who does use the toggle keeps their own choice either way.',
     'board.accent':
@@ -246,7 +246,7 @@ export function adminRoutes(services: Services) {
       'Where the header logo points. / is this board. An absolute URL is for a board that is one room in a larger site — the nav still leads back to the front page, so nobody is stranded.',
     'board.faviconUrl': 'A URL to a browser-tab icon. Replaces the bundled tsbb icons.',
     'board.navLinks':
-      'Your site\'s own navigation, for a board inside a larger site. One link per line as Label | https://example.com/page. Put {board} on its own line where Forums, Latest and Members should sit, or {forums} for the Forums link alone; without either your links come first. Absolute URLs only.',
+      'Your site\'s own navigation, for a board inside a larger site. One link per line as Label | https://example.com/page. Put {board} on its own line where Forums, Latest and Members should sit, or {forums} for the Forums link alone (Community | {forums} renames it); without either your links come first. End a line with | button to make it the header call to action. Absolute URLs only.',
     'board.showPlatform':
       'A panel at the foot of the front page telling a visitor what the software under this board can do: the API, the CLI, MCP, the app, plugins. Guests only, never members. Turn it off for a board whose readers are not looking for one of their own.',
     'signatures.minPosts':
