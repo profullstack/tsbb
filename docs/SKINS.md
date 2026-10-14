@@ -11,7 +11,7 @@ look and not another.
 | `classic` | A 2000s bulletin board: boxy, dense, gradient title bars, Verdana. |
 | `terminal` | Neutral surfaces, hairline rules, monospace chrome, window furniture on section headers. |
 | `deals` | A coupon and deal-sharing storefront: white surfaces, slate greys, the accent as a flat fill with white text, Geist (self-hosted), a dark footer. Made for a board that lives inside a deals site, like [c0upons.com/bbs](https://c0upons.com/bbs). |
-| `paper` | Editorial: warm paper (`#f6f4ed`), green-black ink, sage hairlines, Georgia headlines, small mono capitals for labels, system fonts only. A 100px header ruled off by a hairline, forums as catalogue cards, topics as a ruled list, code as a dark terminal, a three-column site footer. **Light-only.** Made for a board that lives inside a publication-style site, like [w3bs.org/bbs](https://w3bs.org/bbs). |
+| `paper` | Editorial: warm paper (`#f6f4ed`), green-black ink, sage hairlines, Georgia headlines, small mono capitals for labels, system fonts only. A 100px header ruled off by a hairline, a standard forum list (category boxes, one row per forum with counts and the latest post), topics as a ruled list, code as a dark terminal, a three-column site footer. **Light-only.** Made for a board that lives inside a publication-style site, like [w3bs.org/bbs](https://w3bs.org/bbs). |
 
 `classic`, `terminal`, `deals` and `paper` are **layers on top of** the modern
 sheet rather than replacements. A component's structure is defined in exactly
