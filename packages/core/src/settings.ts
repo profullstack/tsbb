@@ -14,7 +14,10 @@ export const DEFAULT_SETTINGS = {
   'board.timezone': 'UTC',
   /** 'system' | 'light' | 'dark' — what a reader with no cookie is shown. */
   'board.theme': 'system',
-  /** 'modern', 'classic' (the 2000s bulletin board), 'terminal' or 'deals' (a coupon/deal storefront). */
+  /**
+   * 'modern', 'classic' (the 2000s bulletin board), 'terminal', 'deals' (a
+   * coupon/deal storefront) or 'paper' (editorial, light-only).
+   */
   'board.skin': 'modern',
   /**
    * One hex colour that links, buttons and highlights follow. EMPTY means the
@@ -60,7 +63,9 @@ export const DEFAULT_SETTINGS = {
   'board.showPlatform': true,
   /**
    * The host site's navigation, for a board inside a larger site: one
-   * `Label | https://…` per line, and `{board}` where the board's own items go.
+   * `Label | https://…` per line, and `{board}` where the board's own items go
+   * (`{forums}`, or `Community | {forums}`, for the Forums link alone). A line
+   * ending `| button` is the header's call to action.
    */
   'board.navLinks': '',
 

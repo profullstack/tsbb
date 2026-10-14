@@ -10,6 +10,7 @@ export {
   isSkin,
   SKINS,
   SKIN_THEME_COLOR,
+  LIGHT_ONLY_SKINS,
   type Skin,
   type Brand,
 } from './styles/index.ts';

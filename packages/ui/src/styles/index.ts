@@ -14,21 +14,31 @@ const TOKENS = join(HERE, '../../../design-tokens/src/tokens.css');
  *   classic   a 2000s bulletin board: boxy, dense, gradient title bars
  *   terminal  neutral surfaces, hairline rules, monospace chrome
  *   deals     a coupon/deal storefront: white, slate, flat accent fills, Geist
+ *   paper     editorial: warm paper, ink, a serif for headlines, hairline rules
  *
  * Each is a LAYER on top of the modern sheet rather than a replacement, so
  * there is exactly one place where a component's structure is defined and the
  * skin only argues about how it looks. A second full stylesheet would drift
  * from the first within a week.
  */
-export type Skin = 'modern' | 'classic' | 'terminal' | 'deals';
+export type Skin = 'modern' | 'classic' | 'terminal' | 'deals' | 'paper';
 
-export const SKINS: readonly Skin[] = ['modern', 'classic', 'terminal', 'deals'];
+export const SKINS: readonly Skin[] = ['modern', 'classic', 'terminal', 'deals', 'paper'];
+
+/**
+ * Skins with no dark palette. Paper is paper: a site built on it is light-only,
+ * and a board inside such a site that turned dark on a reader's OS setting
+ * would stop looking like the site around it. These render light for everyone
+ * and drop the theme toggle.
+ */
+export const LIGHT_ONLY_SKINS: readonly Skin[] = ['paper'];
 
 const BASE = ['base.css', 'components.css', 'forum.css'];
 const LAYER: Partial<Record<Skin, string>> = {
   classic: 'classic.css',
   terminal: 'terminal.css',
   deals: 'deals.css',
+  paper: 'paper.css',
 };
 
 export interface Brand {
@@ -48,6 +58,7 @@ export const SKIN_THEME_COLOR: Record<Skin, { light: string; dark: string }> = {
   classic: { light: '#fffcf9', dark: '#1a120c' },
   terminal: { light: '#fefefe', dark: '#0b0b0b' },
   deals: { light: '#ffffff', dark: '#030712' },
+  paper: { light: '#f6f4ed', dark: '#f6f4ed' },
 };
 
 /**

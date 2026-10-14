@@ -291,7 +291,9 @@ async function authPage(
       : `Signing in with ${via?.name ?? 'that account'} did not work. Try again, or use your email below.`
     : null;
 
-  const body = html`<div style="max-width:26rem;margin:2rem auto">
+  // A class, not a style attribute: style-src has no 'unsafe-inline', so the
+  // attribute was refused and the form ran the full width of the page.
+  const body = html`<div class="auth-page">
     ${Card(html`
       ${CardHeader(heading, {
         description: 'We email you a link. There is no password to choose or forget.',

@@ -85,6 +85,9 @@
   max-width: 12rem;
   object-fit: contain;
 }
+/* The board name beside a logo is for the skins that set a wordmark next to a
+   mark (paper). Everywhere else the artwork is the whole brand. */
+.brand-logo + .brand-name { display: none; }
 
 .site-nav {
   display: flex;
@@ -632,6 +635,13 @@
    'unsafe-inline', and that governs attributes too. */
 .footer-link { display: inline-flex; align-items: center; gap: 0.3rem; }
 .site-footer a:hover { color: var(--foreground); }
+/* Narrow pages. Classes rather than style attributes, which the board's CSP
+   refuses ('unsafe-inline' is not in style-src). */
+.auth-page { max-width: 26rem; margin: 2rem auto; }
+.composer-page { max-width: 48rem; }
+
+/* The full site footer is drawn only by the skins that ask for it (paper). */
+.footer-columns { display: none; }
 
 /* --- Admin --------------------------------------------------------------- */
 
