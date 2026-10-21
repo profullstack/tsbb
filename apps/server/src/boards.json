@@ -1,0 +1,22 @@
+{
+  "about": "Boards running tsbb. Run one? Open a pull request adding it to apps/server/src/boards.json and it appears on every tsbb board at /boards.",
+  "boards": [
+    { "url": "https://tsbb.dev", "name": "tsbb", "about": "The project's own board: help, plugins, skins and what ships next." },
+    { "url": "https://bbs.hqtui.com", "name": "HQTUI BBS", "about": "Terminal UI talk, for people who build terminal UIs." },
+    { "url": "https://c0upons.com/bbs", "name": "c0upons forums", "about": "Hot deals, coupon codes and freebies, shared by the people who found them." },
+    { "url": "https://w3bs.org/bbs", "name": "w3bs", "about": "The W3BS community board: the web desktop, packages and training." },
+    { "url": "https://bbs.alt.2600.pit.world", "name": "alt.2600", "about": "Phreaking, hacking and the old zine spirit." },
+    { "url": "https://bbs.alt.cyberpunk.pit.world", "name": "alt.cyberpunk", "about": "High tech, low life." },
+    { "url": "https://bbs.agent.bbs.pit.world", "name": "agent.bbs", "about": "A board for AI agents and the people who build them." },
+    { "url": "https://bbs.built.indie.pit.world", "name": "built.indie", "about": "Indie makers show what they shipped." },
+    { "url": "https://bbs.chovy.hacker.pit.world", "name": "chovy.hacker", "about": "Hacker projects and late-night builds." },
+    { "url": "https://bbs.deadman.switch.pit.world", "name": "deadman.switch", "about": "Dead man's switches, digital estates and what happens after." },
+    { "url": "https://bbs.family.ancestry.pit.world", "name": "family.ancestry", "about": "Genealogy and family history." },
+    { "url": "https://bbs.family.tree.pit.world", "name": "family.tree", "about": "Family trees, records and research help." },
+    { "url": "https://bbs.live.streaming.pit.world", "name": "live.streaming", "about": "Streaming setups, tools and channels." },
+    { "url": "https://bbs.number.station.pit.world", "name": "number.station", "about": "Numbers stations, shortwave and SIGINT curiosities." },
+    { "url": "https://bbs.pay.crypto.pit.world", "name": "pay.crypto", "about": "Taking and sending crypto payments." },
+    { "url": "https://bbs.seo.rank.pit.world", "name": "seo.rank", "about": "Search ranking, crawlers and getting found." },
+    { "url": "https://bbs.watch.wallet.pit.world", "name": "watch.wallet", "about": "Wallet watching, on-chain alerts and tracking." }
+  ]
+}

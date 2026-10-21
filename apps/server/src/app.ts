@@ -11,6 +11,7 @@ import { adminRoutes } from './routes/admin.ts';
 import { pwaRoutes } from './routes/pwa.ts';
 import { apiRoutes } from './routes/api.ts';
 import { boardRoutes } from './routes/board.ts';
+import { boardsRoutes } from './routes/boards.ts';
 import { discoverRoutes } from './routes/discover.ts';
 import { discoveryRoutes } from './routes/discovery.ts';
 import { docsRoutes } from './routes/docs.ts';
@@ -255,6 +256,7 @@ export function createApp(registry: Registry, baseUrl: string): Hono<AppEnv> {
   app.route('/', docsRoutes(services));
   app.route('/', discoveryRoutes(services));
   app.route('/', discoverRoutes(services));
+  app.route('/', boardsRoutes(services));
   app.route('/', writeRoutes(services));
   app.route('/', settingsRoutes(services));
   app.route('/', boardRoutes(services));

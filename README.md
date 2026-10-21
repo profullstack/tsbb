@@ -1,6 +1,8 @@
 # tsbb
 
 **Live at [tsbb.dev](https://tsbb.dev)** — that board runs this code.
+Every board running tsbb is listed at **[tsbb.dev/boards](https://tsbb.dev/boards)** (and on each
+board's own `/boards`); add yours with a pull request to `apps/server/src/boards.json`.
 
 A TypeScript bulletin board. Forums, topics, replies, moderation, private
 messages, avatars, signatures, search, feeds — and a plugin system that ships
