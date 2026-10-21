@@ -284,6 +284,7 @@ export async function render(
       board: [
         ...board.filter((item) => !item.requires).map((item) => ({ ...item, match: undefined })),
         { label: 'Search', href: '/search' },
+        { label: 'More tsbb boards', href: '/boards' },
       ],
     },
     showThemeToggle: !lightOnly,

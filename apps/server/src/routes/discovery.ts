@@ -194,6 +194,7 @@ export function discoveryRoutes(services: Services) {
       url('/about', '0.6', 'monthly'),
       url('/members', '0.4', 'daily'),
       url('/feeds', '0.3', 'monthly'),
+      url('/boards', '0.5', 'daily'),
       url('/docs', '0.6', 'monthly'),
       ...DOCS.map((doc) => url(`/docs/${doc.slug}`, '0.6', 'monthly')),
       ...forums.map((forum) => url(`/f/${forum.slug}`, '0.7', 'daily')),
