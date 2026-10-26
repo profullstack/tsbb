@@ -229,6 +229,15 @@ importers:
         specifier: workspace:*
         version: link:../../packages/plugin-api
 
+  plugins/profullstack-footer:
+    dependencies:
+      '@profullstack/footer':
+        specifier: ^0.2.6
+        version: 0.2.6
+      '@tsbb/plugin-api':
+        specifier: workspace:*
+        version: link:../../packages/plugin-api
+
 packages:
 
   '@emnapi/runtime@1.11.3':
@@ -626,6 +635,16 @@ packages:
     resolution: {integrity: sha512-ai74Zl1mQN2WZDVb93qiwfpqjCDCg/TZkxgFHFn4Rb/Cxdgg2kUst9ep0B609WoulnNjsXN3IU4IMhpzmypg7w==}
     engines: {node: '>=20'}
     hasBin: true
+
+  '@profullstack/footer@0.2.6':
+    resolution: {integrity: sha512-BKwbDszAc7e0mYIBiPjgr/5WS8WyDt8IW718s/zW/8pCWOIB1BGwSNs6fmImRSo5kqIjQKUVbXp22jZQ5GEipA==}
+    engines: {node: '>=18'}
+    hasBin: true
+    peerDependencies:
+      react: '>=18'
+    peerDependenciesMeta:
+      react:
+        optional: true
 
   '@profullstack/hqtui@0.5.0':
     resolution: {integrity: sha512-jDwILBmdQx8pQA0ao/tzzty8u5nFNS4XhvU9xXhZvdIaMeiF3HBJIVtP6cS6kigS4lXmHR7sztbb9QJpaWwhig==}
@@ -1060,6 +1079,8 @@ snapshots:
   '@neon-rs/load@0.0.4': {}
 
   '@profullstack/bridges@0.2.0': {}
+
+  '@profullstack/footer@0.2.6': {}
 
   '@profullstack/hqtui@0.5.0': {}
 

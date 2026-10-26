@@ -9,6 +9,8 @@ process.env.TSBB_DATABASE_URL = `file:${join(scratch, 'board.db')}`;
 process.env.TSBB_BASE_URL = 'http://localhost:3998';
 process.env.TSBB_SESSION_SECRET = 'test-secret';
 process.env.TSBB_MAIL_TRANSPORT = 'console';
+// The footer plugin renders the template bundled with @profullstack/footer, never the CDN.
+process.env.PROFULLSTACK_FOOTER_OFFLINE = '1';
 
 const { seed } = await import('../packages/db/src/seed.ts');
 const { boot } = await import('../apps/server/src/index.ts');
@@ -31,7 +33,7 @@ describe('the plugin host', () => {
   after(() => db.setDb(null));
 
   it('discovers the bundled plugins', () => {
-    assert.deepEqual([...registry.plugins.keys()].sort(), ['crawlproof-ads', 'hello-world', 'openemoji']);
+    assert.deepEqual([...registry.plugins.keys()].sort(), ['crawlproof-ads', 'hello-world', 'openemoji', 'profullstack-footer']);
     assert.deepEqual([...registry.errors.entries()], [], 'no plugin failed to load');
   });
 
@@ -103,6 +105,32 @@ describe('the plugin host', () => {
     const csp = response.headers.get('content-security-policy') ?? '';
     assert.ok(!csp.includes('crawlproof.com'), 'a disabled plugin grants nothing');
     await registry.setEnabled('crawlproof-ads', true);
+  });
+
+  it('draws the Profullstack footer server-side, only once enabled', async () => {
+    assert.ok(!registry.enabled.has('profullstack-footer'), 'the network footer ships off');
+    let body = await (await app.fetch(new Request(url('/')))).text();
+    assert.ok(!body.includes('pfs-footer'), 'a board that never opted in carries no ring');
+
+    await registry.setEnabled('profullstack-footer', true);
+    await db.run("UPDATE plugins SET config = ? WHERE slug = 'profullstack-footer'", [
+      JSON.stringify({ site: 'https://tsbb.dev/' }),
+    ]);
+    await registry.reload();
+    const response = await app.fetch(new Request(url('/')));
+    body = await response.text();
+    assert.ok(body.includes('rssamplifier.com/ring/profullstack'), 'the webring row is in the HTML');
+    assert.ok(body.includes('built.indie.pit.world/for.svg?site=https://tsbb.dev/'), 'built.indie badge');
+    assert.ok(body.includes('pwamart.com/for.svg'), 'pwamart badge');
+    assert.ok(!body.includes('<style>'), 'no inline style: style-src has no unsafe-inline');
+    assert.ok(body.includes('/p/profullstack-footer/footer.css'), 'the CSS comes from the board');
+
+    const css = await app.fetch(new Request(url('/p/profullstack-footer/footer.css')));
+    assert.equal(css.status, 200);
+    assert.match(css.headers.get('content-type') ?? '', /text\/css/);
+    assert.ok((await css.text()).includes('.pfs-footer'));
+
+    await registry.setEnabled('profullstack-footer', false);
   });
 
   it('runs a plugin migration and mounts its routes when enabled', async () => {
