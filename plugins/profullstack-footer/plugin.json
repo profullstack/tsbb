@@ -1,0 +1,8 @@
+{
+  "slug": "profullstack-footer",
+  "name": "Profullstack Footer",
+  "description": "The Profullstack network footer: the << Profullstack >> webring row and the built.indie and pwamart badges. Off by default; for boards run by Profullstack.",
+  "author": "Profullstack, Inc.",
+  "homepage": "https://github.com/profullstack/footer",
+  "license": "MIT"
+}
