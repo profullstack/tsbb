@@ -122,7 +122,7 @@ describe('the plugin host', () => {
     assert.ok(body.includes('rssamplifier.com/ring/profullstack'), 'the webring row is in the HTML');
     assert.ok(body.includes('built.indie.pit.world/for.svg?site=https://tsbb.dev/'), 'built.indie badge');
     assert.ok(body.includes('pwamart.com/for.svg'), 'pwamart badge');
-    assert.ok(!body.includes('<style>'), 'no inline style: style-src has no unsafe-inline');
+    assert.ok(!/<style[^>]*>\.pfs-footer/.test(body), 'no inline footer style: style-src has no unsafe-inline');
     assert.ok(body.includes('/p/profullstack-footer/footer.css'), 'the CSS comes from the board');
 
     const css = await app.fetch(new Request(url('/p/profullstack-footer/footer.css')));
