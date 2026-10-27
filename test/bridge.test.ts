@@ -134,6 +134,25 @@ describe('host accounts on the board (bridges)', () => {
     assert.equal(rows[0]?.user_id, viaHost?.user_id);
   });
 
+  it('a CoinPay email never reaches an existing account, even if CoinPay calls it verified', async () => {
+    const victim = await core.createUser({ username: 'victim', email: 'victim@example.com', isAdmin: true });
+    coinpayUser = { sub: 'merchant-x', did: 'did:key:mallory', name: 'Mallory', email: 'victim@example.com', email_verified: true };
+    const start = await get('/auth/coinpay?return=%2Flatest');
+    const authorize = new URL(start.headers.get('location') ?? '');
+    coinpayCodes.set('cp-code-2', authorize.searchParams.get('code_challenge') ?? '');
+    const callback = await get(
+      `/auth/coinpay/callback?code=cp-code-2&state=${authorize.searchParams.get('state')}`,
+      cookiesOf(start),
+    );
+    assert.ok(cookiesOf(callback).tsbb_session, 'signed in');
+    const row = await db.one<{ user_id: number }>("SELECT user_id FROM user_identities WHERE subject = 'did:key:mallory'");
+    assert.ok(row);
+    assert.notEqual(row.user_id, victim.id, 'not the victim account');
+    const mallory = await db.one<{ email: string; is_admin: number }>('SELECT email, is_admin FROM users WHERE id = ?', [row.user_id]);
+    assert.notEqual(mallory?.email, 'victim@example.com');
+    assert.ok(!mallory?.is_admin, 'no admin');
+  });
+
   it('sends a CLI sign-in straight to CoinPay', async () => {
     const response = await get('/link?code=ABCD-EFGH&via=coinpay');
     assert.equal(response.headers.get('location'), '/auth/coinpay?return=%2Flink%3Fcode%3DABCD-EFGH');
