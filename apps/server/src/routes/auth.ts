@@ -82,7 +82,11 @@ export function authRoutes(services: Services) {
         return c.redirect(`/login?via=${id}&bridge_error=${encodeURIComponent(result.error)}`, 302);
       }
 
-      const user = await bridgeAccount(source.provider, result.user);
+      // CoinPay never verifies emails, so whatever its userinfo says about
+      // email_verified, a CoinPay email never links to (or takes over) an existing
+      // board account by address: only the CoinPay sub/DID links.
+      const claims = id === 'coinpay' ? { ...result.user, email_verified: false } : result.user;
+      const user = await bridgeAccount(source.provider, claims);
       if (user.isBanned) return c.redirect(`/login?via=${id}&bridge_error=banned`, 302);
       const session = await createSession(user.id, { userAgent: c.req.header('user-agent'), ip: clientIp(c) });
       setCookie(c, SESSION_COOKIE, session.id, cookieOptions(secure));
