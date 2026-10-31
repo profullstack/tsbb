@@ -73,10 +73,13 @@ export default definePlugin({
       'layout:footer',
       async () => {
         const since = Number(ctx.settings.get('since') ?? 0);
+        const memberSite = site();
         return footerHtml({
-          site: site(),
+          site: memberSite,
           css: false,
           subscribe: false,
+          builtIndieHref: `https://built.indie.pit.world/for?site=${memberSite}`,
+          pwamartHref: `https://pwamart.com/for?site=${memberSite}`,
           links: [
             { label: 'About', href: '/about' },
             { label: 'Members', href: '/members' },
