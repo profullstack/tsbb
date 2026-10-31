@@ -2,9 +2,8 @@ import { definePlugin } from '@tsbb/plugin-api';
 import { footerHtml, latestTemplate } from '@profullstack/footer';
 
 /**
- * The Profullstack network footer (@profullstack/footer), for boards that
- * Profullstack runs: the << Profullstack >> webring row, the built.indie and
- * pwamart badges and the copyright line, under the board's own footer.
+ * The Profullstack network footer (@profullstack/footer), enabled on
+ * bbs.hqtui.com as the board's footer and optional on other boards.
  *
  * Ships DISABLED. Joining a webring and showing someone else's badges is the
  * operator's choice, not something an upgrade should decide for every board.
@@ -23,7 +22,7 @@ import { footerHtml, latestTemplate } from '@profullstack/footer';
  *    the board without a redeploy.
  */
 
-const BADGE_HOSTS = ['https://built.indie.pit.world', 'https://pwamart.com'];
+const BADGE_HOSTS = ['https://logicsrc.com', 'https://profullstack.com'];
 
 export default definePlugin({
   manifest: {
@@ -31,7 +30,7 @@ export default definePlugin({
     name: 'Profullstack Footer',
     version: '0.1.0',
     description:
-      'The Profullstack network footer: webring row plus the built.indie and pwamart badges. Off by default; for boards run by Profullstack.',
+      'The shared Profullstack footer with a remotely updated template and site-specific links.',
     author: 'Profullstack, Inc.',
     homepage: 'https://github.com/profullstack/footer',
     license: 'MIT',
@@ -74,7 +73,23 @@ export default definePlugin({
       'layout:footer',
       async () => {
         const since = Number(ctx.settings.get('since') ?? 0);
-        return footerHtml({ site: site(), css: false, ...(since > 0 ? { since } : {}) });
+        const memberSite = site();
+        return footerHtml({
+          site: memberSite,
+          css: false,
+          subscribe: false,
+          builtIndieHref: `https://built.indie.pit.world/for?site=${memberSite}`,
+          pwamartHref: `https://pwamart.com/for?site=${memberSite}`,
+          links: [
+            { label: 'About', href: '/about' },
+            { label: 'Members', href: '/members' },
+            { label: 'Docs', href: '/docs' },
+            { label: 'Feeds', href: '/feeds' },
+            { label: 'RSS', href: '/feed.xml' },
+            { label: 'GitHub', href: 'https://github.com/profullstack/tsbb' },
+          ],
+          ...(since > 0 ? { since } : {}),
+        });
       },
       // Last in the footer, below anything another plugin puts there.
       1000,

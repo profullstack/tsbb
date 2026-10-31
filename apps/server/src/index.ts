@@ -28,6 +28,9 @@ export async function boot(options: { port?: number; listen?: boolean } = {}) {
     bundledRoot: join(REPO_ROOT, 'plugins'),
     baseUrl,
   });
+  if (new URL(baseUrl).hostname === 'bbs.hqtui.com') {
+    await registry.setEnabled('profullstack-footer', true);
+  }
   const enabled = [...registry.enabled];
   console.log(`[tsbb] plugins: ${enabled.length ? enabled.join(', ') : 'none enabled'}`);
   for (const [slug, error] of registry.errors) console.warn(`[tsbb] plugin ${slug}: ${error}`);

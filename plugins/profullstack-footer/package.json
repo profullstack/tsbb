@@ -5,7 +5,7 @@
   "type": "module",
   "main": "./src/index.ts",
   "dependencies": {
-    "@profullstack/footer": "^0.2.6",
+    "@profullstack/footer": "latest",
     "@tsbb/plugin-api": "workspace:*"
   }
 }
