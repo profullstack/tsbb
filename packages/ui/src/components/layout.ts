@@ -106,6 +106,7 @@ function frontPageTitle(boardName: string, tagline?: string): string {
  */
 export function Layout(props: LayoutProps) {
   const slots = props.slots ?? {};
+  const universalFooter = slots.footer?.includes('data-pfs-footer') ?? false;
   const theme = props.theme ?? 'system';
   const themeColor = props.themeColor ?? { light: '#fffcf9', dark: '#1a120c' };
   const title =
@@ -203,33 +204,29 @@ export function Layout(props: LayoutProps) {
         ${trusted(slots.header)}
       </header>
       <main class="main" id="main"><div class="container">${props.body}</div></main>
-      <footer class="site-footer">
-        ${props.footerNav ? FooterColumns(props, props.footerNav) : ''}
-        <div class="container row-between footer-bottom">
-          <span>
-            &copy; ${new Date().getFullYear()} ${props.operator ?? 'Profullstack, Inc.'} &middot; running on
-            <a href="https://github.com/profullstack/tsbb" rel="noopener">tsbb</a>
-          </span>
-          <span class="row">
-            <a href="/about">About</a>
-            <a href="/members">Members</a>
-            <a href="/docs">Docs</a>
-            <a href="/feeds">Feeds</a>
-            <a href="/feed.xml">RSS</a>
-            <!--
-              A class, not a style attribute. style-src has no 'unsafe-inline',
-              which covers inline STYLE ATTRIBUTES as well as <style> blocks —
-              so this link's layout was refused by the board's own policy and
-              the icon sat above the word instead of beside it.
-            -->
-            <a class="footer-link" href="https://github.com/profullstack/tsbb" rel="noopener" title="tsbb on GitHub"
-              >${IconGithub()} GitHub</a
-            >
-            ${props.viewer.isAdmin ? html`<a href="/admin">Admin</a>` : ''}
-          </span>
-        </div>
-        ${trusted(slots.footer)}
-      </footer>
+      ${universalFooter
+        ? trusted(slots.footer)
+        : html`<footer class="site-footer">
+            ${props.footerNav ? FooterColumns(props, props.footerNav) : ''}
+            <div class="container row-between footer-bottom">
+              <span>
+                &copy; ${new Date().getFullYear()} ${props.operator ?? 'Profullstack, Inc.'} &middot; running on
+                <a href="https://github.com/profullstack/tsbb" rel="noopener">tsbb</a>
+              </span>
+              <span class="row">
+                <a href="/about">About</a>
+                <a href="/members">Members</a>
+                <a href="/docs">Docs</a>
+                <a href="/feeds">Feeds</a>
+                <a href="/feed.xml">RSS</a>
+                <a class="footer-link" href="https://github.com/profullstack/tsbb" rel="noopener" title="tsbb on GitHub"
+                  >${IconGithub()} GitHub</a
+                >
+                ${props.viewer.isAdmin ? html`<a href="/admin">Admin</a>` : ''}
+              </span>
+            </div>
+            ${trusted(slots.footer)}
+          </footer>`}
     </div>
     ${trusted(slots.bodyEnd)}
   </body>

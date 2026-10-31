@@ -232,8 +232,8 @@ importers:
   plugins/profullstack-footer:
     dependencies:
       '@profullstack/footer':
-        specifier: ^0.2.6
-        version: 0.2.6
+        specifier: latest
+        version: 0.6.9
       '@tsbb/plugin-api':
         specifier: workspace:*
         version: link:../../packages/plugin-api
@@ -636,8 +636,8 @@ packages:
     engines: {node: '>=20'}
     hasBin: true
 
-  '@profullstack/footer@0.2.6':
-    resolution: {integrity: sha512-BKwbDszAc7e0mYIBiPjgr/5WS8WyDt8IW718s/zW/8pCWOIB1BGwSNs6fmImRSo5kqIjQKUVbXp22jZQ5GEipA==}
+  '@profullstack/footer@0.6.9':
+    resolution: {integrity: sha512-IlLCHq4QHXI6Vj+69o+AC4ZNVSxr/9l+ycC/+Fv3dr5wie8d2mUT/b3go5HH+JmJArW6qE+pa/pRmWJAs0JoYg==}
     engines: {node: '>=18'}
     hasBin: true
     peerDependencies:
@@ -1080,7 +1080,7 @@ snapshots:
 
   '@profullstack/bridges@0.2.0': {}
 
-  '@profullstack/footer@0.2.6': {}
+  '@profullstack/footer@0.6.9': {}
 
   '@profullstack/hqtui@0.5.0': {}
 
