@@ -1,7 +1,9 @@
 import { Hono } from 'hono';
 import { BoardClient } from '@tsbb/client';
+import { basePathOf } from '@tsbb/core';
 import { handle, LATEST_PROTOCOL_VERSION } from '@tsbb/mcp';
 import type { AppEnv, Services } from '../context.ts';
+import { mountAt } from '../mount.ts';
 import { packageVersion } from '../version.ts';
 
 /**
@@ -30,6 +32,11 @@ export function mcpRoutes(
   dispatch: (request: Request) => Response | Promise<Response>,
 ) {
   const app = new Hono<AppEnv>();
+  // BoardClient builds absolute URLs from the public base URL. Re-enter the
+  // app through the same mount adapter used by the network listener so a board
+  // served under a prefix (for example /bbs) has that prefix stripped before
+  // its internal REST request reaches the root-based routes.
+  const localDispatch = mountAt(basePathOf(services.baseUrl), dispatch);
 
   app.post('/api/mcp', async (c) => {
     const authorization = c.req.header('authorization');
@@ -38,7 +45,7 @@ export function mcpRoutes(
     const client = new BoardClient({
       server: services.baseUrl,
       token,
-      fetch: (input, init) => Promise.resolve(dispatch(new Request(input as string, init))),
+      fetch: (input, init) => Promise.resolve(localDispatch(new Request(input as string, init))),
     });
 
     let body: unknown;
