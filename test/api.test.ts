@@ -177,6 +177,67 @@ describe('the API and MCP surfaces', () => {
     assert.ok(afterBoard.forums.every((f) => f.unread === 0), 'nothing is unread after a board-wide mark');
   });
 
+  it('marks selected notifications read without clearing another member’s alerts', async () => {
+    const recipient = await core.createUser({ email: 'notice-recipient@example.com', username: 'notice-recipient' });
+    const recipientToken = await core.mintToken({ userId: recipient.id, label: 'test' });
+    const outsider = await core.createUser({ email: 'notice-outsider@example.com', username: 'notice-outsider' });
+    const first = await core.notify({
+      userId: recipient.id,
+      kind: 'reply',
+      subjectType: 'topic',
+      subjectId: topicId,
+      title: 'First reply',
+    });
+    const second = await core.notify({
+      userId: recipient.id,
+      kind: 'reply',
+      subjectType: 'topic',
+      subjectId: topicId,
+      title: 'Second reply',
+    });
+    const outsiderNotice = await core.notify({
+      userId: outsider.id,
+      kind: 'reply',
+      subjectType: 'topic',
+      subjectId: topicId,
+      title: 'Private to another member',
+    });
+    assert.ok(first && second && outsiderNotice);
+
+    const authed = (path: string, init: RequestInit = {}) => {
+      const headers = new Headers(init.headers);
+      headers.set('authorization', `Bearer ${recipientToken}`);
+      return app.fetch(new Request(url(path), { ...init, headers }));
+    };
+    const selected = await authed('/api/v1/notifications/read', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ ids: [first.id, outsiderNotice.id] }),
+    });
+    assert.equal(selected.status, 200);
+
+    const unread = (await (await authed('/api/v1/notifications?unread=1')).json()) as {
+      notifications: { id: number }[];
+    };
+    assert.deepEqual(unread.notifications.map((notice) => notice.id), [second.id]);
+
+    const markAll = await authed('/api/v1/notifications/read', { method: 'POST' });
+    assert.equal(markAll.status, 200);
+    const afterAll = (await (await authed('/api/v1/notifications?unread=1')).json()) as {
+      notifications: { id: number }[];
+    };
+    assert.deepEqual(afterAll.notifications, []);
+
+    const outsiderToken = await core.mintToken({ userId: outsider.id, label: 'test' });
+    const outsiderUnread = await app.fetch(
+      new Request(url('/api/v1/notifications?unread=1'), {
+        headers: { authorization: `Bearer ${outsiderToken}` },
+      }),
+    );
+    const outsiderData = (await outsiderUnread.json()) as { notifications: { id: number }[] };
+    assert.deepEqual(outsiderData.notifications.map((notice) => notice.id), [outsiderNotice.id]);
+  });
+
   it('says what a token may do in each forum, so a client need not find out by being refused', async () => {
     // A reply-only forum is how a feed is published to a board: the crawler
     // opens the topics and members discuss them. Posting into one answers 403,

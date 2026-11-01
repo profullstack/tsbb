@@ -267,8 +267,26 @@ export function openApiDocument(baseUrl: string, settings: Settings): Record<str
       '/api/v1/notifications/read': {
         post: {
           operationId: 'markNotificationsRead',
-          summary: 'Mark everything read.',
+          summary: 'Mark selected notifications read, or everything when ids is omitted.',
           security: [{ bearerAuth: [] }],
+          requestBody: {
+            required: false,
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    ids: {
+                      type: 'array',
+                      maxItems: 100,
+                      items: { type: 'integer', minimum: 1 },
+                    },
+                  },
+                  additionalProperties: false,
+                },
+              },
+            },
+          },
           responses: { '200': json('ok'), ...errors },
         },
       },
