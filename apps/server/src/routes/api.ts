@@ -438,7 +438,38 @@ export function apiRoutes(services: Services) {
   app.post('/api/v1/notifications/read', async (c) => {
     const viewer = c.get('viewer');
     if (!viewer.user) return c.json({ error: 'unauthorized' }, 401);
-    await markNotificationsRead(viewer.user.id);
+
+    // An omitted body keeps the original mark-everything behavior. Clients
+    // that handle one notification at a time can clear only that alert, so a
+    // later reply on the same followed topic can raise and email a new one.
+    const raw = await c.req.raw.clone().text();
+    let ids: number[] | undefined;
+    if (raw.trim()) {
+      let body: unknown;
+      try {
+        body = JSON.parse(raw) as unknown;
+      } catch {
+        return c.json({ error: 'invalid_json' }, 400);
+      }
+      if (!body || typeof body !== 'object' || Array.isArray(body)) {
+        return c.json({ error: 'invalid_body' }, 400);
+      }
+
+      if ('ids' in body) {
+        const requested = (body as { ids?: unknown }).ids;
+        if (
+          !Array.isArray(requested) ||
+          requested.length > 100 ||
+          requested.some((id) => !Number.isSafeInteger(id) || Number(id) < 1)
+        ) {
+          return c.json({ error: 'invalid_notification_ids' }, 400);
+        }
+        ids = [...new Set(requested as number[])];
+        if (ids.length === 0) return c.json({ ok: true });
+      }
+    }
+
+    await markNotificationsRead(viewer.user.id, ids);
     return c.json({ ok: true });
   });
 
