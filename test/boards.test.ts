@@ -47,7 +47,7 @@ describe('the tsbb network', () => {
 
   it('serves the list as JSON', async () => {
     const body = (await (await get('/api/v1/boards')).json()) as { boards: { url: string }[] };
-    assert.ok(body.boards.some((board) => board.url === 'https://tsbb.dev'));
+    assert.ok(body.boards.some((board) => board.url === 'https://tsbb.pwa.pit.world'));
   });
 
   it('links the page from the footer and the sitemap', async () => {

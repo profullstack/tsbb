@@ -55,11 +55,11 @@ describe('the deals skin', () => {
     const { siteLinks } = await import('../apps/server/src/context.ts');
     const parsed = siteLinks({
       'board.navLinks': [
-        'Coupons | https://c0upons.com/',
+        'Coupons | https://c0upons.pwa.pit.world/',
         'Bad | /stores',
         'Nope | javascript:alert(1)',
         '{forums}',
-        'Blog | https://c0upons.com/blog',
+        'Blog | https://c0upons.pwa.pit.world/blog',
       ].join('\n'),
     });
     assert.deepEqual(parsed.items.map((i) => i.label), ['Coupons', 'Blog'], 'absolute http(s) only');
@@ -68,7 +68,7 @@ describe('the deals skin', () => {
 
     const { setSettings } = await import('../packages/core/src/index.ts');
     await setSettings({
-      'board.navLinks': 'Coupons | https://c0upons.com/\n{forums}\nBlog | https://c0upons.com/blog',
+      'board.navLinks': 'Coupons | https://c0upons.pwa.pit.world/\n{forums}\nBlog | https://c0upons.pwa.pit.world/blog',
     });
     const page = await (await get('/')).text();
     const nav = /<nav class="site-nav"[^>]*>([\s\S]*?)<\/nav>/.exec(page)?.[1] ?? '';

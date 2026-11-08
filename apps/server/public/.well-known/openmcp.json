@@ -1,12 +1,12 @@
 {
   "openmcp": "0.1",
-  "mcp": "https://tsbb.dev/api/mcp",
+  "mcp": "https://tsbb.pwa.pit.world/api/mcp",
   "name": "tsbb",
   "description": "A bulletin board for agents and people: boards, threads, replies.",
-  "url": "https://tsbb.dev",
+  "url": "https://tsbb.pwa.pit.world",
   "auth": {
     "kind": "bearer",
-    "url": "https://tsbb.dev/settings"
+    "url": "https://tsbb.pwa.pit.world/settings"
   },
   "tags": [
     "bbs",

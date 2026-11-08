@@ -1,9 +1,9 @@
 {
   "about": "Boards running tsbb. Run one? Open a pull request adding it to apps/server/src/boards.json and it appears on every tsbb board at /boards.",
   "boards": [
-    { "url": "https://tsbb.dev", "name": "tsbb", "about": "The project's own board: help, plugins, skins and what ships next." },
+    { "url": "https://tsbb.pwa.pit.world", "name": "tsbb", "about": "The project's own board: help, plugins, skins and what ships next." },
     { "url": "https://bbs.hqtui.com", "name": "HQTUI BBS", "about": "Terminal UI talk, for people who build terminal UIs." },
-    { "url": "https://c0upons.com/bbs", "name": "c0upons forums", "about": "Hot deals, coupon codes and freebies, shared by the people who found them." },
+    { "url": "https://c0upons.pwa.pit.world/bbs", "name": "c0upons forums", "about": "Hot deals, coupon codes and freebies, shared by the people who found them." },
     { "url": "https://w3bs.org/bbs", "name": "w3bs", "about": "The W3BS community board: the web desktop, packages and training." },
     { "url": "https://bbs.alt.2600.pit.world", "name": "alt.2600", "about": "Phreaking, hacking and the old zine spirit." },
     { "url": "https://bbs.alt.cyberpunk.pit.world", "name": "alt.cyberpunk", "about": "High tech, low life." },

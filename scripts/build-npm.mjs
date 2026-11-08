@@ -9,7 +9,7 @@
  * refuses to strip types inside node_modules, so a published copy of the source
  * cannot run. Each bin is bundled into one ESM file instead, with the @tsbb/*
  * code inlined and only real npm dependencies left external. The result installs
- * standalone with `npm i -g`, which is what https://tsbb.dev/install.sh does.
+ * standalone with `npm i -g`, which is what https://tsbb.pwa.pit.world/install.sh does.
  *
  * `tsbb serve`, `init` and the other board commands need the repository and are
  * not bundled: the published CLI tells you how to get a checkout.
@@ -96,7 +96,7 @@ for (const pkg of packages) {
     type: 'module',
     license: source.license,
     author: source.author,
-    homepage: 'https://tsbb.dev',
+    homepage: 'https://tsbb.pwa.pit.world',
     repository: { type: 'git', url: 'git+https://github.com/profullstack/tsbb.git', directory: pkg.app },
     bugs: { url: 'https://github.com/profullstack/tsbb/issues' },
     keywords: pkg.keywords,
@@ -123,7 +123,7 @@ function readme(manifest, bin) {
 ${manifest.description}
 
 \`\`\`sh
-curl -fsSL https://tsbb.dev/install.sh | sh     # installs tsbb, tsbb-tui and tsbb-mcp
+curl -fsSL https://tsbb.pwa.pit.world/install.sh | sh     # installs tsbb, tsbb-tui and tsbb-mcp
 npm i -g ${manifest.name}                        # or just this one (Node ${NODE_FLOOR.slice(2)}+)
 \`\`\`
 
@@ -133,7 +133,7 @@ ${usage}
 
 Running a board of your own needs the repository: https://github.com/profullstack/tsbb
 
-Docs: https://tsbb.dev · MIT, ${manifest.author}
+Docs: https://tsbb.pwa.pit.world · MIT, ${manifest.author}
 `;
 }
 

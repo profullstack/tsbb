@@ -1,7 +1,7 @@
 # tsbb
 
-**Live at [tsbb.dev](https://tsbb.dev)** — that board runs this code.
-Every board running tsbb is listed at **[tsbb.dev/boards](https://tsbb.dev/boards)** (and on each
+**Live at [tsbb.dev](https://tsbb.pwa.pit.world)** — that board runs this code.
+Every board running tsbb is listed at **[tsbb.dev/boards](https://tsbb.pwa.pit.world/boards)** (and on each
 board's own `/boards`); add yours with a pull request to `apps/server/src/boards.json`.
 
 A TypeScript bulletin board. Forums, topics, replies, moderation, private
@@ -38,7 +38,7 @@ pnpm exec tsbb init
 pnpm start
 ```
 
-Just want to use a board from the terminal? `curl -fsSL https://tsbb.dev/install.sh | sh`
+Just want to use a board from the terminal? `curl -fsSL https://tsbb.pwa.pit.world/install.sh | sh`
 installs the client (`tsbb`, `tsbb-tui`, `tsbb-mcp`) from npm.
 
 Open <http://localhost:3000>, put in your email address, and click the link.
@@ -223,7 +223,7 @@ Turn it off in the admin panel and the `frame-src` permission goes with it.
 ## The terminal client
 
 ```
-curl -fsSL https://tsbb.dev/install.sh | sh    # tsbb, tsbb-tui and tsbb-mcp
+curl -fsSL https://tsbb.pwa.pit.world/install.sh | sh    # tsbb, tsbb-tui and tsbb-mcp
 tsbb-tui https://forum.example.com
 ```
 
@@ -269,7 +269,7 @@ is never an administrator, however it was minted.
 Every board serves these four documents at **`/docs`** — they are the files in
 `docs/`, rendered by the board's own markdown renderer, so the site cannot
 quietly disagree with the repository. On tsbb.dev that is
-**[tsbb.dev/docs](https://tsbb.dev/docs)**.
+**[tsbb.dev/docs](https://tsbb.pwa.pit.world/docs)**.
 
 ## Commands
 

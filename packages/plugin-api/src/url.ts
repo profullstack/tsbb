@@ -3,7 +3,7 @@
  *
  * `new URL('/t/1', baseUrl)` throws away any path in the base URL, which is
  * right for a board at the root of its host and wrong for one mounted under a
- * prefix (`https://c0upons.com/bbs`). This keeps the prefix either way.
+ * prefix (`https://c0upons.pwa.pit.world/bbs`). This keeps the prefix either way.
  */
 export function boardUrl(path: string, baseUrl: string): string {
   if (/^[a-z][a-z0-9+.-]*:/i.test(path) || path.startsWith('//')) return new URL(path, baseUrl).toString();

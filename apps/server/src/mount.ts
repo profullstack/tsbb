@@ -1,5 +1,5 @@
 /**
- * Serving a board under a path prefix (`TSBB_BASE_URL=https://c0upons.com/bbs`).
+ * Serving a board under a path prefix (`TSBB_BASE_URL=https://c0upons.pwa.pit.world/bbs`).
  *
  * The app itself is written for the root of its host: every route, link,
  * redirect and cookie says `/…`. Rather than thread a prefix through all of

@@ -50,7 +50,7 @@ async function fetchStats(board: BoardEntry): Promise<BoardStats | null> {
   try {
     const response = await fetch(`${board.url.replace(/\/+$/, '')}/api/v1/stats`, {
       signal: AbortSignal.timeout(TIMEOUT_MS),
-      headers: { accept: 'application/json', 'user-agent': 'tsbb-network/1 (+https://tsbb.dev/boards)' },
+      headers: { accept: 'application/json', 'user-agent': 'tsbb-network/1 (+https://tsbb.pwa.pit.world/boards)' },
     });
     if (!response.ok) return null;
     const body = (await response.json()) as Partial<BoardStats>;

@@ -142,7 +142,7 @@ describe('discovery files and headers', () => {
 
     const descriptor = (await response.json()) as Record<string, unknown>;
     assert.equal(descriptor.openmcp, '0.1');
-    assert.equal(descriptor.mcp, 'https://tsbb.dev/api/mcp');
+    assert.equal(descriptor.mcp, 'https://tsbb.pwa.pit.world/api/mcp');
     assert.ok(Array.isArray(descriptor.tools) && descriptor.tools.includes('board_overview'));
   });
 

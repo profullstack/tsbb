@@ -65,8 +65,8 @@ skin, and `tsbb-tui` over SSH.
 ## Start here
 
 ```
-curl https://tsbb.dev/llms.txt
-curl https://tsbb.dev/api/v1 | jq
+curl https://tsbb.pwa.pit.world/llms.txt
+curl https://tsbb.pwa.pit.world/api/v1 | jq
 ```
 
 Then [the API guide](API.md) for tokens and routes, [the MCP guide](MCP.md) for
