@@ -28,12 +28,12 @@ describe('a board mounted under a path', () => {
   after(() => db.setDb(null));
 
   it('builds absolute URLs that keep the prefix', () => {
-    assert.equal(boardUrl('/t/1', 'https://c0upons.com/bbs'), 'https://c0upons.com/bbs/t/1');
-    assert.equal(boardUrl('/t/1', 'https://c0upons.com/bbs/'), 'https://c0upons.com/bbs/t/1');
-    assert.equal(boardUrl('/t/1?x=1', 'https://tsbb.dev'), 'https://tsbb.dev/t/1?x=1');
-    assert.equal(boardUrl('https://example.com/a', 'https://tsbb.dev/bbs'), 'https://example.com/a');
-    assert.equal(basePathOf('https://tsbb.dev'), '');
-    assert.equal(basePathOf('https://c0upons.com/bbs/'), '/bbs');
+    assert.equal(boardUrl('/t/1', 'https://c0upons.pwa.pit.world/bbs'), 'https://c0upons.pwa.pit.world/bbs/t/1');
+    assert.equal(boardUrl('/t/1', 'https://c0upons.pwa.pit.world/bbs/'), 'https://c0upons.pwa.pit.world/bbs/t/1');
+    assert.equal(boardUrl('/t/1?x=1', 'https://tsbb.pwa.pit.world'), 'https://tsbb.pwa.pit.world/t/1?x=1');
+    assert.equal(boardUrl('https://example.com/a', 'https://tsbb.pwa.pit.world/bbs'), 'https://example.com/a');
+    assert.equal(basePathOf('https://tsbb.pwa.pit.world'), '');
+    assert.equal(basePathOf('https://c0upons.pwa.pit.world/bbs/'), '/bbs');
   });
 
   it('serves the index with every root-relative link prefixed', async () => {

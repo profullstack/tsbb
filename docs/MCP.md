@@ -21,7 +21,7 @@ missing from `list_forums` is a forum that member cannot read.
 Install it (with `tsbb` and `tsbb-tui`; Node 22.6+):
 
 ```
-curl -fsSL https://tsbb.dev/install.sh | sh
+curl -fsSL https://tsbb.pwa.pit.world/install.sh | sh
 ```
 
 Then point your client at it:

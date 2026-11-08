@@ -89,7 +89,7 @@ const baseUrl = process.env.TSBB_BASE_URL ?? 'http://localhost:3000';
 
 /*
  * Running a board needs the whole repository (server, migrations, plugins). The
- * npm package (curl -fsSL https://tsbb.dev/install.sh | sh) is only the client
+ * npm package (curl -fsSL https://tsbb.pwa.pit.world/install.sh | sh) is only the client
  * half, so say how to get a board instead of failing on a missing module.
  */
 const BOARD_COMMANDS = new Set([

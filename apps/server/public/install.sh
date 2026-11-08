@@ -2,7 +2,7 @@
 # Install the tsbb bulletin board client: tsbb (CLI), tsbb-tui (terminal client)
 # and tsbb-mcp (MCP server). npm: @profullstack/tsbb, -tui, -mcp.
 #
-#   curl -fsSL https://tsbb.dev/install.sh | sh
+#   curl -fsSL https://tsbb.pwa.pit.world/install.sh | sh
 #
 # Works against any tsbb board. Needs Node >= 22.6 (the commands run on Node).
 # Installs with bun if present, otherwise npm. When the global npm prefix is not writable it installs into

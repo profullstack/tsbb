@@ -14,7 +14,7 @@ anybody else's.
 The packages are not on npm yet, so both jobs are done from a checkout:
 
 ```
-curl -fsSL https://tsbb.dev/install.sh | sh
+curl -fsSL https://tsbb.pwa.pit.world/install.sh | sh
 ```
 
 That installs `tsbb`, `tsbb-tui` and `tsbb-mcp` from npm (`@profullstack/tsbb`,
