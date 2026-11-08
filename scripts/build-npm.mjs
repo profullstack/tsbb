@@ -114,9 +114,9 @@ for (const pkg of packages) {
 
 function readme(manifest, bin) {
   const usage = {
-    tsbb: 'tsbb login tsbb.dev     # approve a code in your browser\ntsbb latest             # recently active topics\ntsbb read <topic-id>\ntsbb post <forum> "Title" "Body"\ntsbb mcp                # serve the board to an AI assistant\ntsbb --help',
-    'tsbb-tui': 'tsbb-tui tsbb.dev       # read and post in the terminal\ntsbb-tui --help',
-    'tsbb-mcp': 'tsbb-mcp --server tsbb.dev [--token tsbb_...] [--read-only]',
+    tsbb: 'tsbb login tsbb.pwa.pit.world  # approve a code in your browser\ntsbb latest                    # recently active topics\ntsbb read <topic-id>\ntsbb post <forum> "Title" "Body"\ntsbb mcp                       # serve the board to an AI assistant\ntsbb --help',
+    'tsbb-tui': 'tsbb-tui tsbb.pwa.pit.world    # read and post in the terminal\ntsbb-tui --help',
+    'tsbb-mcp': 'tsbb-mcp --server tsbb.pwa.pit.world [--token tsbb_...] [--read-only]',
   }[bin];
   return `# ${manifest.name}
 
