@@ -33,7 +33,7 @@ describe('the tsbb network', () => {
     assert.equal(response.status, 200);
     const page = await response.text();
     assert.match(page, /The tsbb network/);
-    assert.match(page, /href="https:\/\/tsbb\.dev"/);
+    assert.match(page, /href="https:\/\/tsbb\.pwa\.pit\.world"/);
     assert.match(page, /Add your board/);
   });
 

@@ -57,7 +57,7 @@ else
 fi
 say ""
 say "Next:"
-say "  tsbb login tsbb.dev     # approve a code in your browser"
-say "  tsbb latest             # recently active topics"
-say "  tsbb-tui tsbb.dev       # read and post in the terminal"
-say "  tsbb --help             # everything else, including tsbb mcp"
+say "  tsbb login tsbb.pwa.pit.world  # approve a code in your browser"
+say "  tsbb latest                    # recently active topics"
+say "  tsbb-tui tsbb.pwa.pit.world    # read and post in the terminal"
+say "  tsbb --help                    # everything else, including tsbb mcp"
