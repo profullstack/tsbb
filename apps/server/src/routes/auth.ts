@@ -160,10 +160,11 @@ export function authRoutes(services: Services) {
 
     if (isFirstEver) {
       const settings = c.get('settings');
-      const message = welcomeEmail({
+      const message = await welcomeEmail({
         boardName: String(settings['board.name'] ?? 'tsbb'),
         baseUrl: services.baseUrl,
         username: result.user.username,
+        email: result.user.email,
       });
       await queueEmail({
         to: result.user.email,

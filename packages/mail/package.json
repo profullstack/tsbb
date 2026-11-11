@@ -1,10 +1,11 @@
 {
   "name": "@tsbb/mail",
-  "version": "0.14.1",
+  "version": "0.15.0",
   "private": true,
   "type": "module",
   "exports": { ".": "./src/index.ts" },
   "dependencies": {
+    "@profullstack/cross-promo": "^0.1.0",
     "@tsbb/core": "workspace:*",
     "@tsbb/db": "workspace:*",
     "@tsbb/markup": "workspace:*"
