@@ -84,6 +84,7 @@ const FRAME_HEIGHT: Record<string, number> = {
 };
 
 const ORIGIN = 'https://crawlproof.com';
+const LEGAL_PAGES = new Set(['/privacy', '/terms']);
 
 function escapeAttribute(value: string): string {
   return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
@@ -228,6 +229,9 @@ export default definePlugin({
         placement.slot,
         (props) => {
           if (ctx.settings.get(placement.key) !== true) return null;
+
+          // The privacy policy and terms carry no ads, whatever the placements say.
+          if (LEGAL_PAGES.has((props as { url?: URL }).url?.pathname ?? '')) return null;
 
           /*
            * The board offers every gap between two posts; take only the

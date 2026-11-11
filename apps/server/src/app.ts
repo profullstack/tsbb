@@ -15,6 +15,7 @@ import { boardsRoutes } from './routes/boards.ts';
 import { discoverRoutes } from './routes/discover.ts';
 import { discoveryRoutes } from './routes/discovery.ts';
 import { docsRoutes } from './routes/docs.ts';
+import { legalRoutes } from './routes/legal.ts';
 import { mcpRoutes } from './routes/mcp.ts';
 import { userRoutes } from './routes/user.ts';
 import { authRoutes } from './routes/auth.ts';
@@ -254,6 +255,7 @@ export function createApp(registry: Registry, baseUrl: string): Hono<AppEnv> {
   app.route('/', adminRoutes(services));
   app.route('/', userRoutes(services));
   app.route('/', docsRoutes(services));
+  app.route('/', legalRoutes(services));
   app.route('/', discoveryRoutes(services));
   app.route('/', discoverRoutes(services));
   app.route('/', boardsRoutes(services));

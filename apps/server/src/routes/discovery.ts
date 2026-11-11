@@ -192,6 +192,8 @@ export function discoveryRoutes(services: Services) {
       url('/', '1.0', 'hourly'),
       url('/latest', '0.8', 'hourly'),
       url('/about', '0.6', 'monthly'),
+      url('/privacy', '0.2', 'yearly'),
+      url('/terms', '0.2', 'yearly'),
       url('/members', '0.4', 'daily'),
       url('/feeds', '0.3', 'monthly'),
       url('/boards', '0.5', 'daily'),

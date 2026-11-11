@@ -219,6 +219,8 @@ export function Layout(props: LayoutProps) {
                 <a href="/docs">Docs</a>
                 <a href="/feeds">Feeds</a>
                 <a href="/feed.xml">RSS</a>
+                <a href="/privacy">Privacy</a>
+                <a href="/terms">Terms</a>
                 <a class="footer-link" href="https://github.com/profullstack/tsbb" rel="noopener" title="tsbb on GitHub"
                   >${IconGithub()} GitHub</a
                 >

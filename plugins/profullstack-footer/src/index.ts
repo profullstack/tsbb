@@ -86,6 +86,10 @@ export default definePlugin({
             { label: 'Docs', href: '/docs' },
             { label: 'Feeds', href: '/feeds' },
             { label: 'RSS', href: '/feed.xml' },
+            // This board's own policies. The shared footer's Terms and Privacy
+            // links below are Profullstack's company-wide ones.
+            { label: 'Privacy', href: '/privacy' },
+            { label: 'Terms', href: '/terms' },
             { label: 'GitHub', href: 'https://github.com/profullstack/tsbb' },
           ],
           ...(since > 0 ? { since } : {}),
