@@ -1,5 +1,6 @@
 import { escapeHtml } from '@tsbb/markup';
 import { boardUrl } from '@tsbb/core';
+import { promoBlock } from '@profullstack/cross-promo';
 
 /**
  * Email templates.
@@ -144,21 +145,34 @@ export function notificationEmail(input: {
   };
 }
 
-export function welcomeEmail(input: {
+export async function welcomeEmail(input: {
   boardName: string;
   baseUrl: string;
   username: string;
-}): RenderedEmail {
+  /** The recipient, so each one sees a stable rotation of the network block. */
+  email?: string;
+}): Promise<RenderedEmail> {
+  // "More from the network": sister properties for developers, never this
+  // board's own host. Never throws; falls back to the bundled catalog.
+  const promo = await promoBlock({
+    site: input.baseUrl,
+    audience: 'developers',
+    seed: input.email,
+    theme: { accent: ACCENT, text: INK, muted: MUTED, border: BORDER, bg: '#ffffff', heading: INK },
+  });
   const body =
     `<h1 style="margin:0 0 8px;font-size:18px;font-weight:650">Welcome to ${escapeHtml(input.boardName)}</h1>` +
     `<p style="margin:0;font-size:14px;line-height:1.6;color:${MUTED}">` +
     `You are signed in as <strong style="color:${INK}">${escapeHtml(input.username)}</strong>. ` +
     `Your username and picture can be changed in settings at any time.</p>` +
-    button(boardUrl('/settings', input.baseUrl), 'Set up your profile');
+    button(boardUrl('/settings', input.baseUrl), 'Set up your profile') +
+    promo.html;
 
   return {
     subject: `Welcome to ${input.boardName}`,
     html: shell(input.boardName, body, `You received this because an account was created for this address.`),
-    text: `Welcome to ${input.boardName}.\n\nYou are signed in as ${input.username}.\nSet up your profile: ${boardUrl('/settings', input.baseUrl)}`,
+    text:
+      `Welcome to ${input.boardName}.\n\nYou are signed in as ${input.username}.\nSet up your profile: ${boardUrl('/settings', input.baseUrl)}` +
+      (promo.text ? `\n\n${promo.text}` : ''),
   };
 }

@@ -5,6 +5,7 @@
   "type": "module",
   "exports": { ".": "./src/index.ts" },
   "dependencies": {
+    "@profullstack/cross-promo": "^0.1.0",
     "@tsbb/core": "workspace:*",
     "@tsbb/db": "workspace:*",
     "@tsbb/markup": "workspace:*"
