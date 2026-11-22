@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { createRequire } from 'node:module';
 import { createBridgeClient, createCoinPayClient, type BridgeClient } from '@profullstack/bridges';
 import { boardUrl } from '@tsbb/core';
 
@@ -15,6 +16,30 @@ export interface SignInProvider {
   /** "Continue with <name>". */
   name: string;
   client: BridgeClient;
+}
+
+/** apps/server's version, for the User-Agent CoinPay sees. */
+function serverVersion(): string | undefined {
+  try {
+    return (createRequire(import.meta.url)('../package.json') as { version?: string }).version;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * A fetch that names this board in User-Agent (`<board host>/<version> (+<board>) tsbb`),
+ * so CoinPay can tell the boards on one box apart instead of seeing `node`.
+ */
+export function coinpayFetch(baseUrl: string): typeof fetch {
+  const origin = new URL(baseUrl).origin;
+  const version = serverVersion();
+  const ua = `${new URL(baseUrl).host}${version ? `/${version}` : ''} (+${origin}) tsbb`;
+  return (input, init = {}) => {
+    const headers = new Headers(init.headers);
+    if (!headers.has('user-agent')) headers.set('user-agent', ua);
+    return fetch(input, { ...init, headers });
+  };
 }
 
 /**
@@ -41,6 +66,7 @@ export function coinpayConfig(baseUrl: string, env: NodeJS.ProcessEnv = process.
         clientId,
         clientSecret,
         redirectUri: boardUrl('/auth/coinpay/callback', baseUrl),
+        fetch: coinpayFetch(baseUrl),
         // The state cookie is the board's own: sealed with a key derived from
         // the session secret, whatever length CoinPay's secret happens to be.
         stateSecret: createHash('sha256')
